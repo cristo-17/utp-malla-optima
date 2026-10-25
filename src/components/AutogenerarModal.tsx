@@ -147,7 +147,7 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
         </fieldset>
         <div className="autogen-campos">
           <label htmlFor="autogen-horas">Máximo de horas por ciclo
-            <input id="autogen-horas" type="number" inputMode="numeric" min="0" step="1" placeholder="22 (opcional)" value={horas} onChange={(event) => { setHoras(event.target.value); setHorasEstricto(false); }} /></label>
+            <input id="autogen-horas" type="number" inputMode="numeric" min="0" step="1" placeholder="Sin límite" value={horas} onChange={(event) => { setHoras(event.target.value); setHorasEstricto(false); }} /></label>
           <label htmlFor="autogen-creditos">Máximo de créditos
             <input id="autogen-creditos" type="number" inputMode="numeric" min="0" step="1" placeholder="Opcional" value={creditos} onChange={(event) => { setCreditos(event.target.value); setCreditosEstricto(false); }} /></label>
           <label htmlFor="autogen-cuota">Presupuesto mensual (S/)
