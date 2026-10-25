@@ -451,3 +451,31 @@ describe('evaluación - plan con límites, ruta sugerida, guía y descuentos', (
       .not.toContain('MAYOR:numero-sin-fuente');
   });
 });
+
+describe('evaluación - falsos positivos de la corrida 8 (F-044)', () => {
+  const ciclo = (fixture: Parameters<typeof leerFixture>[0]) => leerFixture(fixture);
+
+  it('pago-unico-mensual: " o " separa dos métodos; el pago único dicho como mensual sigue fallando', () => {
+    const real = 'Con un ciclo extra (hasta el Ciclo 12) te quedan 5 periodos de 14, 14, 14, 12 y 14 h, con 3 a 5 cursos cada uno, y egresas en el Ciclo 12. La cuota sería S/ 725.35 al mes o S/ 3,354.74 de pago único por ciclo.';
+    expect(fallosDe(real, {}, ['y qué pasa si agrego otro ciclo?'], ciclo('contexto-agrego-ciclo'))).not.toContain('CRITICO:pago-unico-mensual');
+    expect(fallosDe('Con pago único pagas S/ 3,354.74 al mes.', {}, ['¿y con pago único?'], ciclo('contexto-agrego-ciclo')))
+      .toContain('CRITICO:pago-unico-mensual');
+  });
+
+  it('ruta-como-malla: "tu Ciclo 8 ya está armado" es cierto si el alumno lo ubicó; con el Ciclo 8 vacío sigue fallando', () => {
+    const armado = 'Ojo, según tu plan en MallaU estás en el Ciclo 7, no eres cachimbo. Y tu próximo periodo (Ciclo 8) ya está armado con 7 cursos, 25 h, que supera el tope de 22 h.';
+    expect(fallosDe(armado, {}, ['soy cachimbo, ¿qué llevo?'])).not.toContain('MAYOR:ruta-como-malla');
+    expect(fallosDe('Lo más útil ahora es revisar tu Ciclo 8, que ya tienes armado con 7 cursos.', {}, ['soy cachimbo, ¿por dónde empiezo?']))
+      .not.toContain('MAYOR:ruta-como-malla');
+    const vacio = ciclo('contexto-ciclo-vacio');
+    expect(fallosDe('Tu Ciclo 8 ya está armado con 6 cursos.', {}, ['¿qué llevo el próximo ciclo?'], vacio)).toContain('MAYOR:ruta-como-malla');
+    expect(fallosDe('Tu ruta ya está armada.', {}, ['¿qué llevo el próximo ciclo?'], vacio)).toContain('MAYOR:ruta-como-malla');
+  });
+
+  it('numero-sin-fuente: "te salen 4 ciclos" cuenta los periodos de la propuesta; un número que no cuadra sigue fallando', () => {
+    const real = 'Con menos de 20 h por periodo te salen 4 ciclos: Ciclo 8 con 5 cursos (19 h), Ciclo 9 con 7 (19 h), Ciclo 10 con 5 (19 h) y un Ciclo 11 con 3 (11 h).';
+    expect(fallosDe(real, {}, ['Quiero armar un plan que tenga menos de 20h semanales'], ciclo('contexto-limite-20h'))).not.toContain('MAYOR:numero-sin-fuente');
+    expect(fallosDe('Con menos de 20 h te salen 13 ciclos.', {}, ['Quiero armar un plan que tenga menos de 20h semanales'], ciclo('contexto-limite-20h')))
+      .toContain('MAYOR:numero-sin-fuente');
+  });
+});

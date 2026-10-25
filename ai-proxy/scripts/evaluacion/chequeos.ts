@@ -98,7 +98,7 @@ const CAMPOS_POR_UNIDAD = (unidad: string): RegExp => /^h|^hora/.test(unidad) ? 
  * "la cuota mensual más baja es S/ 884.86 (Interbank) y el pago único sería S/ 4,705.86 al inicio" compara dos
  * métodos y no presenta el pago único como mensual (falso positivo de la corrida 2026-10-23-1922).
  */
-const CLAUSULAS = /\s+y\s+|;|\(|\)|,\s+(?=(con|mientras|pero|o|si|en cambio)\s)/;
+const CLAUSULAS = /\s+y\s+|\s+o\s+|;|\(|\)|,\s+(?=(con|mientras|pero|o|si|en cambio)\s)/;
 const MENSUAL = /\bal mes\b|\bmensual(es|mente)?\b|\bpor mes\b|\bcada mes\b|\bcuotas?\b|\bmensualidad(es)?\b/g;
 const NO_MENSUAL = /(\b(no|sin|ni|nada de)\s+(\S+\s+){0,3}$)|(\ben\s+$)/;
 export const pagoUnicoMensual = (texto: string): string | null => {
@@ -143,9 +143,14 @@ const CICLO_COMO_MALLA = /\b(?:tu|en tu|en el) ciclo (\d{1,2}) (?:ya )?(?:tiene|
 export const rutaComoMalla = (texto: string, contexto: AIContext): string | null => {
   if (contexto.rutaSugerida.aplicadaEnMalla || contexto.propuestaConLimites) return null;
   const t = normalizar(texto);
-  const lista = t.match(RUTA_LISTA)?.[0];
-  if (lista) return lista;
   const enMalla = new Set(contexto.periodosPlanificados.map((periodo) => periodo.id));
+  // "tu Ciclo 8 ya está armado" es cierto si el Ciclo 8 está en la malla del alumno (corrida 2026-10-25-1530).
+  for (const frase of t.split(/(?<=[.!?;])\s+|\n+/)) {
+    const lista = frase.match(RUTA_LISTA)?.[0];
+    if (!lista) continue;
+    const periodos = [...frase.matchAll(/\b(ciclo|verano) (\d{1,2})\b/g)].map((m) => `${m[1]}-${Number(m[2])}`);
+    if (!periodos.length || periodos.some((id) => !enMalla.has(id))) return lista;
+  }
   const soloSugerida = new Set(contexto.rutaSugerida.propuesta.map((periodo) => periodo.periodoId).filter((id) => !enMalla.has(id)));
   return [...t.matchAll(CICLO_COMO_MALLA)].find((m) => soloSugerida.has(`ciclo-${Number(m[1])}`))?.[0] ?? null;
 };
@@ -248,7 +253,10 @@ export const chequear = ({ modo, contexto, mensajes, esperado, respuesta, codigo
   const propuesta = contexto.propuestaConLimites;
   const ciclosDePropuesta = propuesta
     ? [propuesta.ciclosAgregados.length, propuesta.ciclosExtraVsSinLimites ?? 0, propuesta.limites.agregarCiclo ? 1 : 0,
-      ...propuesta.alternativas.flatMap((alternativa) => [alternativa.ciclosAgregados.length, alternativa.ciclosAntes])] : [];
+      ...propuesta.alternativas.flatMap((alternativa) => [alternativa.ciclosAgregados.length, alternativa.ciclosAntes,
+        alternativa.horasPorPeriodo.length]),
+      // "Te salen 4 ciclos": cuántos periodos tiene la propuesta (corrida 2026-10-25-1530).
+      propuesta.periodos.length] : [contexto.rutaSugerida.propuesta.length];
   const sinFuente = [...new Set([...t.matchAll(NUMERO_CON_UNIDAD)].filter((m) => {
     const fuente = [...numerosPorClave(contexto, CAMPOS_POR_UNIDAD(m[2])), ...delAlumno, ...(/^ciclo/.test(m[2]) ? ciclosDePropuesta : [])];
     return !fuente.some((n) => cerca(n, Number(m[1].replace(',', '.'))));

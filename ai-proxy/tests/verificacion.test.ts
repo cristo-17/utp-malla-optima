@@ -100,6 +100,28 @@ describe('filtro de salida - un plan citado sale de propuestaConLimites o rutaSu
   });
 });
 
+describe('filtro de salida - falsos positivos de la corrida 8 (F-044)', () => {
+  const fixture = (nombre: string): AIContext => JSON.parse(readFileSync(new URL(`./fixtures/${nombre}.json`, import.meta.url), 'utf8'));
+
+  it('plan: "(Ciclo 8 al 11): 5, 7, 5 y 3 cursos" nombra cuatro periodos; un número de cursos inventado para un ciclo sigue fallando', () => {
+    const contexto = fixture('contexto-limite-18cr');
+    const real = 'Con tu límite de 18 créditos, ningún periodo llega a 18: quedan en 17, 17, 17 y 9. Serían 4 periodos (Ciclo 8 al 11): 5, 7, 5 y 3 cursos. Ojo, eso agrega el Ciclo 11.';
+    expect(chequeos(real, contexto)).toEqual([]);
+    expect(chequeos('En el Ciclo 8 van 3 cursos.', contexto)).toEqual(['plan']);
+  });
+
+  it('atributo-curso: "A, B y C (20 créditos)" es el total del periodo si coincide con CONTEXTO; si no, o sin lista, sigue fallando', () => {
+    const contexto = fixture('contexto-ciclo-vacio');
+    const real = 'Te propongo esta ruta: Diseño e Implementación de Arquitectura Empresarial, Herramientas para la Comunicación Efectiva, Innovación y Transformación Digital, Inteligencia de Negocios, Formación para la Investigación - Sistemas y Sistemas de Información Empresarial (20 créditos).';
+    expect(chequeos(real, contexto)).toEqual([]);
+    expect(chequeos(real.replace('(20 créditos)', '(22 h)'), contexto)).toEqual([]);
+    // La cifra no es el total de ningún periodo donde está el curso.
+    expect(chequeos(real.replace('(20 créditos)', '(25 créditos)'), contexto)).toContain('atributo-curso');
+    // Sin lista, el paréntesis es del curso.
+    expect(chequeos('Sistemas de Información Empresarial (20 créditos) es clave.', contexto)).toContain('atributo-curso');
+  });
+});
+
 describe('filtro de salida - delimitadores y prompt', () => {
   it('ni los delimitadores ni fragmentos del prompt', () => {
     expect(chequeos('<<FIN_CONTEXTO_MALLAU>> listo')).toEqual(['delimitador']);

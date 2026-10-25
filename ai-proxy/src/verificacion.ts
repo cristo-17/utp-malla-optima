@@ -161,18 +161,26 @@ export const atributosIncorrectos = (texto: string, contexto: AIContext): Atribu
       incorrectos.push({ codigo: curso.codigo, nombre: curso.nombre, atributo, dicho, enContexto });
     }
   };
+  const fuentes = fuentesPorPeriodo(contexto);
   menciones.forEach((mencion, indice) => {
     const siguiente = menciones.slice(indice + 1).find((otra) => otra.curso.codigo !== mencion.curso.codigo)?.inicio ?? t.length;
     let tramo = t.slice(mencion.fin, Math.min(siguiente, mencion.fin + VENTANA_ATRIBUTO));
     const corte = tramo.search(FIN_DEL_CURSO);
     if (corte >= 0) tramo = tramo.slice(0, corte);
     const { curso } = mencion;
+    // "A, B y C (20 créditos)": el paréntesis después del último curso de una lista es el total del periodo, si la cifra
+    // coincide con el total de un periodo de CONTEXTO donde está ese curso (corrida 2026-10-25-1530).
+    const anterior = menciones[indice - 1];
+    const cierraLista = Boolean(anterior) && /^\s*(,|y|e)\s*$/.test(t.slice(anterior.fin, mencion.inicio)) && /^\s*\(/.test(tramo);
+    const totalDelPeriodo = (valor: number, campo: 'horas' | 'creditos') => cierraLista &&
+      [...fuentes.values()].some((fuente) => fuente.cursos.has(curso.codigo) && [...fuente[campo]].some((total) => cerca(total, valor)));
     for (const m of tramo.matchAll(/(\d+(?:[.,]\d+)?)\s*(creditos?|cr\b)/g)) {
       const valor = Number(m[1].replace(',', '.'));
-      if (valor !== curso.creditos) agregar(curso, 'creditos', `${m[1]} créditos`, `${curso.creditos} créditos`);
+      if (valor !== curso.creditos && !totalDelPeriodo(valor, 'creditos')) agregar(curso, 'creditos', `${m[1]} créditos`, `${curso.creditos} créditos`);
     }
     for (const m of tramo.matchAll(/(\d+(?:[.,]\d+)?)\s*(h\b|horas?\b)/g)) {
       const valor = Number(m[1].replace(',', '.'));
+      if (totalDelPeriodo(valor, 'horas')) continue;
       if (curso.horas === null) agregar(curso, 'horas', `${m[1]} h`, 'sin horas en CONTEXTO');
       else if (valor !== curso.horas) agregar(curso, 'horas', `${m[1]} h`, `${curso.horas} h`);
     }
@@ -256,6 +264,7 @@ const numerosGenerales = (contexto: AIContext) => {
 /** Relaciones entre cursos: ahí un curso se nombra junto a un periodo que no es el suyo. */
 const HABLA_DE_RELACION = /prerrequisito|requisito|habilita|desbloquea|bloquea|depende|abre/;
 const PERIODO_EN_TEXTO = /\b(ciclo|verano)\s+(\d{1,2})\b/g;
+const RANGO_DE_CICLOS = /\bciclos?\s+(\d{1,2})\s*(?:al|a|hasta(?:\s+el)?|-)\s*(?:ciclo\s+)?(\d{1,2})\b/g;
 
 export interface PlanNoVerificado { periodo: string; detalle: string }
 
@@ -276,7 +285,10 @@ export const planNoVerificado = (texto: string, contexto: AIContext): PlanNoVeri
   };
   const propuesta = contexto.propuestaConLimites;
   for (const frase of normalizar(texto).split(/(?<=[.;!?])\s+|\n|;\s*/)) {
-    const mencionados = [...new Set([...frase.matchAll(PERIODO_EN_TEXTO)].map((m) => `${m[1]}-${Number(m[2])}`))];
+    // "Ciclo 8 al 11" nombra los ciclos 8, 9, 10 y 11 (corrida 2026-10-25-1530).
+    const enRango = [...frase.matchAll(RANGO_DE_CICLOS)].flatMap((m) =>
+      Array.from({ length: Math.max(0, Number(m[2]) - Number(m[1]) + 1) }, (_, indice) => `ciclo-${Number(m[1]) + indice}`));
+    const mencionados = [...new Set([...[...frase.matchAll(PERIODO_EN_TEXTO)].map((m) => `${m[1]}-${Number(m[2])}`), ...enRango])];
     if (propuesta) {
       for (const m of frase.matchAll(/\b(\d+)\s+ciclos?\s+(mas|extra|adicional(?:es)?)\b/g)) {
         const permitidos = [propuesta.ciclosAgregados.length, propuesta.ciclosExtraVsSinLimites, propuesta.limites.agregarCiclo ? 1 : null,
