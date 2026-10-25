@@ -199,6 +199,8 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
       </div>
       <footer className="autogen-footer">
         {error && <p className="autogen-error" role="alert">{error}</p>}
+        {/* En el celular, el resumen queda a la vista sin bajar (en escritorio ya está junto a los avisos). */}
+        {propuesta && propuesta.periodos.length > 0 && <p className="autogen-resumen-movil">{resumenEgreso(propuesta)}</p>}
         <div className="autogen-acciones">
           <button type="button" className="autogen-cancelar" onClick={cerrar}>Cancelar</button>
           <button type="button" className="autogen-aplicar" onClick={() => void aplicar()}

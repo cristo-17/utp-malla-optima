@@ -63,6 +63,7 @@
 .autogen-no-entraron ul { display: grid; gap: 4px; margin-top: 6px; padding-left: 18px; }
 .autogen-footer { flex: none; padding: 12px 20px 16px; border-top: 1px solid var(--border-default); background: var(--bg-surface); }
 .autogen-error { margin: 8px 0; color: var(--rose-dark); }
+.autogen-resumen-movil { display: none; margin: 0 0 8px; color: var(--t-primary); font-size: .84rem; font-weight: 700; text-align: center; }
 .autogen-acciones { display: flex; justify-content: flex-end; gap: 10px; }
 .autogen-acciones button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 9px 16px; border-radius: 7px; font-size: .9rem; font-weight: 700; cursor: pointer; }
 .autogen-cancelar { border: 1px solid var(--border-default); background: var(--bg-surface-subtle); color: var(--t-primary); }
@@ -81,4 +82,5 @@
   .autogen-campos { grid-template-columns: 1fr; }
   .autogen-head, .autogen-body, .autogen-footer { padding-left: 16px; padding-right: 16px; }
   .autogen-acciones button { flex: 1; }
+  .autogen-resumen-movil { display: block; }
 }

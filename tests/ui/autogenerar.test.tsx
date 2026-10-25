@@ -228,3 +228,18 @@ describe('Autogenerar - lo ya ubicado que pasa el límite', () => {
     sembrar({ autogenerar: null });
   });
 });
+
+describe('Autogenerar - resumen fijo en el celular', () => {
+  it('encima de "Aplicar a mi malla" va "Egresas en el Ciclo N · S/ X en total"; se ve solo en el celular', async () => {
+    const { store } = await crearStore();
+    sembrar({ ...estadoDe(store), autogenerar: { inicial: { maxCuotaMensual: 800 } } });
+    const html = renderToStaticMarkup(<AutogenerarModal />);
+    const pie = html.slice(html.indexOf('<footer'));
+    expect(pie).toContain('<p class="autogen-resumen-movil">Egresas en el Ciclo 12 · S/ 19,349.50 en total</p>');
+    expect(pie.indexOf('autogen-resumen-movil')).toBeLessThan(pie.indexOf('Aplicar a mi malla'));
+    const css = readFileSync(fileURLToPath(new URL('../../src/styles/autogenerar.css', import.meta.url)), 'utf8');
+    expect(css).toContain('.autogen-resumen-movil { display: none;');
+    expect(css.slice(css.indexOf('@media (max-width: 640px)'))).toContain('.autogen-resumen-movil { display: block; }');
+    sembrar({ autogenerar: null });
+  });
+});
