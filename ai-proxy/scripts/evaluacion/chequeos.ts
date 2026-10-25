@@ -105,7 +105,8 @@ export const pagoUnicoMensual = (texto: string): string | null => {
   for (const frase of normalizar(texto).split(/(?<=[.!?:;])\s+|\n+/)) {
     for (const clausula of frase.split(CLAUSULAS).filter((parte): parte is string => Boolean(parte))) {
       if (!/pago unico/.test(clausula)) continue;
-      const limpia = clausula.replace(/\bmes a mes\b/g, '');
+      // "Simulación de cuotas" es el nombre de la pestaña, no una cuota mensual (F-045).
+      const limpia = clausula.replace(/\bmes a mes\b/g, '').replace(/\bsimulacion de cuotas\b/g, '');
       for (const m of limpia.matchAll(MENSUAL)) {
         if (!NO_MENSUAL.test(limpia.slice(Math.max(0, (m.index ?? 0) - 25), m.index))) return frase.trim();
       }

@@ -519,3 +519,11 @@ describe('evaluación - chat-largo con propuestaConLimites (regla 17)', () => {
     expect(fallosDe(ciento_diez, {}, ['arma mi plan'], leerFixture('contexto-limite-20h'))).toContain('MENOR:chat-largo');
   });
 });
+
+describe('evaluación - pago-unico-mensual y la pestaña "Simulación de cuotas" (F-045)', () => {
+  it('nombrar la pestaña no es presentar el pago único como mensual; decirlo en cuotas al mes sigue fallando', () => {
+    expect(fallosDe('La ruta sugerida aún no está aplicada; revisa el pago único en Estrategia → Simulación de cuotas.'))
+      .not.toContain('CRITICO:pago-unico-mensual');
+    expect(fallosDe('Con pago único de S/ 4,307.86 en cuotas al mes te alcanza.')).toContain('CRITICO:pago-unico-mensual');
+  });
+});
