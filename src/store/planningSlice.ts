@@ -3,19 +3,25 @@ import { generateOptimalPlanUseCase } from '../application/usecases/generateOpti
 import { determinarTotalCiclos } from '../domain/rules/cycleRules';
 import { ordenarCursos } from '../domain/rules/courseRules';
 import { validarCargaPlanificacionAutomatica } from '../domain/services/automaticPlanningService';
-import { notificacionPlanAplicado } from '../presentation/messages/movementMessages';
+import { notificacionErrorPersistencia, notificacionPlanAplicado } from '../presentation/messages/movementMessages';
 import type { AcademicSlice, AcademicStore } from './types';
 
 type PlanningSlice = Pick<AcademicStore,
   'cursosSeleccionadosParaMatricula' | 'previsualizarPlanificacionOptima' |
-  'aplicarPlanificacionOptima' | 'generarPlanificacionOptima' | 'toggleSeleccionMatricula'>;
+  'aplicarPlanificacionOptima' | 'generarPlanificacionOptima' | 'toggleSeleccionMatricula' |
+  'planAnterior' | 'deshacerPlanificacion'>;
 
 export const createPlanningSlice = (repos: AcademicRepositories): AcademicSlice<PlanningSlice> => (set, get) => ({
   cursosSeleccionadosParaMatricula: [],
 
-  previsualizarPlanificacionOptima: () => {
-    const { cursos, totalCiclos, ciclosExcluidos, cicloActual, periodoIngreso } = get();
-    return generateOptimalPlanUseCase({ cursos, totalCiclos, ciclosExcluidos, cicloActual, periodoIngreso });
+  planAnterior: null,
+
+  previsualizarPlanificacionOptima: (opciones = {}) => {
+    const { cursos, totalCiclos, ciclosExcluidos, cicloActual, periodoIngreso, tarifario, disciplinaActiva, metodoPago } = get();
+    return generateOptimalPlanUseCase({
+      cursos, totalCiclos, ciclosExcluidos, cicloActual, periodoIngreso,
+      tarifario, disciplina: disciplinaActiva, metodoPago, ...opciones,
+    });
   },
 
   aplicarPlanificacionOptima: async (resultado) => {
@@ -37,7 +43,25 @@ export const createPlanningSlice = (repos: AcademicRepositories): AcademicSlice<
       await repos.profile.save({ totalCiclos });
     });
     set({ cursos, totalCiclos, cursosSeleccionadosParaMatricula: [], cursoAMover: null,
-      notificacionMovimiento: notificacionPlanAplicado(resultado.advertenciasHoras) });
+      planAnterior: { cursos: actuales, totalCiclos: state.totalCiclos },
+      notificacionMovimiento: notificacionPlanAplicado(resultado.advertenciasHoras, resultado.totalPlanificados) });
+  },
+
+  deshacerPlanificacion: async () => {
+    const { planAnterior } = get();
+    if (!planAnterior) return false;
+    try {
+      await repos.transaction(async () => {
+        await repos.courses.saveMany(planAnterior.cursos);
+        await repos.profile.save({ totalCiclos: planAnterior.totalCiclos });
+      });
+    } catch {
+      set({ notificacionMovimiento: notificacionErrorPersistencia('Planificación automática') });
+      return false;
+    }
+    set({ cursos: planAnterior.cursos, totalCiclos: planAnterior.totalCiclos, planAnterior: null,
+      cursoAMover: null, notificacionMovimiento: null });
+    return true;
   },
 
   generarPlanificacionOptima: async () => {

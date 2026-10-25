@@ -54,6 +54,7 @@ export type TipoNotificacionMovimiento =
   | 'JALADO'
   | 'JALADO_OBLIGATORIO'
   | 'DATOS_DESACTUALIZADOS'
+  | 'PLAN_APLICADO'
   | 'ERROR_PERSISTENCIA';
 
 export interface NotificacionMovimiento {
@@ -66,4 +67,6 @@ export interface NotificacionMovimiento {
   valorActual?: number;
   /** Código del curso recién marcado como jalado; habilita la acción Deshacer. */
   deshacerJalado?: string;
+  /** El plan recién aplicado se puede deshacer (deshacerPlanificacion). */
+  deshacerPlan?: boolean;
 }

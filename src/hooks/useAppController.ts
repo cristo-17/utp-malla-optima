@@ -17,7 +17,7 @@ export function useAppController() {
     setCursoAMover: state.setCursoAMover, totalCiclos: state.totalCiclos,
     ciclosExcluidos: state.ciclosExcluidos, agregarCiclo: state.agregarCiclo,
     setPanelPlanificadorAbierto: state.setPanelPlanificadorAbierto,
-    reiniciarPlanificacion: state.reiniciarPlanificacion,
+    reiniciarPlanificacion: state.reiniciarPlanificacion, abrirAutogenerar: state.abrirAutogenerar,
   })));
   const [modalCarga, setModalCarga] = useState(false);
   const [modalContexto, setModalContexto] = useState(false);

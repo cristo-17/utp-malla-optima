@@ -1,4 +1,4 @@
-import { Calculator, CircleHelp, FileSpreadsheet, GraduationCap, Menu, Moon, RotateCcw, Settings2, Sun, Upload } from 'lucide-react';
+import { Calculator, CircleHelp, FileSpreadsheet, GraduationCap, Menu, Moon, RotateCcw, Settings2, Sparkles, Sun, Upload } from 'lucide-react';
 import { APP_NAME, APP_SUBTITLE } from '../../config/appIdentity';
 import { MINIMO_CREDITOS_ELECTIVOS } from '../../domain/rules/planningRules';
 import { formatCredits } from '../../utils/formatCredits';
@@ -44,6 +44,7 @@ function MainNav({ app }: { app: AppController }) {
     <div className="nav-final-actions">
       <SaveAsMenu cursos={app.cursos} exportandoPNG={app.exportando} onGuardarPNG={app.descargarPNG} />
       <FacultadDropdown />
+      <button type="button" className="nav-action autogen-nav-action" onClick={() => app.abrirAutogenerar()}><Sparkles size={14} /> Autogenerar</button>
       <button type="button" className="nav-action primary strategy-nav-action" onClick={() => app.setPanelPlanificadorAbierto(true)}><Calculator size={14} /> Estrategia</button>
     </div>
   </nav>;
