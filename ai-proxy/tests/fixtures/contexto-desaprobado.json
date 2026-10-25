@@ -759,14 +759,18 @@
           "100000NI24",
           "100000SI95"
         ]
+      },
+      {
+        "periodoId": "ciclo-11",
+        "cursos": [
+          "100000CN47",
+          "100000SI97"
+        ]
       }
     ],
-    "ciclosRestantes": 3,
-    "cicloFinal": 10,
-    "noPlanificados": [
-      "100000SI97",
-      "100000CN47"
-    ]
+    "ciclosRestantes": 4,
+    "cicloFinal": 11,
+    "noPlanificados": []
   },
   "electivos": [
     {
@@ -840,7 +844,7 @@
       "enCurso": 19,
       "faltanParaEgresar": 83,
       "faltanSiApruebaEnCurso": 64,
-      "ciclosRestantes": 3
+      "ciclosRestantes": 4
     },
     "cursosProximoPeriodo": [],
     "proximoPeriodoConJalados": null,

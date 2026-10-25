@@ -9,7 +9,8 @@ export const horasValidas = (curso: Curso) =>
 
 export const motivosNoPlanificado = (
   curso: Curso, porCodigo: Map<string, Curso>, asignaciones: Map<string, PeriodoAcademico>,
-  ultimoPeriodo: PeriodoAcademico | undefined, cicloFinal: number
+  ultimoPeriodo: PeriodoAcademico | undefined, cicloFinal: number,
+  limiteHoras = LIMITE_HORAS_PLANIFICACION, limiteCreditos: number | null = null
 ): MotivoNoPlanificado[] => {
   const motivos: MotivoNoPlanificado[] = [];
   if (!horasValidas(curso)) motivos.push({ tipo: 'HORAS_INVALIDAS' });
@@ -25,6 +26,6 @@ export const motivosNoPlanificado = (
         : { tipo: 'REQUISITO_NO_PROGRAMADO', requisito: referencia });
     }
   }
-  if (!motivos.length) motivos.push({ tipo: 'SIN_ESPACIO', cicloFinal, limiteHoras: LIMITE_HORAS_PLANIFICACION });
+  if (!motivos.length) motivos.push({ tipo: 'SIN_ESPACIO', cicloFinal, limiteHoras, limiteCreditos });
   return motivos;
 };

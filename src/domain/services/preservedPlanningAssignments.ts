@@ -3,9 +3,16 @@ import { crearPeriodoRegular, obtenerPeriodoCurso } from '../rules/academicPerio
 import { permiteVeranoDespuesDe, periodoBloqueadoPorCicloActual } from '../rules/academicContextRules';
 import { esJaladoSinReplanificar } from '../rules/courseRules';
 
-/** Conserva veranos manuales válidos y la secuencia que los hace posibles. */
+export interface OpcionesConservacion {
+  /** También conserva los pendientes ubicados en ciclos regulares futuros (y su secuencia). */
+  regulares?: boolean;
+  /** Periodo cuyos cursos no se conservan (se vuelven a planificar). */
+  excepto?: PeriodoAcademico['id'];
+}
+
+/** Conserva veranos manuales válidos y la secuencia que los hace posibles; con `regulares`, también los ciclos futuros. */
 export const obtenerAsignacionesConservadas = (
-  cursos: Curso[], cicloActual: number, ingreso?: PeriodoIngreso | null
+  cursos: Curso[], cicloActual: number, ingreso?: PeriodoIngreso | null, opciones: OpcionesConservacion = {}
 ) => {
   const porCodigo = new Map(cursos.map((curso) => [curso.codigo, curso]));
   const conservados = new Set<string>();
@@ -39,6 +46,11 @@ export const obtenerAsignacionesConservadas = (
   // Primero se conserva la secuencia completa de cada verano válido.
   for (const curso of cursos) {
     if (curso.estado === 'PENDIENTE' && curso.ubicacion === 'periodo' && curso.tipoPeriodo === 'VERANO' &&
+        validoAntesDe(curso.codigo, crearPeriodoRegular(curso.ciclo + 1))) conservarSecuencia(curso);
+  }
+  for (const curso of opciones.regulares ? cursos : []) {
+    if (curso.estado === 'PENDIENTE' && curso.ubicacion === 'periodo' && curso.tipoPeriodo === 'REGULAR' &&
+        obtenerPeriodoCurso(curso).id !== opciones.excepto &&
         validoAntesDe(curso.codigo, crearPeriodoRegular(curso.ciclo + 1))) conservarSecuencia(curso);
   }
   for (const curso of cursos) {

@@ -944,22 +944,22 @@
         "cursos": [
           "100000S61T",
           "100000S06I",
+          "100000S72T",
+          "100000S73T",
           "100000H01C",
           "100000TD09",
-          "100000SI82",
-          "100000SI86"
+          "100000S71T"
         ]
       },
       {
         "periodoId": "ciclo-9",
         "cursos": [
-          "100000S72T",
-          "100000S73T",
           "100000I62N",
-          "100000S71T",
+          "100000SI82",
           "100000SI87",
-          "100000N25I",
-          "10000096SI"
+          "100000S07I",
+          "100000SI86",
+          "100000SI97"
         ]
       },
       {
@@ -967,19 +967,23 @@
         "cursos": [
           "100000S09I",
           "100000S02I",
-          "100000S07I",
+          "100000N25I",
           "100000N11I",
-          "100000SI97",
+          "10000096SI",
+          "100000NI24",
           "100000SI95"
+        ]
+      },
+      {
+        "periodoId": "ciclo-11",
+        "cursos": [
+          "100000CN47"
         ]
       }
     ],
-    "ciclosRestantes": 3,
-    "cicloFinal": 10,
-    "noPlanificados": [
-      "100000NI24",
-      "100000CN47"
-    ]
+    "ciclosRestantes": 4,
+    "cicloFinal": 11,
+    "noPlanificados": []
   },
   "electivos": [
     {
@@ -1134,7 +1138,7 @@
       "enCurso": 16,
       "faltanParaEgresar": 79,
       "faltanSiApruebaEnCurso": 63,
-      "ciclosRestantes": 3
+      "ciclosRestantes": 4
     },
     "cursosProximoPeriodo": [
       {

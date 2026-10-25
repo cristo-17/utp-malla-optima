@@ -5,10 +5,15 @@ import { pluralizar } from '../../utils/pluralizar';
 export const explicarPlan = (explicacion: ExplicacionPlan): string => {
   switch (explicacion.tipo) {
     case 'RESUMEN':
-      return `${pluralizar(explicacion.total, 'Se organizó 1 curso pendiente', `Se organizaron ${explicacion.total} cursos pendientes`)} desde el ciclo ${explicacion.cicloInicio} hasta el ${explicacion.cicloFinal}, utilizando solo ciclos regulares${explicacion.jaladosEnVerano
+      return `${pluralizar(explicacion.total, 'Se organizó 1 curso pendiente', `Se organizaron ${explicacion.total} cursos pendientes`)} desde el ciclo ${explicacion.cicloInicio} hasta el ${explicacion.cicloFinal}, ${explicacion.conVeranos ? 'con ciclos regulares y veranos' : 'utilizando solo ciclos regulares'}${!explicacion.conVeranos && explicacion.jaladosEnVerano
         ? ` (el verano se usa únicamente para ${pluralizar(explicacion.jaladosEnVerano, 'tu curso jalado', `tus ${explicacion.jaladosEnVerano} cursos jalados`)})` : ''}.`;
     case 'LIMITE':
-      return `Cada ciclo que recibe nuevas asignaciones respeta hasta ${explicacion.horas} horas semanales. Los créditos son informativos y no limitan la propuesta.`;
+      return `Cada ciclo que recibe nuevas asignaciones respeta hasta ${explicacion.horas} horas semanales${explicacion.creditos
+        ? ` y ${formatCredits(explicacion.creditos)} créditos.` : '. Los créditos son informativos y no limitan la propuesta.'}`;
+    case 'CICLOS_AGREGADOS':
+      return `Con estos límites hace falta ${pluralizar(explicacion.ciclos.length, 'agregar el ciclo', 'agregar los ciclos')} ${explicacion.ciclos.join(', ')} para terminar la carrera.`;
+    case 'VERANOS_USADOS':
+      return `Se ${pluralizar(explicacion.periodos.length, 'usa el', 'usan el')} ${explicacion.periodos.join(' y el ')} para no agregar ciclos (máximo de créditos por verano).`;
     case 'PRIORIDAD_OBLIGATORIOS':
       return 'Primero se organizan todos los obligatorios: se priorizan los que desbloquean más obligatorios pendientes y se completa el espacio con materias de ciclos anteriores o del actual, y después de ciclos posteriores.';
     case 'APROBADOS_SIN_CARGA':
@@ -47,7 +52,9 @@ export const explicarMotivo = (motivo: MotivoNoPlanificado): string => {
     case 'REQUISITO_NO_PROGRAMADO':
       return `Depende de ${motivo.requisito.nombre} (${motivo.requisito.codigo}), que no está programado válidamente en un periodo anterior.`;
     case 'SIN_ESPACIO':
-      return `No encontró espacio hasta el ciclo ${motivo.cicloFinal}, respetando prerrequisitos y las ${motivo.limiteHoras} horas por ciclo. Puedes añadir ciclos o ajustar la distribución manual.`;
+      return `No encontró espacio hasta el ciclo ${motivo.cicloFinal}, respetando prerrequisitos y las ${motivo.limiteHoras} horas${motivo.limiteCreditos ? ` y ${formatCredits(motivo.limiteCreditos)} créditos` : ''} por ciclo. Puedes añadir ciclos o ajustar la distribución manual.`;
+    case 'NO_CABE_EN_PERIODO':
+      return `Se puede llevar en el ${motivo.periodo.etiqueta}, pero pasaría el límite de ${motivo.limiteHoras} horas${motivo.limiteCreditos ? ` o de ${formatCredits(motivo.limiteCreditos)} créditos` : ''}.`;
     case 'ELECTIVO_ESPERA_OBLIGATORIOS':
       return 'El electivo queda en el banco hasta que puedan planificarse todos los obligatorios.';
   }

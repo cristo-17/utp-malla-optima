@@ -597,7 +597,7 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > con S6
   "derivados": {
     "creditos": {
       "aprobadosQueCuentan": 121,
-      "ciclosRestantes": 3,
+      "ciclosRestantes": 4,
       "electivosMinimos": 3,
       "enCurso": 16,
       "faltanParaEgresar": 79,
@@ -1066,33 +1066,30 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > con S6
     "totalHoras": 25,
   },
   "ruta": {
-    "cicloFinal": 10,
-    "ciclosRestantes": 3,
-    "noPlanificados": [
-      "100000NI24",
-      "100000CN47",
-    ],
+    "cicloFinal": 11,
+    "ciclosRestantes": 4,
+    "noPlanificados": [],
     "propuesta": [
       {
         "cursos": [
           "100000S61T",
           "100000S06I",
+          "100000S72T",
+          "100000S73T",
           "100000H01C",
           "100000TD09",
-          "100000SI82",
-          "100000SI86",
+          "100000S71T",
         ],
         "periodoId": "ciclo-8",
       },
       {
         "cursos": [
-          "100000S72T",
-          "100000S73T",
           "100000I62N",
-          "100000S71T",
+          "100000SI82",
           "100000SI87",
-          "100000N25I",
-          "10000096SI",
+          "100000S07I",
+          "100000SI86",
+          "100000SI97",
         ],
         "periodoId": "ciclo-9",
       },
@@ -1100,12 +1097,19 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > con S6
         "cursos": [
           "100000S09I",
           "100000S02I",
-          "100000S07I",
+          "100000N25I",
           "100000N11I",
-          "100000SI97",
+          "10000096SI",
+          "100000NI24",
           "100000SI95",
         ],
         "periodoId": "ciclo-10",
+      },
+      {
+        "cursos": [
+          "100000CN47",
+        ],
+        "periodoId": "ciclo-11",
       },
     ],
   },
@@ -2291,40 +2295,39 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > cumple
   "ruta": {
     "cicloFinal": 10,
     "ciclosRestantes": 3,
-    "noPlanificados": [
-      "100000CN47",
-    ],
+    "noPlanificados": [],
     "propuesta": [
       {
         "cursos": [
           "100000S06I",
+          "100000S72T",
+          "100000S73T",
           "100000H01C",
           "100000TD09",
           "100000I62N",
-          "100000SI82",
-          "100000SI86",
+          "100000S71T",
         ],
         "periodoId": "ciclo-8",
       },
       {
         "cursos": [
-          "100000S72T",
-          "100000S73T",
-          "100000S71T",
+          "100000S09I",
+          "100000SI82",
           "100000S02I",
-          "100000SI87",
-          "100000N11I",
-          "10000096SI",
+          "100000S07I",
+          "100000SI86",
+          "100000SI97",
         ],
         "periodoId": "ciclo-9",
       },
       {
         "cursos": [
-          "100000S09I",
-          "100000S07I",
+          "100000SI87",
           "100000N25I",
+          "100000N11I",
+          "100000CN47",
+          "10000096SI",
           "100000NI24",
-          "100000SI97",
           "100000SI95",
         ],
         "periodoId": "ciclo-10",
