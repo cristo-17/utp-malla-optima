@@ -76,6 +76,11 @@ describe('filtro de salida - un plan citado sale de propuestaConLimites o rutaSu
     expect(deLimite('Necesitas 2 ciclos más.')).toEqual(['plan']);
   });
 
+  it('los datos de carga del periodo no son el total de cursos: "5 cursos de 4 h o más" (corrida 2026-10-25-1246)', () => {
+    expect(chequeos('Sí, estás en nivel de riesgo: tu Ciclo 8 tiene 25 h, por encima de las 24 h recomendadas, y 5 cursos de 4 h o más.')).toEqual([]);
+    expect(chequeos('Tu Ciclo 8 tiene 9 cursos de 4 h.')).toEqual(['plan']);
+  });
+
   it('un curso en un periodo donde ninguna fuente lo ubica', () => {
     expect(deLimite('En el Ciclo 8 llevas CURSO INTEGRADOR II: SISTEMAS (100000S09I).')).toEqual(['plan']);
     // Una relación entre cursos no es una ubicación.

@@ -291,14 +291,19 @@ export const planNoVerificado = (texto: string, contexto: AIContext): PlanNoVeri
         if (!periodosDe.get(curso.codigo)?.has(id)) agregar(id, `Pusiste ${curso.nombre} (${curso.codigo}) en el ${etiqueta}, pero CONTEXTO no lo ubica ahí.`);
       }
     }
-    const deCursos = enFrase.map(({ curso }) => curso);
-    const revisar = (patron: RegExp, permitidos: number[], unidad: string) => {
+    // Las horas de cualquier curso del periodo valen ("5 cursos de 4 h o más", corrida 2026-10-25-1246).
+    const deCursos = [...enFrase.map(({ curso }) => curso), ...cursos.filter((curso) => fuente.cursos.has(curso.codigo))];
+    const revisar = (patron: RegExp, permitidos: number[], unidad: string, esParte?: (resto: string, valor: number) => boolean) => {
       for (const m of frase.matchAll(patron)) {
         const valor = Number(m[1].replace(',', '.'));
+        if (esParte?.(frase.slice((m.index ?? 0) + m[0].length), valor)) continue;
         if (!permitidos.some((numero) => cerca(numero, valor))) agregar(id, `Dijiste ${m[1]} ${unidad} para el ${etiqueta}, que no sale de la propuesta ni de la ruta sugerida.`);
       }
     };
-    revisar(/(\d+)\s*(?:cursos|materias)\b/g, [...fuente.numeroCursos], 'cursos');
+    // "5 cursos de 4 h o más", "2 cursos con laboratorio": una parte del periodo, no su total.
+    const maximoCursos = Math.max(0, ...fuente.numeroCursos);
+    revisar(/(\d+)\s*(?:cursos|materias)\b/g, [...fuente.numeroCursos], 'cursos',
+      (resto, valor) => /^\s+(de|con|que|del|sin)\b/.test(resto) && valor <= maximoCursos);
     revisar(/(\d+(?:[.,]\d+)?)\s*(?:h\b|horas?\b)/g,
       [...fuente.horas, ...generales.horas, ...deCursos.flatMap((curso) => curso.horas === null ? [] : [curso.horas])], 'h');
     revisar(/(\d+(?:[.,]\d+)?)\s*(?:creditos?\b|cr\b)/g, [...fuente.creditos, ...generales.creditos, ...deCursos.map((curso) => curso.creditos)], 'créditos');
