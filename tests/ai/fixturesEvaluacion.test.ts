@@ -105,4 +105,18 @@ describe('fixtures de la evaluación (buildAIContext)', () => {
     expect(contexto.rutaSugerida.propuesta[0].periodoId).toBe('ciclo-8');
     await expect(comoJson(contexto)).toMatchFileSnapshot(destino('contexto-ciclo-vacio.json'));
   });
+
+  /**
+   * Las dos rutas son ciertas: dependen de lo que el alumno ya ubicó (la ruta sugerida conserva lo ubicado).
+   * Con su Ciclo 8 de 7 cursos (25 h), lo que falta entra en 22 + 21 h y la ruta cierra en el Ciclo 10. Con el Ciclo 8
+   * vacío y el tope de 22 h, 68 h no entran en 3 ciclos y el electivo va al Ciclo 11 (D-046).
+   */
+  it('la ruta sugerida cierra en el Ciclo 10 con el 8vo ubicado (25 h) y en el Ciclo 11 con el Ciclo 8 vacío', async () => {
+    const conOctavo = buildAIContext((await crearPlan1ConOctavo()).getState()).rutaSugerida;
+    expect(conOctavo.cicloFinal).toBe(10);
+    expect(conOctavo.propuesta.map((periodo) => periodo.horas)).toEqual([25, 22, 21]);
+    const vacio = buildAIContext((await crearStore('Plan_de_Estudio_1.xlsx')).getState()).rutaSugerida;
+    expect(vacio.cicloFinal).toBe(11);
+    expect(vacio.propuesta.map((periodo) => periodo.horas)).toEqual([22, 22, 21, 3]);
+  });
 });
