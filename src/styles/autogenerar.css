@@ -18,13 +18,14 @@
   background: rgba(255, 255, 255, .08); color: #F8FAFC; cursor: pointer;
 }
 .autogen-close:hover { background: rgba(255, 255, 255, .18); }
-.autogen-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 18px 20px; font-size: .86rem; line-height: 1.5; }
+.autogen-body { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 18px 20px; font-size: .86rem; line-height: 1.5; }
 .autogen-alcance { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0; padding: 0; border: 0; }
 .autogen-alcance legend { width: 100%; margin-bottom: 6px; color: var(--t-muted); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
 .autogen-alcance label, .autogen-checks label { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; color: var(--t-secondary); cursor: pointer; }
 .autogen-campos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
-.autogen-campos label { display: grid; gap: 5px; color: var(--t-secondary); font-size: .78rem; font-weight: 650; }
+.autogen-campos label { display: grid; gap: 5px; min-width: 0; color: var(--t-secondary); font-size: .78rem; font-weight: 650; }
 .autogen-campos input {
+  box-sizing: border-box; width: 100%; min-width: 0;
   min-height: 40px; padding: 8px 10px; border: 1px solid var(--border-default); border-radius: 7px;
   background: var(--bg-surface-subtle); color: var(--t-primary); font-size: 1rem;
 }
