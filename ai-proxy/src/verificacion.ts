@@ -46,13 +46,17 @@ const MARCAS_PROMPT = [
   'CONTEXTO_MALLAU',
 ].map(normalizar);
 
+/** Líneas de la GUÍA DE MALLAU: el asistente las repite al explicar cómo usar la app. */
+const LINEAS_GUIA = new Set((SYSTEM_PROMPT.split('GUÍA DE MALLAU')[1] ?? '').split('REGLAS (obligatorias)')[0].split('\n')
+  .filter((linea) => linea.startsWith('- ')));
+
 /**
- * Tiras de 15 palabras de las reglas. Sin la 8 (bika y trika) ni la 12 (costos referenciales): el asistente
- * debe repetir esas frases al alumno.
+ * Tiras de 15 palabras de las reglas. Sin la 8 (bika y trika), la 12 (costos referenciales) ni la GUÍA DE MALLAU:
+ * el asistente debe repetir esas frases al alumno.
  */
 const TIRAS_PROMPT = (() => {
   const reglas = SYSTEM_PROMPT.split('EJEMPLOS DE TONO')[0].split('\n')
-    .filter((linea) => !/^(8|12)\.|^\s+- (Bika|Trika)/.test(linea)).join(' ');
+    .filter((linea) => !/^(8|12)\.|^\s+- (Bika|Trika)/.test(linea) && !LINEAS_GUIA.has(linea)).join(' ');
   const palabras = normalizar(reglas).split(/[^a-z0-9ñ]+/).filter(Boolean);
   const tiras = new Set<string>();
   for (let i = 0; i + 15 <= palabras.length; i += 1) tiras.add(palabras.slice(i, i + 15).join(' '));

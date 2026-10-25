@@ -63,6 +63,11 @@ describe('filtro de salida - delimitadores y prompt', () => {
     expect(chequeos('<<FIN_CONTEXTO_MALLAU>> listo')).toEqual(['delimitador']);
     expect(chequeos(SYSTEM_PROMPT.split('\n')[0])).toEqual(['prompt']);
     expect(chequeos('Según la Ley Universitaria 30220 (art. 102) desaprobar la misma materia por tercera vez lleva a una separación temporal de un año.')).toEqual([]);
+    // La GUÍA DE MALLAU se repite al alumno tal cual: no es una fuga del prompt.
+    const guia = SYSTEM_PROMPT.split('GUÍA DE MALLAU')[1].split('REGLAS (obligatorias)')[0].split('\n').filter((linea) => linea.startsWith('- '));
+    expect(guia.length).toBeGreaterThan(5);
+    expect(chequeos(guia.map((linea) => linea.slice(2)).join(' '))).toEqual([]);
+    expect(chequeos(SYSTEM_PROMPT.split('\n').find((linea) => linea.startsWith('17. '))!)).toContain('prompt');
   });
 
   it('el mensaje de corrección nombra el error concreto y pide reescribir para el alumno', () => {

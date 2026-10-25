@@ -165,3 +165,17 @@ describe('CONTEXTO.descuentos (desde el tarifario)', () => {
     for (const parte of ['5 %', '2.5 %', '7.5 %', 'al inicio del ciclo', 'Estrategia → Simulación de cuotas']) expect(texto).toContain(parte);
   });
 });
+
+describe('mock: cómo usar MallaU (regla 14 con la guía)', () => {
+  it('"¿cómo uso la plataforma?" nombra los botones reales; "¿dónde veo los descuentos?" dice Estrategia', async () => {
+    const store = await crearStore();
+    const contexto = buildAIContext(store.getState());
+    const responder = (texto: string) => {
+      const respuesta = generarRespuestaMock({ modo: 'chat', contexto, mensajes: [{ rol: 'user', texto }] });
+      return 'texto' in respuesta ? respuesta.texto : '';
+    };
+    const guia = responder('¿cómo uso la plataforma?');
+    for (const lugar of ['«Subir Excel»', '«Banco de pendientes»', '«Estrategia»', '«Autogenerar»']) expect(guia).toContain(lugar);
+    expect(responder('¿dónde veo los descuentos?')).toContain('Estrategia → Simulación de cuotas');
+  });
+});

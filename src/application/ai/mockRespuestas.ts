@@ -189,7 +189,7 @@ export const mockAnalisis = (contexto: AIContext): AIAnalisisResponse => {
   return { resumen, secciones, preguntasSugeridas: PREGUNTAS_BASE };
 };
 
-type Tema = 'bienestar' | 'identidad' | 'sinDatos' | 'intentos' | 'cachimbo' | 'estadoCurso' | 'creditos'
+type Tema = 'bienestar' | 'identidad' | 'guia' | 'sinDatos' | 'intentos' | 'cachimbo' | 'estadoCurso' | 'creditos'
   | 'financiero' | 'carga' | 'whatIf' | 'ruta' | 'electivos' | 'conviene' | 'fuera';
 
 const normalizar = (texto: string) => texto.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
@@ -202,6 +202,7 @@ const detectarTema = (texto: string): Tema => {
   const t = normalizar(texto);
   if (/estres|no puedo mas|dejar la (u|carrera|universidad)|quiero dejar|agobi|ansios/.test(t)) return 'bienestar';
   if (/eres (una |un )?(persona|humano|profe|profesor|docente|real)|hablo con (una persona|alguien)/.test(t)) return 'identidad';
+  if (/como (uso|usar|se usa|funciona) (la |esta )?(plataforma|app|aplicacion|mallau|pagina|web)|donde (veo|esta|estan|encuentro|subo|marco|cambio)|como (subo|marco|agrego|anado|guardo|exporto)/.test(t)) return 'guia';
   if (/horario|hueco|cruce|seccion|profe|docente|\bnotas?\b|tranca|yuca|dificil/.test(t)) return 'sinDatos';
   if (/\bbika\b|\btrika\b|(segunda|tercera) vez|(dos|tres|2|3) veces/.test(t)) return 'intentos';
   if (/cachimbo|primer ciclo/.test(t)) return 'cachimbo';
@@ -440,6 +441,13 @@ const respuestaPropuesta = (contexto: AIContext): AIChatResponse | null => {
   };
 };
 
+/** Regla 14 con la guía: cómo usar MallaU, con los nombres reales de los botones. */
+const respuestaGuia = (): AIChatResponse => ({
+  texto: 'Sube tu plan con «Subir Excel» y arrastra cursos del «Banco de pendientes» a cada ciclo; con «Añadir ciclo» sumas uno más. ' +
+    'En «Estrategia» → «Simulación de cuotas» ves los costos. Con «Autogenerar» armas tu plan con tus límites y lo aplicas con «Aplicar a mi malla».',
+  cursos: [], preguntasSugeridas: ['¿Cómo funcionan los descuentos de la UTP?', '¿Me alcanza mi presupuesto?'],
+});
+
 /** Regla de descuentos: porcentajes de CONTEXTO.descuentos y dónde se ven (Estrategia → Simulación de cuotas). */
 const respuestaDescuentos = (contexto: AIContext): AIChatResponse | null => {
   const descuentos = contexto.descuentos;
@@ -460,6 +468,7 @@ export const mockChat = (contexto: AIContext, pregunta: string): AIChatResponse 
   if (tema === 'identidad') return respuestaIdentidad();
   const conPropuesta = respuestaPropuesta(contexto);
   if (conPropuesta) return conPropuesta;
+  if (tema === 'guia' && !/descuento/.test(normalizar(pregunta))) return respuestaGuia();
   if (/descuento/.test(normalizar(pregunta)) && !/\d/.test(pregunta)) {
     const descuentos = respuestaDescuentos(contexto);
     if (descuentos) return descuentos;
