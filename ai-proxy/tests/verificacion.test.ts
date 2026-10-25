@@ -58,11 +58,80 @@ describe('filtro de salida - créditos, horas y estado de cada curso', () => {
   });
 });
 
+describe('filtro de salida - un plan citado sale de propuestaConLimites o rutaSugerida', () => {
+  const limite20: AIContext = JSON.parse(readFileSync(new URL('./fixtures/contexto-limite-20h.json', import.meta.url), 'utf8'));
+  const deLimite = (texto: string) => chequeos(texto, limite20);
+
+  it('la propuesta tal cual pasa: cursos por periodo, horas, "1 ciclo más" y el límite', () => {
+    expect(deLimite('Con menos de 20 h por ciclo: Ciclo 8: 5 cursos (19 h); Ciclo 9: 7 cursos (19 h); Ciclo 10: 5 cursos (19 h); Ciclo 11: 3 cursos (11 h). Necesitas 1 ciclo más.')).toEqual([]);
+    expect(deLimite('En el Ciclo 11 van SERVICIOS CLOUD (100000SI97) y TALLER DE INVESTIGACIÓN - SISTEMAS (100000SI95).')).toEqual([]);
+    // La malla del alumno (su Ciclo 8 de 25 h) también es un dato válido.
+    expect(deLimite('Hoy tu Ciclo 8 tiene 7 cursos y 25 h.')).toEqual([]);
+  });
+
+  it('cifras inventadas de un periodo: número de cursos, horas, créditos o ciclos extra', () => {
+    expect(deLimite('Ciclo 8: 6 cursos (19 h).')).toEqual(['plan']);
+    expect(deLimite('El Ciclo 9 queda con 21 h.')).toEqual(['plan']);
+    expect(deLimite('El Ciclo 10 suma 30 créditos.')).toEqual(['plan']);
+    expect(deLimite('Necesitas 2 ciclos más.')).toEqual(['plan']);
+  });
+
+  it('los datos de carga del periodo no son el total de cursos: "5 cursos de 4 h o más" (corrida 2026-10-25-1246)', () => {
+    expect(chequeos('Sí, estás en nivel de riesgo: tu Ciclo 8 tiene 25 h, por encima de las 24 h recomendadas, y 5 cursos de 4 h o más.')).toEqual([]);
+    expect(chequeos('Tu Ciclo 8 tiene 9 cursos de 4 h.')).toEqual(['plan']);
+  });
+
+  it('un curso en un periodo donde ninguna fuente lo ubica', () => {
+    expect(deLimite('En el Ciclo 8 llevas CURSO INTEGRADOR II: SISTEMAS (100000S09I).')).toEqual(['plan']);
+    // Una relación entre cursos no es una ubicación.
+    expect(deLimite('INTELIGENCIA DE NEGOCIOS (100000I62N) es prerrequisito de CURSO INTEGRADOR II: SISTEMAS (100000S09I), que va en el Ciclo 10.')).toEqual([]);
+  });
+
+  it('las cifras de las alternativas también salen de la propuesta (S/ 800: pronto pago y el Verano 8)', () => {
+    const limite800: AIContext = JSON.parse(readFileSync(new URL('./fixtures/contexto-limite-800.json', import.meta.url), 'utf8'));
+    expect(limite800.propuestaConLimites!.alternativas[0]).toMatchObject({ cicloEgreso: 10, costoTotalHastaEgresar: 14456.45, ciclosAntes: 2 });
+    expect(chequeos('Con pronto pago de Interbank y el Verano 8 (14 h) egresas en el Ciclo 10, 2 ciclos antes, y pagas S/ 14,456.45 en total: S/ 4,893.05 menos.', limite800)).toEqual([]);
+    expect(chequeos('Con pronto pago egresas en el Ciclo 10 y pagas S/ 13,000.00 en total.', limite800)).toEqual(['monto']);
+  });
+
+  it('sin propuesta, la ruta sugerida es la fuente', () => {
+    expect(chequeos(`El planificador te propone el Ciclo 9 con ${plan1.rutaSugerida.propuesta[1].cursos.length} cursos (${plan1.rutaSugerida.propuesta[1].horas} h).`)).toEqual([]);
+    expect(chequeos('El planificador te propone el Ciclo 9 con 2 cursos.')).toEqual(['plan']);
+  });
+});
+
+describe('filtro de salida - falsos positivos de la corrida 8 (F-044)', () => {
+  const fixture = (nombre: string): AIContext => JSON.parse(readFileSync(new URL(`./fixtures/${nombre}.json`, import.meta.url), 'utf8'));
+
+  it('plan: "(Ciclo 8 al 11): 5, 7, 5 y 3 cursos" nombra cuatro periodos; un número de cursos inventado para un ciclo sigue fallando', () => {
+    const contexto = fixture('contexto-limite-18cr');
+    const real = 'Con tu límite de 18 créditos, ningún periodo llega a 18: quedan en 17, 17, 17 y 9. Serían 4 periodos (Ciclo 8 al 11): 5, 7, 5 y 3 cursos. Ojo, eso agrega el Ciclo 11.';
+    expect(chequeos(real, contexto)).toEqual([]);
+    expect(chequeos('En el Ciclo 8 van 3 cursos.', contexto)).toEqual(['plan']);
+  });
+
+  it('atributo-curso: "A, B y C (20 créditos)" es el total del periodo si coincide con CONTEXTO; si no, o sin lista, sigue fallando', () => {
+    const contexto = fixture('contexto-ciclo-vacio');
+    const real = 'Te propongo esta ruta: Diseño e Implementación de Arquitectura Empresarial, Herramientas para la Comunicación Efectiva, Innovación y Transformación Digital, Inteligencia de Negocios, Formación para la Investigación - Sistemas y Sistemas de Información Empresarial (20 créditos).';
+    expect(chequeos(real, contexto)).toEqual([]);
+    expect(chequeos(real.replace('(20 créditos)', '(22 h)'), contexto)).toEqual([]);
+    // La cifra no es el total de ningún periodo donde está el curso.
+    expect(chequeos(real.replace('(20 créditos)', '(25 créditos)'), contexto)).toContain('atributo-curso');
+    // Sin lista, el paréntesis es del curso.
+    expect(chequeos('Sistemas de Información Empresarial (20 créditos) es clave.', contexto)).toContain('atributo-curso');
+  });
+});
+
 describe('filtro de salida - delimitadores y prompt', () => {
   it('ni los delimitadores ni fragmentos del prompt', () => {
     expect(chequeos('<<FIN_CONTEXTO_MALLAU>> listo')).toEqual(['delimitador']);
     expect(chequeos(SYSTEM_PROMPT.split('\n')[0])).toEqual(['prompt']);
     expect(chequeos('Según la Ley Universitaria 30220 (art. 102) desaprobar la misma materia por tercera vez lleva a una separación temporal de un año.')).toEqual([]);
+    // La GUÍA DE MALLAU se repite al alumno tal cual: no es una fuga del prompt.
+    const guia = SYSTEM_PROMPT.split('GUÍA DE MALLAU')[1].split('REGLAS (obligatorias)')[0].split('\n').filter((linea) => linea.startsWith('- '));
+    expect(guia.length).toBeGreaterThan(5);
+    expect(chequeos(guia.map((linea) => linea.slice(2)).join(' '))).toEqual([]);
+    expect(chequeos(SYSTEM_PROMPT.split('\n').find((linea) => linea.startsWith('17. '))!)).toContain('prompt');
   });
 
   it('el mensaje de corrección nombra el error concreto y pide reescribir para el alumno', () => {

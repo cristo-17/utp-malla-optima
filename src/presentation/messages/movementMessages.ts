@@ -93,12 +93,17 @@ export const notificacionJaladoRetirado = (
     `Estos ${afectados.length} cursos quedan marcados`)} (falta llevar curso jalado) hasta que lo lleves ${ventana || 'en su periodo de recuperación'}:`,
 } : null;
 
+/** Toast después de "Aplicar a mi malla", con Deshacer. */
 export const notificacionPlanAplicado = (
-  advertencias: { periodo: PeriodoAcademico; total: number; limite: number }[]
-): NotificacionMovimiento | null => advertencias.length ? {
-  tipo: 'LIMITE_HORAS', cursoNombre: 'Planificación automática',
-  mensaje: `Se aplicó la propuesta. Carga recomendada superada: ${advertencias.map((aviso) => `${aviso.periodo.etiqueta}: ${aviso.total} h (recomendadas: ${aviso.limite} h)`).join('; ')}.`,
-} : null;
+  advertencias: { periodo: PeriodoAcademico; total: number; limite: number }[],
+  totalPlanificados = 0,
+): NotificacionMovimiento => ({
+  tipo: 'PLAN_APLICADO', cursoNombre: 'Planificación automática', deshacerPlan: true,
+  mensaje: [
+    `Se aplicó la propuesta: ${pluralizar(totalPlanificados, '1 curso ubicado', `${totalPlanificados} cursos ubicados`)}.`,
+    ...(advertencias.length ? [`Carga recomendada superada: ${advertencias.map((aviso) => `${aviso.periodo.etiqueta}: ${aviso.total} h (recomendadas: ${aviso.limite} h)`).join('; ')}.`] : []),
+  ].join(' '),
+});
 
 export const notificacionPeriodoBloqueado = (cursoNombre: string): NotificacionMovimiento => ({
   tipo: 'INMOVIBLE', cursoNombre,

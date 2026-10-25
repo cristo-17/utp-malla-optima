@@ -1,0 +1,86 @@
+/* Autogenerar: límites del alumno, vista previa por periodo y "Aplicar a mi malla".
+   Solo tokens de tokens.css / theme.css: el modo oscuro sale de [data-theme="dark"]. */
+.autogen-backdrop { position: fixed; inset: 0; z-index: 5200; background: rgba(8, 15, 29, .45); }
+.autogen-modal {
+  position: fixed; top: 50%; left: 50%; z-index: 5210; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; width: min(680px, calc(100vw - 32px)); max-height: calc(100dvh - 48px);
+  overflow: hidden; border: 1px solid var(--border-default); border-radius: 12px;
+  background: var(--bg-surface); color: var(--t-primary); box-shadow: var(--shadow-pop);
+}
+.autogen-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; flex: none;
+  padding: 16px 20px; background: var(--bg-dark-1); color: #F8FAFC;
+}
+.autogen-head > div > span { display: flex; align-items: center; gap: 7px; color: #FF9AAC; font-size: .75rem; font-weight: 700; }
+.autogen-head h2 { margin: 6px 0 0; color: #FFFFFF; font-size: 1.12rem; line-height: 1.3; }
+.autogen-close {
+  display: grid; place-items: center; flex: 0 0 40px; height: 40px; border: 1px solid #657389; border-radius: 7px;
+  background: rgba(255, 255, 255, .08); color: #F8FAFC; cursor: pointer;
+}
+.autogen-close:hover { background: rgba(255, 255, 255, .18); }
+.autogen-body { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 18px 20px; font-size: .86rem; line-height: 1.5; }
+.autogen-alcance { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0; padding: 0; border: 0; }
+.autogen-alcance legend { width: 100%; margin-bottom: 6px; color: var(--t-muted); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.autogen-alcance label, .autogen-checks label { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; color: var(--t-secondary); cursor: pointer; }
+.autogen-campos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.autogen-campos label { display: grid; gap: 5px; min-width: 0; color: var(--t-secondary); font-size: .78rem; font-weight: 650; }
+.autogen-campos input {
+  box-sizing: border-box; width: 100%; min-width: 0;
+  min-height: 40px; padding: 8px 10px; border: 1px solid var(--border-default); border-radius: 7px;
+  background: var(--bg-surface-subtle); color: var(--t-primary); font-size: 1rem;
+}
+.autogen-campos input::placeholder { color: var(--t-muted); }
+.autogen-checks { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 12px; }
+.autogen-modal input[type="radio"], .autogen-modal input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--blue-primary); }
+.autogen-modal button:focus-visible, .autogen-modal input:focus-visible { outline: 3px solid var(--blue-primary); outline-offset: 2px; }
+.autogen-preview { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle); }
+.autogen-preview > h3 { font-size: 1rem; }
+.autogen-nota { margin-top: 4px; color: var(--t-muted); font-size: .78rem; }
+.autogen-avisos { display: grid; gap: 6px; margin: 12px 0 0; padding: 10px 12px; list-style: none; border: 1px solid var(--amber-border); border-radius: 8px; background: var(--amber-subtle); color: var(--amber-darker); }
+.autogen-avisos li { display: flex; align-items: flex-start; gap: 8px; }
+.autogen-avisos svg { flex: none; margin-top: 2px; }
+.autogen-total { margin-top: 10px; color: var(--t-primary); font-weight: 700; }
+.autogen-alternativas { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--blue-border); border-radius: 8px; background: var(--blue-subtle); }
+.autogen-alternativas h4 { color: var(--t-primary); font-size: .86rem; }
+.autogen-alternativas ul { display: grid; gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; }
+.autogen-alternativas li { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.autogen-alternativas li > div { display: grid; gap: 2px; min-width: 0; }
+.autogen-alternativas b { color: var(--t-primary); font-size: .84rem; }
+.autogen-alternativas span { color: var(--t-secondary); font-size: .8rem; }
+.autogen-usar {
+  flex: none; min-height: 40px; padding: 6px 12px; border: 1px solid var(--blue-primary); border-radius: 7px;
+  background: var(--bg-surface); color: var(--blue-dark); font-weight: 700; cursor: pointer;
+}
+.autogen-usar:hover { background: var(--blue-subtle); }
+.autogen-periodo { margin-top: 10px; padding: 11px 13px; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-surface-subtle); }
+.autogen-verano { border-color: var(--amber-border); background: var(--amber-tint); }
+.autogen-periodo h4 { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; font-size: .92rem; }
+.autogen-periodo h4 span { color: var(--t-muted); font-size: .78rem; font-weight: 650; }
+.autogen-periodo ul { display: grid; gap: 3px; margin-top: 8px; padding-left: 18px; color: var(--t-secondary); }
+.autogen-tag { margin-left: 6px; padding: 1px 6px; border: 1px solid var(--border-default); border-radius: 999px; color: var(--t-muted); font-size: .68rem; font-style: normal; font-weight: 700; }
+.autogen-tag-jalado { border-color: var(--rose-border); color: var(--rose-dark); }
+.autogen-no-entraron { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--border-default); border-radius: 8px; color: var(--t-secondary); }
+.autogen-no-entraron ul { display: grid; gap: 4px; margin-top: 6px; padding-left: 18px; }
+.autogen-footer { flex: none; padding: 12px 20px 16px; border-top: 1px solid var(--border-default); background: var(--bg-surface); }
+.autogen-error { margin: 8px 0; color: var(--rose-dark); }
+.autogen-resumen-movil { display: none; margin: 0 0 8px; color: var(--t-primary); font-size: .84rem; font-weight: 700; text-align: center; }
+.autogen-acciones { display: flex; justify-content: flex-end; gap: 10px; }
+.autogen-acciones button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 9px 16px; border-radius: 7px; font-size: .9rem; font-weight: 700; cursor: pointer; }
+.autogen-cancelar { border: 1px solid var(--border-default); background: var(--bg-surface-subtle); color: var(--t-primary); }
+.autogen-aplicar { border: 1px solid #047857; background: #047857; color: #FFFFFF; }
+.autogen-aplicar:hover:not(:disabled) { background: #065F46; }
+.autogen-aplicar:disabled { opacity: .55; cursor: not-allowed; }
+.nav-action.autogen-nav-action { border-color: var(--blue-primary); color: var(--blue-dark); background: var(--blue-subtle); }
+.nav-action.autogen-nav-action:hover { background: var(--bg-surface); }
+
+/* Celular: pantalla completa, con las safe areas de la PWA. */
+@media (max-width: 640px) {
+  .autogen-modal {
+    top: 0; left: 0; transform: none; width: 100vw; height: 100dvh; max-height: none; border: 0; border-radius: 0;
+    padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+  }
+  .autogen-campos { grid-template-columns: 1fr; }
+  .autogen-head, .autogen-body, .autogen-footer { padding-left: 16px; padding-right: 16px; }
+  .autogen-acciones button { flex: 1; }
+  .autogen-resumen-movil { display: block; }
+}

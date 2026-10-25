@@ -1,7 +1,9 @@
 import {
-  AIErrorResponseSchema, MENSAJE_LIMITE, MENSAJE_NO_VERIFICADA, parsearRespuesta, type AIErrorCodigo, type AIRequest, type AIRespuesta,
+  AIErrorResponseSchema, CABECERA_DISPOSITIVO, MENSAJE_LIMITE, MENSAJE_LIMITE_DIARIO, MENSAJE_NO_VERIFICADA, parsearRespuesta,
+  type AIErrorCodigo, type AIRequest, type AIRespuesta,
 } from '../../application/ai/contracts';
 import { generarRespuestaMock } from '../../application/ai/mockRespuestas';
+import { idDispositivo } from './dispositivo';
 
 export type ResultadoIA =
   | { ok: true; respuesta: AIRespuesta }
@@ -65,6 +67,8 @@ interface OpcionesHttp {
   timeoutMs?: number;
   enLinea?: () => boolean;
   zonaHoraria?: string;
+  /** ID anónimo del dispositivo para los límites del proxy (por defecto, el de localStorage). */
+  dispositivo?: () => string;
 }
 
 /** Cliente del proxy ai-proxy. Nunca envía el prompt del sistema: solo modo, contexto, foco y mensajes. */
@@ -74,12 +78,13 @@ export class HttpAIClient implements AIClient {
 
   constructor(opciones: OpcionesHttp) {
     this.opciones = {
-      fetch: globalThis.fetch.bind(globalThis), timeoutMs: TIMEOUT_CLIENTE_MS, enLinea: estaEnLinea, ...opciones,
+      fetch: globalThis.fetch.bind(globalThis), timeoutMs: TIMEOUT_CLIENTE_MS, enLinea: estaEnLinea, dispositivo: () => idDispositivo(),
+      ...opciones,
     };
   }
 
   async enviar(peticion: AIRequest): Promise<ResultadoIA> {
-    const { endpoint, fetch, timeoutMs, enLinea, zonaHoraria } = this.opciones;
+    const { endpoint, fetch, timeoutMs, enLinea, zonaHoraria, dispositivo } = this.opciones;
     if (!enLinea()) return fallo('SIN_CONEXION');
     if (!endpoint) return fallo('PROVEEDOR_CAIDO');
 
@@ -88,7 +93,7 @@ export class HttpAIClient implements AIClient {
     try {
       const respuesta = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', [CABECERA_DISPOSITIVO]: dispositivo() },
         body: JSON.stringify(peticion),
         signal: controlador.signal,
       });
@@ -96,9 +101,10 @@ export class HttpAIClient implements AIClient {
       if (!respuesta.ok) {
         const error = AIErrorResponseSchema.safeParse(datos);
         if (!error.success) return fallo(codigoPorStatus(respuesta.status));
-        return error.data.error === 'LIMITE'
-          ? fallo('LIMITE', mensajeLimite(error.data.reintentarEn, zonaHoraria))
-          : fallo(error.data.error);
+        if (error.data.error !== 'LIMITE') return fallo(error.data.error);
+        // El límite global del día tiene su propio mensaje; el del dispositivo o la red, la hora en que se libera.
+        return fallo('LIMITE', error.data.mensaje === MENSAJE_LIMITE_DIARIO
+          ? MENSAJE_LIMITE_DIARIO : mensajeLimite(error.data.reintentarEn, zonaHoraria));
       }
       try {
         return { ok: true, respuesta: parsearRespuesta(peticion.modo, datos, peticion.contexto) };

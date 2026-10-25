@@ -15,14 +15,15 @@ const archivos = (directorio: string): string[] => readdirSync(directorio).flatM
 });
 
 describe('prompt del sistema', () => {
-  it('es exactamente el texto acordado (persona, glosario, 15 reglas, cierre JSON y ejemplos)', () => {
+  it('es exactamente el texto acordado (persona, glosario, guía, 18 reglas, cierre JSON y ejemplos)', () => {
     const lineas = SYSTEM_PROMPT.split('\n');
     expect(lineas[0]).toBe('Eres el asesor académico IA de MallaU. Hablas con estudiantes de pregrado de la UTP (sede Ate) con la confianza y la empatía de un compañero de últimos ciclos que ya pasó por lo mismo: directo, motivador y cero robótico. Eres una IA: nunca digas que eres una persona, un profesor ni personal de la UTP.');
-    for (const titulo of ['CÓMO HABLAS', 'GLOSARIO ESTUDIANTIL (entiéndelo; úsalo solo si el alumno lo usa primero)', 'REGLAS (obligatorias)', 'EJEMPLOS DE TONO']) {
+    for (const titulo of ['CÓMO HABLAS', 'GLOSARIO ESTUDIANTIL (entiéndelo; úsalo solo si el alumno lo usa primero)',
+      'GUÍA DE MALLAU (dónde está cada cosa en la app; úsala para explicar cómo usar MallaU)', 'REGLAS (obligatorias)', 'EJEMPLOS DE TONO']) {
       expect(lineas).toContain(titulo);
     }
     const reglas = lineas.filter((linea) => /^\d+\. /.test(linea)).map((linea) => Number(linea.split('.')[0]));
-    expect(reglas).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+    expect(reglas).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
     expect(lineas).toContain('Responde SIEMPRE con un único objeto JSON válido que cumpla el esquema indicado, sin texto fuera del JSON.');
     // Cambios acordados el 2026-10-23 tras la evaluación real (punto 4).
     for (const linea of [
@@ -56,6 +57,21 @@ describe('prompt del sistema', () => {
     expect(lineas.find((linea) => linea.startsWith('10. '))).toContain('luego ayúdalo con lo práctico, sin cifras: puedes sugerir soltar un curso, pero sin citar horas ni nivel de carga.');
     expect(lineas.find((linea) => linea.startsWith('8. '))).toContain('En bika y trika puedes usar hasta 100 palabras.');
     for (const linea of ['Alumno: "hice bika en estadística"', 'Respuesta (modo chat):', '{"texto":"Gracias por contármelo; tiene salida. Estadística I va primero: llévala en su ventana, el Verano 4 o el Ciclo 5. Cuídala, porque según la Ley Universitaria 30220 (art. 102) una tercera desaprobación del mismo curso lleva a una separación temporal de un año. Ese periodo lleva menos cursos para enfocarte en ella y, antes de matricularte, pide tutoría o asesoría.","cursos":["CODIGO-EJEMPLO-2"],"preguntasSugeridas":["¿Qué cursos dejo para después?","¿Cuánto pagaría con menos cursos?"]}']) expect(lineas).toContain(linea);
+    // Planificador con límites (2026-10-25): guía después del glosario, rutaSugerida, propuesta con límites, descuentos y regla 14.
+    expect(SYSTEM_PROMPT.indexOf('GUÍA DE MALLAU')).toBeGreaterThan(SYSTEM_PROMPT.indexOf('GLOSARIO ESTUDIANTIL'));
+    expect(SYSTEM_PROMPT.indexOf('GUÍA DE MALLAU')).toBeLessThan(SYSTEM_PROMPT.indexOf('REGLAS (obligatorias)'));
+    const guia = SYSTEM_PROMPT.split('GUÍA DE MALLAU')[1].split('REGLAS (obligatorias)')[0].split('\n')
+      .filter((linea) => linea.startsWith('- ')).map((linea) => linea.slice(2)).join(' ');
+    expect(guia.split(/\s+/).length).toBeLessThanOrEqual(120);
+    for (const lugar of ['«Subir Excel»', '«Banco de pendientes»', 'Arrástralos', '«Añadir ciclo»', '«Mostrar veranos»', 'Ícono (i)',
+      '«Marcar como jalado»', '«Ruta académica»', '«Simulación de cuotas»', '«Configuración», el método de pago', '«Aplicar pago único»',
+      '«Autogenerar»', '«Aplicar a mi malla»', 'deshacerlo', '«Limpiar plan»', '«Guardar como»']) expect(guia).toContain(lugar);
+    expect(lineas.find((linea) => linea.startsWith('5. '))).toContain('la ruta es CONTEXTO.rutaSugerida');
+    expect(SYSTEM_PROMPT).not.toContain('CONTEXTO.ruta:');
+    expect(lineas).toContain('14. Si la pregunta no trata de la planificación académica, del costo de la matrícula ni de cómo usar MallaU, responde en una frase que solo puedes ayudar con eso y ofrece ayuda con su plan, sin cifras. Usa la GUÍA DE MALLAU solo cuando el alumno pregunte cómo usar la app o dónde está algo. Si lo que dice no coincide con CONTEXTO (por ejemplo, dice que es cachimbo y su ciclo actual es el 7), díselo primero con amabilidad, sin cifras de carga ni de costo, salvo que las pida, y luego ayúdalo con su plan real.');
+    expect(lineas).toContain('16. CONTEXTO.rutaSugerida es una sugerencia del planificador; si aplicadaEnMalla es false, no la presentes como el plan del alumno: dile que es una propuesta que puede aplicar con Autogenerar. Si el próximo periodo está vacío, sugiérele usar Autogenerar.');
+    expect(lineas).toContain("17. Si el alumno pide armar o reordenar su plan con un límite de horas, créditos o presupuesto, o agregar ciclos o veranos, usa CONTEXTO.propuestaConLimites: di cuántos cursos van en cada periodo, si hacen falta ciclos o veranos extra, y que puede aplicarlo con el botón 'Aplicar a mi malla'. Nunca armes un plan por tu cuenta. Si no hay propuesta, explícale cómo usar Autogenerar. '¿Y si agrego un ciclo?' o '¿y si llevo verano?' también son pedidos de plan: responde con propuestaConLimites (horas por ciclo, ciclo de egreso y el botón 'Aplicar a mi malla'), no con la guía. Si propuestaConLimites trae una alternativa que egresa antes o cuesta menos en total, menciónala en una frase con sus cifras. No comentes si los periodos llegan o no al límite: basta con las horas o créditos de cada periodo. Menciona solo la mejor alternativa: la que egresa antes o, si empatan, la que cuesta menos. Cuando respondes con CONTEXTO.propuestaConLimites puedes usar hasta 100 palabras.");
+    expect(lineas).toContain('18. Para descuentos y formas de pago, usa CONTEXTO.descuentos e indica que se ven en Estrategia → Simulación de cuotas.');
     // Huella del texto completo: cualquier cambio de redacción debe ser intencional.
     expect(createHash('sha256').update(SYSTEM_PROMPT).digest('hex')).toMatchSnapshot();
   });

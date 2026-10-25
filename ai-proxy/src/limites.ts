@@ -1,7 +1,13 @@
 import { createHash } from 'node:crypto';
+import { CABECERA_DISPOSITIVO, FORMATO_ID_DISPOSITIVO } from './contracts.js';
 
-export const LIMITE_IP_HORA_POR_DEFECTO = 15;
-export const LIMITE_DIARIO_POR_DEFECTO = 200;
+/**
+ * Redes compartidas (la universidad): muchos alumnos salen por la misma IP, así que el tope fino es por dispositivo
+ * y el de la IP es amplio (D-050).
+ */
+export const LIMITE_DISPOSITIVO_HORA_POR_DEFECTO = 30;
+export const LIMITE_IP_HORA_POR_DEFECTO = 300;
+export const LIMITE_DIARIO_POR_DEFECTO = 1500;
 /** Perú no tiene horario de verano: Lima es siempre UTC-5. */
 const DESFASE_LIMA_MS = -5 * 60 * 60 * 1000;
 const HORA_MS = 60 * 60 * 1000;
@@ -75,25 +81,44 @@ export const ipDe = (request: Request): string =>
 
 /** La IP nunca se guarda en claro: solo sha256(sal + ip). */
 export const hashIp = (ip: string, sal: string): string => createHash('sha256').update(`${sal}:${ip}`).digest('hex');
+/** El ID del dispositivo tampoco: sha256 con la misma sal y otro prefijo. */
+export const hashDispositivo = (id: string, sal: string): string => createHash('sha256').update(`${sal}:dispositivo:${id.toLowerCase()}`).digest('hex');
+
+/**
+ * Cabecera X-MallaU-Dispositivo: null si no viene (cuentan solo la IP y el total); 'invalido' si no tiene formato
+ * UUID (se rechaza la consulta).
+ */
+export const dispositivoDe = (request: Request): string | null | 'invalido' => {
+  const valor = request.headers.get(CABECERA_DISPOSITIVO)?.trim();
+  if (!valor) return null;
+  return FORMATO_ID_DISPOSITIVO.test(valor) ? valor : 'invalido';
+};
 
 export interface LimitesConfig {
+  porDispositivoHora: number;
   porIpHora: number;
   diario: number;
   sal: string;
 }
 
-export type ResultadoLimite = { ok: true } | { ok: false; alcance: 'ip' | 'diario'; reintentarEn: string };
+export type ResultadoLimite = { ok: true } | { ok: false; alcance: 'dispositivo' | 'ip' | 'diario'; reintentarEn: string };
 
 /**
- * Ventanas fijas: la hora UTC en curso para cada IP y el día calendario de Lima para el total.
+ * Ventanas fijas, en orden: la hora UTC en curso para el dispositivo (si vino su ID) y para la IP, y el día
+ * calendario de Lima para el total. Un tope alcanzado corta antes de contar los siguientes.
  * `reintentarEn` es el inicio de la ventana siguiente (ISO).
  */
 export const comprobarLimites = async (
-  limitador: RateLimiter, config: LimitesConfig, ip: string, ahora: number = Date.now(),
+  limitador: RateLimiter, config: LimitesConfig, ip: string, ahora: number = Date.now(), dispositivo: string | null = null,
 ): Promise<ResultadoLimite> => {
   const hora = Math.floor(ahora / HORA_MS);
+  const finDeHora = new Date((hora + 1) * HORA_MS).toISOString();
+  if (dispositivo) {
+    const porDispositivo = await limitador.incrementar(`mallau:disp:${hashDispositivo(dispositivo, config.sal)}:${hora}`, 3600);
+    if (porDispositivo > config.porDispositivoHora) return { ok: false, alcance: 'dispositivo', reintentarEn: finDeHora };
+  }
   const porIp = await limitador.incrementar(`mallau:ip:${hashIp(ip, config.sal)}:${hora}`, 3600);
-  if (porIp > config.porIpHora) return { ok: false, alcance: 'ip', reintentarEn: new Date((hora + 1) * HORA_MS).toISOString() };
+  if (porIp > config.porIpHora) return { ok: false, alcance: 'ip', reintentarEn: finDeHora };
 
   const diaLima = Math.floor((ahora + DESFASE_LIMA_MS) / DIA_MS);
   const fecha = new Date(diaLima * DIA_MS).toISOString().slice(0, 10);
@@ -110,6 +135,7 @@ const entero = (valor: string | undefined, porDefecto: number) => {
 };
 
 export const leerLimites = (env: Entorno, salAleatoria: string): LimitesConfig => ({
+  porDispositivoHora: entero(env.AI_LIMITE_DISPOSITIVO_HORA, LIMITE_DISPOSITIVO_HORA_POR_DEFECTO),
   porIpHora: entero(env.AI_LIMITE_IP_HORA, LIMITE_IP_HORA_POR_DEFECTO),
   diario: entero(env.AI_LIMITE_DIARIO, LIMITE_DIARIO_POR_DEFECTO),
   // Sin AI_SALT, una sal aleatoria por instancia: el hash sigue sin revelar la IP, pero con Upstash

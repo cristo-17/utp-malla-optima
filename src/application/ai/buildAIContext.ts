@@ -13,15 +13,17 @@ import { calcularPrioridadesPendientes } from '../../domain/services/recommendat
 import { simularJalado } from '../../domain/services/whatIfService';
 import { FinancialPlanningService } from '../../financial/services/FinancialPlanningService';
 import { UniversityFinancialRulesProvider } from '../../financial/rules/UniversityFinancialRulesProvider';
-import { generateOptimalPlanUseCase } from '../usecases/generateOptimalPlanUseCase';
+import type { MotivoNoPlanificado } from '../../domain/services/automaticPlanningService';
+import { generateOptimalPlanUseCase, type GenerateOptimalPlanInput, type PropuestaPlan } from '../usecases/generateOptimalPlanUseCase';
 import type {
-  AICarga, AIContext, AICursoPlanificado, AIDerivados, AIEscenarioPeriodo, AIFoco, AIFocoContexto, AIWhatIf,
+  AICarga, AIContext, AICursoPlanificado, AIDerivados, AIEscenarioPeriodo, AIFoco, AIFocoContexto, AIPropuestaConLimites, AIWhatIf,
 } from './contracts';
+import type { LimitesDelMensaje } from './limites';
 import { pagoUnicoDe, positivo, presupuestoPorEscenario, r2 } from './presupuesto';
 
 /**
  * Contexto del asistente IA. Función PURA: lee el estado del store y devuelve
- * todo ya calculado (créditos, costos, carga, what-if, ruta), para que la IA
+ * todo ya calculado (créditos, costos, carga, what-if, ruta sugerida), para que la IA
  * solo redacte. Copia campos explícitos: nunca nombreArchivoCargado ni otro
  * dato identificable.
  */
@@ -33,6 +35,8 @@ export interface OpcionesContextoIA {
   foco?: AIFoco;
   presupuestoMensual?: number | null;
   servicioFinanciero?: FinancialPlanningService;
+  /** Límites que pidió el alumno en su mensaje (detectarLimites): agregan propuestaConLimites. */
+  limites?: LimitesDelMensaje | null;
 }
 
 /** Cursos con longitudCadena desde este valor cuentan como cadena larga en la carga. */
@@ -362,6 +366,145 @@ const proximoPeriodoConJalados = (
   };
 };
 
+const MOTIVO_NO_ENTRA: Record<MotivoNoPlanificado['tipo'], string> = {
+  HORAS_INVALIDAS: 'no tiene horas válidas en el Excel',
+  SIN_CICLOS_FUTUROS: 'no quedan ciclos para ubicarlo',
+  DEPENDENCIA_CIRCULAR: 'sus prerrequisitos forman un ciclo',
+  REQUISITO_SIN_ESPACIO: 'su prerrequisito queda en el último ciclo disponible',
+  REQUISITO_NO_PROGRAMADO: 'su prerrequisito no está programado antes',
+  SIN_ESPACIO: 'no entra con esos límites',
+  NO_CABE_EN_PERIODO: 'pasaría el límite del periodo',
+  ELECTIVO_ESPERA_OBLIGATORIOS: 'el electivo va después de los obligatorios',
+};
+
+/** "Con Interbank / Scotiabank — pronto pago y el Verano 8", "Con hasta 23 h por ciclo (con recargo…)". */
+const descripcionAlternativa = (alternativa: PropuestaPlan['alternativas'][number]): string => {
+  const veranos = alternativa.veranosUsados.map((id) => id.replace('verano-', 'Verano ')).join(' y ');
+  if (alternativa.tipo === 'metodoPago') return `Con ${alternativa.nombreMetodo}`;
+  if (alternativa.tipo === 'veranos') return `Usando el ${veranos}`;
+  if (alternativa.tipo === 'metodoPagoYVeranos') return `Con ${alternativa.nombreMetodo} y el ${veranos}`;
+  return `Con hasta ${alternativa.opciones.maxHorasPorPeriodo} h por ciclo${alternativa.conRecargo ? ' (con recargo por horas adicionales)' : ''}`;
+};
+
+/** Con "un ciclo más": las horas mínimas por ciclo con las que se egresa a lo más un ciclo después (búsqueda binaria). */
+const repartirEnUnCicloMas = (entrada: GenerateOptimalPlanInput, base: PropuestaPlan): PropuestaPlan => {
+  if (base.cicloEgreso === null || base.alcance !== 'hastaEgresar') return base;
+  const objetivo = base.cicloEgreso + 1;
+  let [desde, hasta, mejor] = [1, base.limites.horas, base];
+  while (desde < hasta) {
+    const medio = Math.floor((desde + hasta) / 2);
+    const intento = generateOptimalPlanUseCase({ ...entrada, maxHorasPorPeriodo: medio, conAlternativas: false });
+    if (!intento.noPlanificados.length && intento.cicloEgreso !== null && intento.cicloEgreso <= objetivo) {
+      [hasta, mejor] = [medio, intento];
+    } else desde = medio + 1;
+  }
+  return mejor;
+};
+
+/**
+ * CONTEXTO.propuestaConLimites: el planificador (el mismo de Autogenerar) con los límites del mensaje. Un solo ciclo
+ * nombrado, si es el próximo, arma solo ese periodo; si no, hasta egresar. Reordena lo ubicado: el alumno pidió
+ * armar el plan con sus límites. Nunca se aplica sola (aplicadaEnMalla: false).
+ */
+const propuestaConLimitesDe = (
+  estado: EstadoContextoIA, limites: LimitesDelMensaje | null | undefined, servicio?: FinancialPlanningService,
+): AIPropuestaConLimites | null => {
+  if (!limites) return null;
+  const proximo = (estado.cicloActual ?? 0) + 1;
+  const alcance = limites.unSoloCiclo && (!limites.ciclos.length || limites.ciclos[0] === proximo) ? 'proximoPeriodo' : 'hastaEgresar';
+  const entrada: GenerateOptimalPlanInput = {
+    cursos: estado.cursos, totalCiclos: estado.totalCiclos, ciclosExcluidos: estado.ciclosExcluidos,
+    cicloActual: estado.cicloActual, periodoIngreso: estado.periodoIngreso,
+    tarifario: estado.tarifario, disciplina: estado.disciplinaActiva, metodoPago: estado.metodoPago, servicioFinanciero: servicio,
+    maxHorasPorPeriodo: limites.maxHorasPorPeriodo, maxCreditosPorPeriodo: limites.maxCreditosPorPeriodo,
+    horasEstricto: limites.horasEstricto, creditosEstricto: limites.creditosEstricto,
+    maxCuotaMensual: limites.maxCuotaMensual, usarVeranos: limites.usarVeranos ?? false, alcance, conservarUbicados: false,
+  };
+  const base = generateOptimalPlanUseCase(entrada);
+  const propuesta = limites.agregarCiclo ? repartirEnUnCicloMas(entrada, base) : base;
+  const periodos = alcance === 'proximoPeriodo'
+    ? propuesta.periodos.filter((item) => item.periodo.id === propuesta.periodoInicio.id) : propuesta.periodos;
+  return {
+    limites: {
+      maxHorasPorPeriodo: limites.maxHorasPorPeriodo,
+      maxCreditosPorPeriodo: limites.maxCreditosPorPeriodo,
+      horasEstricto: propuesta.limites.horasEstricto,
+      creditosEstricto: propuesta.limites.creditosEstricto,
+      maxCuotaMensual: propuesta.limitesPedidos.maxCuotaMensual,
+      metodoPago: propuesta.limitesPedidos.metodoPago,
+      horasPorCuota: propuesta.limitesPedidos.horasPorCuota,
+      horasAplicadas: propuesta.limites.horas,
+      creditosAplicados: propuesta.limites.creditos,
+      usarVeranos: limites.usarVeranos ?? false,
+      agregarCiclo: limites.agregarCiclo,
+      alcance,
+    },
+    periodos: periodos.map(({ periodo, cursos, horas, creditos, costos }) => {
+      const cuotas = costos?.cuotas ?? [];
+      return {
+        periodoId: periodo.id,
+        etiqueta: nombrePeriodoCorto(periodo),
+        cursos: cursos.map((curso) => curso.codigo),
+        numeroCursos: cursos.length,
+        horas: r2(horas),
+        creditos: r2(creditos),
+        cuotaMensual: (cuotas.find((cuota) => cuota.metodo === estado.metodoPago) ?? cuotas[0])?.cuotaMensual ?? null,
+        pagoUnicoAlInicio: costos?.pagoUnico?.pensionAlInicio ?? null,
+      };
+    }),
+    ciclosAgregados: propuesta.ciclosAgregados,
+    veranosUsados: propuesta.veranosUsados,
+    cicloEgreso: propuesta.cicloEgreso,
+    ciclosExtraVsSinLimites: propuesta.comparacionSinLimites?.ciclosExtra ?? null,
+    noEntraron: propuesta.noPlanificados.map((curso) => ({ codigo: curso.codigo, motivo: MOTIVO_NO_ENTRA[curso.motivos[0]?.tipo ?? 'SIN_ESPACIO'] })),
+    costoTotalHastaEgresar: propuesta.costoTotalHastaEgresar,
+    // Solo restas hechas en código (D-001): el ahorro y los ciclos que se adelanta.
+    alternativas: propuesta.alternativas.map((alternativa) => ({
+      tipo: alternativa.tipo,
+      descripcion: descripcionAlternativa(alternativa),
+      metodoPago: alternativa.opciones.metodoPago ?? null,
+      usarVeranos: Boolean(alternativa.opciones.usarVeranos),
+      maxHorasPorPeriodo: alternativa.opciones.maxHorasPorPeriodo ?? null,
+      cicloEgreso: alternativa.cicloEgreso,
+      horasPorPeriodo: alternativa.horasPorPeriodo.map(({ periodoId, horas }) => ({ periodoId, horas: r2(horas) })),
+      ciclosAgregados: alternativa.ciclosAgregados,
+      veranosUsados: alternativa.veranosUsados,
+      costoTotalHastaEgresar: alternativa.costoTotalHastaEgresar,
+      ahorroVsPropuesta: alternativa.ahorroVsPropuesta,
+      ciclosAntes: Math.max(0, (propuesta.cicloEgreso ?? 0) - (alternativa.cicloEgreso ?? 0)),
+      conRecargo: alternativa.conRecargo,
+    })),
+    aplicadaEnMalla: false,
+  };
+};
+
+/** Dónde están los descuentos en la app (textos reales de PlanificadorPanel y PeriodFinancialCard). */
+export const UBICACION_DESCUENTOS = 'Estrategia → Simulación de cuotas: el método de pago se elige en Configuración y el pago único con "Aplicar pago único" en cada ciclo.';
+
+/**
+ * CONTEXTO.descuentos: lo que hace hoy el código (budgetCalculator). El pronto pago y el pago único solo aplican a
+ * ciclos regulares, y el porcentaje se calcula sobre la cuota con el recargo por horas adicionales (F-021).
+ */
+const descuentosDe = (tarifario: Tarifario | null, disciplina: string, topeEscala: number | null): AIContext['descuentos'] => {
+  if (!tarifario) return null;
+  const tarifas = tarifario.disciplinas[disciplina] ?? Object.values(tarifario.disciplinas)[0];
+  return {
+    metodosPago: Object.entries(tarifario.metodosPago ?? {}).map(([id, metodo]) => ({
+      id, nombre: metodo.nombre, descuentoPorcentaje: metodo.descuentoPorcentaje, requiereProntoPago: Boolean(metodo.requiereProntoPago),
+    })),
+    pagoUnico: {
+      descuentoPorcentaje: tarifario.descuentoPagoUnicoRegular ?? 7.5,
+      seCobra: 'todo junto al inicio del ciclo',
+      soloCiclosRegulares: true,
+    },
+    costoHoraAdicional: tarifas?.costoHoraAdicional ?? null,
+    horasSinRecargo: topeEscala,
+    descuentoSobreRecargo: true,
+    veranoConDescuento: false,
+    ubicacionEnApp: UBICACION_DESCUENTOS,
+  };
+};
+
 export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesContextoIA = {}): AIContext => {
   const { cursos, tarifario, disciplinaActiva, cicloActual, periodoIngreso } = estado;
   const contextoJalados = { cicloActual, periodoIngreso };
@@ -383,17 +526,23 @@ export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesConte
   const financieroProximo = siguiente && entorno
     ? calcularEscenario('sin_descuento', entorno).periodos.find((item) => item.id === siguiente.periodo.id) : undefined;
 
-  const ruta = (() => {
+  const rutaSugerida = (() => {
     const propuesta = generateOptimalPlanUseCase({
-      cursos, totalCiclos: estado.totalCiclos, ciclosExcluidos: estado.ciclosExcluidos, cicloActual, periodoIngreso,
+      cursos, totalCiclos: estado.totalCiclos, ciclosExcluidos: estado.ciclosExcluidos, cicloActual, periodoIngreso, conAlternativas: false,
     });
     const periodos = agruparPorPeriodo(propuesta.cursos, cicloActual);
     const cicloFinal = periodos.length ? Math.max(...periodos.map((item) => item.periodo.cicloReferencia)) : null;
+    const actuales = new Map(cursos.map((curso) => [curso.codigo, ubicacionDe(curso)]));
     return {
-      propuesta: periodos.map((item) => ({ periodoId: item.periodo.id, cursos: item.cursos.map((curso) => curso.codigo) })),
+      propuesta: periodos.map((item) => {
+        const { cursos: codigos, horas, creditos } = resumenPeriodo(item.periodo, item.cursos);
+        return { periodoId: item.periodo.id, cursos: codigos, horas, creditos };
+      }),
       ciclosRestantes: cicloFinal && cicloActual ? Math.max(0, cicloFinal - cicloActual) : periodos.length,
       cicloFinal,
       noPlanificados: propuesta.noPlanificados.map((curso) => curso.codigo),
+      // La sugerencia no es la malla del alumno salvo que cada pendiente ya esté donde ella lo pone.
+      aplicadaEnMalla: propuesta.cursos.every((curso) => curso.estado !== 'PENDIENTE' || actuales.get(curso.codigo) === ubicacionDe(curso)),
     };
   })();
 
@@ -458,7 +607,7 @@ export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesConte
       ...conEstado('EN_CURSO').map((curso) => ({ ...whatIfDe(curso, estado), origen: 'EN_CURSO' as const })),
       ...whatIfProximos.map((item) => ({ ...item, origen: 'PROXIMO_PERIODO' as const })),
     ],
-    ruta,
+    rutaSugerida,
     electivos: cursos.filter((curso) => curso.tipo === 'ELECTIVO' && curso.estado === 'PENDIENTE').map((curso) => ({
       codigo: curso.codigo,
       nombre: curso.nombre,
@@ -472,7 +621,7 @@ export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesConte
     foco: construirFoco(opciones.foco, estado, prioridades, topeEscala, entorno),
     derivados: {
       ...calcularDerivados(
-        cursos, carga, escenariosProximos, entorno ? presupuesto : null, cursosProximos, whatIfProximos, ruta.ciclosRestantes,
+        cursos, carga, escenariosProximos, entorno ? presupuesto : null, cursosProximos, whatIfProximos, rutaSugerida.ciclosRestantes,
         siguiente && entorno ? pensionPagoUnico(siguiente.periodo.id, entorno) : null, siguiente?.periodo.tipo,
       ),
       proximoPeriodoConJalados: proximoPeriodoConJalados(estado, siguiente, topeEscala, entorno),
@@ -481,5 +630,7 @@ export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesConte
         ? planificadosSinJalado(cursos, contextoJalados).filter((curso) => siguiente.cursos.some((item) => item.codigo === curso.codigo))
         : [],
     },
+    propuestaConLimites: propuestaConLimitesDe(estado, opciones.limites, entorno?.servicio),
+    descuentos: descuentosDe(tarifario, disciplinaActiva, topeEscala),
   };
 };

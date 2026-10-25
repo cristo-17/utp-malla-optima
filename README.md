@@ -56,8 +56,9 @@ después de cambiarlas hay que volver a desplegar.
 | `DEEPSEEK_API_KEY` | la clave (secreta) | no hace falta: fuera de producción el proxy siempre responde en mock |
 | `ALLOWED_ORIGINS` | `https://<proyecto-web>.vercel.app` (y el dominio propio, si hay) | `http://localhost:5173,http://127.0.0.1:5173` |
 | `AI_SALT` | texto aleatorio largo (secreto) | opcional |
-| `AI_LIMITE_IP_HORA` | `15` (por defecto) | opcional |
-| `AI_LIMITE_DIARIO` | `200` (por defecto) | opcional |
+| `AI_LIMITE_DISPOSITIVO_HORA` | `30` (por defecto) | opcional |
+| `AI_LIMITE_IP_HORA` | `300` (por defecto) | opcional |
+| `AI_LIMITE_DIARIO` | `1500` (por defecto) | opcional |
 | `AI_PAUSADO` | `true` solo para pausar el gasto | opcional |
 | `AI_MOCK` | (sin definir; `true` fuerza el mock) | no hace falta |
 | `DEEPSEEK_MODEL` | opcional (`deepseek-flash`) | — |

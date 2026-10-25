@@ -21,7 +21,11 @@ export const PREGUNTAS_RAPIDAS = [
   { emoji: '🔀', texto: '¿Qué pasa si jalo un curso?' },
   { emoji: '🗺️', texto: 'Mi ruta hasta egresar' },
   { emoji: '🎯', texto: '¿Qué electivo me conviene?' },
+  { emoji: '💸', texto: '¿Cómo funcionan los descuentos de la UTP?' },
 ] as const;
+
+/** Entrada de 😊 que no es una pregunta: abre Autogenerar para armar el plan con límites. */
+export const ACCION_ARMAR_PLAN = { emoji: '🗓️', texto: 'Armar mi plan con límites' } as const;
 
 export const preguntasPorFoco = (foco: FocoUI | null): string[] => {
   if (!foco) return [];
@@ -79,16 +83,15 @@ export const filtrarCursos = (cursos: OpcionesAdjuntar['cursos'], busqueda: stri
 };
 
 export interface EstadoFab {
-  sinMalla: boolean;
   arrastrando: boolean;
   cursoAMover: string | null;
   panelAbierto: boolean;
   estrategiaAbierta: boolean;
 }
 
-/** El botón flotante no debe tapar el arrastre, la barra "Moviendo curso" ni los paneles. */
+/** El botón flotante no debe tapar el arrastre, la barra "Moviendo curso" ni los paneles. Sin malla sí se muestra: invita a subir el Excel. */
 export const debeOcultarFab = (estado: EstadoFab): boolean =>
-  estado.sinMalla || estado.arrastrando || Boolean(estado.cursoAMover) || estado.panelAbierto || estado.estrategiaAbierta;
+  estado.arrastrando || Boolean(estado.cursoAMover) || estado.panelAbierto || estado.estrategiaAbierta;
 
 /** Parte un texto para resaltar los códigos de curso que aparezcan en él. */
 export const partirPorCodigos = (texto: string, codigos: string[]): { texto: string; codigo: boolean }[] => {
@@ -121,3 +124,18 @@ export const CLAVES_ASISTENTE = {
   privacidad: 'mallau.asistente.privacidadAceptada',
   tooltipRapidas: 'mallau.asistente.tooltipRapidasVisto',
 } as const;
+
+/** Máximo de chips de cursos debajo de una respuesta. */
+export const MAX_CHIPS_CURSOS = 5;
+
+/** Los cursos que se muestran como chips: hasta 5, primero los del próximo periodo y después en el orden de la IA. */
+export const cursosParaMostrar = (codigos: string[], prioridad: readonly string[] = []): string[] => {
+  const unicos = [...new Set(codigos)];
+  return [...unicos.filter((codigo) => prioridad.includes(codigo)), ...unicos.filter((codigo) => !prioridad.includes(codigo))]
+    .slice(0, MAX_CHIPS_CURSOS);
+};
+
+/** Códigos del próximo ciclo regular (ciclo actual + 1) planificado. */
+export const codigosProximoPeriodo = (cursos: Curso[], cicloActual: number | null): string[] =>
+  cicloActual ? cursos.filter((curso) => curso.estado === 'PENDIENTE' && curso.ubicacion === 'periodo' &&
+    curso.tipoPeriodo === 'REGULAR' && curso.ciclo === cicloActual + 1).map((curso) => curso.codigo) : [];

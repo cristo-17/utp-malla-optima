@@ -1,9 +1,10 @@
 import { Fragment, type ReactNode } from 'react';
 import {
-  AlertTriangle, Bot, CircleCheck, GitBranch, Gauge, OctagonAlert, RefreshCw, Route, Target, Wallet,
+  AlertTriangle, Bot, Check, CircleCheck, GitBranch, Gauge, OctagonAlert, RefreshCw, Route, Sparkles, Target, Wallet,
 } from 'lucide-react';
+import type { OpcionesPropuesta } from '../../application/ai/limites';
 import type { AISeccion, Nivel } from '../../application/ai/contracts';
-import { partirPorCodigos, sinRepetidas } from './asistenteLogica';
+import { cursosParaMostrar, partirPorCodigos, sinRepetidas } from './asistenteLogica';
 import type { MensajeChat } from './controladorAsistente';
 
 const ICONO_SECCION: Record<AISeccion['tipo'], ReactNode> = {
@@ -33,12 +34,16 @@ export function TextoPlano({ texto, codigos = [] }: { texto: string; codigos?: s
 interface CursosProps {
   codigos: string[];
   nombres: Map<string, string>;
+  /** Cursos del próximo periodo: van primero. */
+  prioridad?: readonly string[];
 }
 
-function CursosResaltados({ codigos, nombres }: CursosProps) {
-  if (!codigos.length) return null;
+/** Hasta 5 chips, primero los del próximo periodo. */
+function CursosResaltados({ codigos, nombres, prioridad }: CursosProps) {
+  const visibles = cursosParaMostrar(codigos, prioridad);
+  if (!visibles.length) return null;
   return <ul className="ia-cursos" aria-label="Cursos mencionados">
-    {codigos.map((codigo) => <li key={codigo}><span>{nombres.get(codigo) ?? codigo}</span> <mark className="ia-codigo">{codigo}</mark></li>)}
+    {visibles.map((codigo) => <li key={codigo}><span>{nombres.get(codigo) ?? codigo}</span> <mark className="ia-codigo">{codigo}</mark></li>)}
   </ul>;
 }
 
@@ -57,7 +62,7 @@ function Chips({ preguntas, excluir, onElegir, deshabilitado }: ChipsProps) {
   </div>;
 }
 
-export function TarjetaSeccion({ seccion, nombres }: { seccion: AISeccion; nombres: Map<string, string> }) {
+export function TarjetaSeccion({ seccion, nombres, prioridad }: { seccion: AISeccion; nombres: Map<string, string>; prioridad?: readonly string[] }) {
   const nivel = NIVEL[seccion.nivel];
   return <article className={`ia-seccion ia-nivel-${seccion.nivel}`} aria-label={`${seccion.titulo}: ${nivel.texto}`}>
     <header>
@@ -67,7 +72,7 @@ export function TarjetaSeccion({ seccion, nombres }: { seccion: AISeccion; nombr
     </header>
     <p><TextoPlano texto={seccion.detalle} codigos={seccion.cursos} /></p>
     {seccion.acciones.length > 0 && <ul className="ia-acciones">{seccion.acciones.map((accion) => <li key={accion}>{accion}</li>)}</ul>}
-    <CursosResaltados codigos={seccion.cursos} nombres={nombres} />
+    <CursosResaltados codigos={seccion.cursos} nombres={nombres} prioridad={prioridad} />
   </article>;
 }
 
@@ -80,9 +85,16 @@ interface MensajesProps {
   excluirPreguntas?: string[];
   onPreguntar: (texto: string) => void;
   onReintentar: (id: number) => void;
+  onAplicarPropuesta?: (opciones: OpcionesPropuesta) => void;
+  onAnalizar?: () => void;
+  /** Códigos del próximo periodo (prioridad de los chips de cursos). */
+  prioridadCursos?: readonly string[];
 }
 
-export function AsistenteMensajes({ mensajes, nombres, enviando, deshabilitado, excluirPreguntas = [], onPreguntar, onReintentar }: MensajesProps) {
+export function AsistenteMensajes({
+  mensajes, nombres, enviando, deshabilitado, excluirPreguntas = [], onPreguntar, onReintentar, onAplicarPropuesta, onAnalizar,
+  prioridadCursos = [],
+}: MensajesProps) {
   const ultimo = mensajes.at(-1);
   return <>
     {mensajes.map((mensaje) => {
@@ -105,11 +117,21 @@ export function AsistenteMensajes({ mensajes, nombres, enviando, deshabilitado, 
           </div>
         </div>;
       }
+      if (mensaje.tipo === 'app') {
+        return <div key={mensaje.id} className="ia-fila">
+          <div className="ia-burbuja ia-burbuja-bot ia-mensaje-app" role="status">
+            <p>{mensaje.texto}</p>
+            {onAnalizar && <button type="button" className="ia-btn-primario ia-accion-plan" disabled={deshabilitado} onClick={onAnalizar}>
+              <Sparkles size={16} aria-hidden="true" /> Analizar mi plan
+            </button>}
+          </div>
+        </div>;
+      }
       if (mensaje.tipo === 'analisis') {
         return <div key={mensaje.id} className="ia-fila">
           <div className="ia-analisis">
             <div className="ia-burbuja ia-burbuja-bot"><TextoPlano texto={mensaje.analisis.resumen} /></div>
-            {mensaje.analisis.secciones.map((seccion, indice) => <TarjetaSeccion key={`${seccion.tipo}-${indice}`} seccion={seccion} nombres={nombres} />)}
+            {mensaje.analisis.secciones.map((seccion, indice) => <TarjetaSeccion key={`${seccion.tipo}-${indice}`} seccion={seccion} nombres={nombres} prioridad={prioridadCursos} />)}
             <p className="ia-nota">Costos referenciales (tarifario 2026): verifícalos en el portal de la UTP antes de pagar.</p>
             {esUltimo && <Chips preguntas={mensaje.analisis.preguntasSugeridas} excluir={excluirPreguntas} onElegir={onPreguntar} deshabilitado={deshabilitado} />}
           </div>
@@ -119,7 +141,9 @@ export function AsistenteMensajes({ mensajes, nombres, enviando, deshabilitado, 
         <div className="ia-columna">
           <div className="ia-burbuja ia-burbuja-bot">
             <p><TextoPlano texto={mensaje.texto} codigos={mensaje.cursos} /></p>
-            <CursosResaltados codigos={mensaje.cursos} nombres={nombres} />
+            <CursosResaltados codigos={mensaje.cursos} nombres={nombres} prioridad={prioridadCursos} />
+            {mensaje.propuesta && onAplicarPropuesta && <button type="button" className="ia-btn-primario ia-accion-plan"
+              onClick={() => onAplicarPropuesta(mensaje.propuesta!)}><Check size={16} aria-hidden="true" /> Aplicar a mi malla</button>}
           </div>
           {esUltimo && <Chips preguntas={mensaje.preguntas} excluir={excluirPreguntas} onElegir={onPreguntar} deshabilitado={deshabilitado} />}
         </div>

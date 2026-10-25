@@ -37,7 +37,9 @@ export const crearContextoMinimo = (cambios: Partial<AIContext> = {}): AIContext
     cursos4HorasOMas: 1, laboratorios: 0, cadenasLargas: 0, motivos: [],
   },
   whatIf: [{ codigo: '100000S61T', origen: 'EN_CURSO', cursosBloqueados: ['100000I62N'], planificadosInvalidos: [], ventanaSiJala: ['ciclo-8'] }],
-  ruta: { propuesta: [{ periodoId: 'ciclo-8', cursos: ['100000I62N'] }], ciclosRestantes: 1, cicloFinal: 8, noPlanificados: [] },
+  rutaSugerida: {
+    propuesta: [{ periodoId: 'ciclo-8', cursos: ['100000I62N'], horas: 4, creditos: 4 }], ciclosRestantes: 1, cicloFinal: 8, noPlanificados: [], aplicadaEnMalla: true,
+  },
   electivos: [{
     codigo: '100000I64M', nombre: 'CALIDAD DE SOFTWARE', creditos: 3, horas: 3,
     area: 'Ingeniería de software', areaConfirmada: false, ubicacion: 'banco',
@@ -63,6 +65,16 @@ export const crearContextoMinimo = (cambios: Partial<AIContext> = {}): AIContext
     }],
     proximoPeriodoConJalados: null,
     planificadosBloqueadosPorJalado: [],
+  },
+  propuestaConLimites: null,
+  descuentos: {
+    metodosPago: [
+      { id: 'sin_descuento', nombre: 'Sin descuento', descuentoPorcentaje: 0, requiereProntoPago: false },
+      { id: 'interbank_scotiabank', nombre: 'Interbank / Scotiabank — pronto pago', descuentoPorcentaje: 5, requiereProntoPago: true },
+    ],
+    pagoUnico: { descuentoPorcentaje: 7.5, seCobra: 'todo junto al inicio del ciclo', soloCiclosRegulares: true },
+    costoHoraAdicional: 38.81, horasSinRecargo: 22, descuentoSobreRecargo: true, veranoConDescuento: false,
+    ubicacionEnApp: 'Estrategia → Simulación de cuotas',
   },
   ...cambios,
 });

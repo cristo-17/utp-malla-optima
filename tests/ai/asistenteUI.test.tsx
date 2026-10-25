@@ -181,13 +181,20 @@ describe('Asistente - aviso de privacidad', () => {
 });
 
 describe('Asistente - paneles 😊 y 📎', () => {
-  it('😊 muestra "Preguntas rápidas" con sus 5 chips y el tooltip la primera vez', () => {
+  it('😊 muestra "Preguntas rápidas" con sus 6 chips, "Armar mi plan con límites" y el tooltip la primera vez', () => {
     const html = renderPanel(estadoBase({ panel: 'rapidas' }), { tooltip: true });
     expect(html).toContain('id="ia-panel-rapidas" role="group" aria-label="Preguntas rápidas"');
-    for (const texto of ['¿Me alcanza mi presupuesto?', '¿Estoy sobrecargado?', '¿Qué pasa si jalo un curso?', 'Mi ruta hasta egresar', '¿Qué electivo me conviene?']) {
+    for (const texto of ['¿Me alcanza mi presupuesto?', '¿Estoy sobrecargado?', '¿Qué pasa si jalo un curso?', 'Mi ruta hasta egresar',
+      '¿Qué electivo me conviene?', '¿Cómo funcionan los descuentos de la UTP?']) {
       expect(html).toContain(texto);
     }
-    for (const emoji of ['💰', '😰', '🔀', '🗺️', '🎯']) expect(html).toContain(emoji);
+    for (const emoji of ['💰', '😰', '🔀', '🗺️', '🎯', '💸']) expect(html).toContain(emoji);
+    // Sin Autogenerar disponible no se ofrece la acción; con él, sí.
+    expect(html).not.toContain('Armar mi plan con límites');
+    const conAccion = renderToStaticMarkup(<AsistentePanel {...acciones} estado={estadoBase({ panel: 'rapidas' })} enLinea nombres={nombres}
+      opciones={opciones} mostrarTooltipRapidas={false} onAutogenerar={sinAccion} />);
+    expect(conAccion).toContain('🗓️');
+    expect(conAccion).toContain('Armar mi plan con límites');
     expect(html).toContain('role="tooltip"');
     expect(renderPanel(estadoBase({ panel: 'rapidas' }))).not.toContain('role="tooltip"');
   });
@@ -368,14 +375,13 @@ describe('Asistente - descarte de códigos inexistentes', () => {
 });
 
 describe('Asistente - ocultamiento del botón', () => {
-  const visible = { sinMalla: false, arrastrando: false, cursoAMover: null, panelAbierto: false, estrategiaAbierta: false };
+  const visible = { arrastrando: false, cursoAMover: null, panelAbierto: false, estrategiaAbierta: false };
 
   it.each([
     ['mientras se arrastra un curso', { arrastrando: true }],
     ['con la barra "Moviendo curso"', { cursoAMover: '100000I62N' }],
     ['con el panel abierto', { panelAbierto: true }],
     ['con el drawer Estrategia abierto', { estrategiaAbierta: true }],
-    ['sin malla cargada', { sinMalla: true }],
   ])('se oculta %s', (_caso, cambios) => {
     expect(debeOcultarFab(visible)).toBe(false);
     expect(debeOcultarFab({ ...visible, ...cambios })).toBe(true);

@@ -21,34 +21,43 @@ const esMejorOpcion = (candidata: OpcionDP, actual?: OpcionDP): boolean => {
   return candidata.horas > actual.horas;
 };
 
-/** Mochila por horas. Los créditos se suman únicamente para el resumen. */
+/**
+ * Mochila por horas. Con maxCreditos finito, los créditos también limitan (y el estado de la mochila
+ * los incluye); si no, solo se suman para el resumen.
+ */
 export const optimizarSemestre = (
   cursosDisponibles: Curso[],
   maxHoras: number,
-  prioridades: ReadonlyMap<string, PrioridadPendiente> = calcularPrioridadesPendientes(cursosDisponibles)
+  prioridades: ReadonlyMap<string, PrioridadPendiente> = calcularPrioridadesPendientes(cursosDisponibles),
+  maxCreditos = Infinity
 ): CursoOptimizado => {
   const vacio: OpcionDP = { cursos: [], creditos: 0, horas: 0, impacto: 0, longitud: 0 };
-  if (!Number.isFinite(maxHoras) || maxHoras <= 0) return vacio;
+  if (!Number.isFinite(maxHoras) || maxHoras <= 0 || maxCreditos < 0) return vacio;
 
   const limite = Math.floor(maxHoras * ESCALA_HORAS);
-  const dp = new Map<number, OpcionDP>([[0, vacio]]);
+  const conCreditos = Number.isFinite(maxCreditos);
+  const clave = (peso: number, creditos: number) => conCreditos ? `${peso}|${creditos}` : `${peso}`;
+  const dp = new Map<string, OpcionDP & { peso: number }>([[clave(0, 0), { ...vacio, peso: 0 }]]);
   for (const curso of cursosDisponibles) {
     if (!Number.isFinite(curso.horasSemanales) || curso.horasSemanales <= 0) continue;
     const peso = Math.ceil(curso.horasSemanales * ESCALA_HORAS - 1e-9);
     const prioridad = prioridades.get(curso.codigo);
-    for (const [horasUsadas, opcion] of [...dp.entries()]) {
-      const nuevoPeso = horasUsadas + peso;
+    for (const opcion of [...dp.values()]) {
+      const nuevoPeso = opcion.peso + peso;
       const horas = opcion.horas + curso.horasSemanales;
-      if (nuevoPeso > limite || horas > maxHoras) continue;
+      const creditos = opcion.creditos + curso.creditos;
+      if (nuevoPeso > limite || horas > maxHoras || creditos > maxCreditos) continue;
 
-      const candidata: OpcionDP = {
+      const candidata = {
         cursos: [...opcion.cursos, curso],
-        creditos: opcion.creditos + curso.creditos,
+        creditos,
         horas,
         impacto: opcion.impacto + (prioridad?.impacto ?? 0),
         longitud: opcion.longitud + (prioridad?.longitudCadena ?? 1),
+        peso: nuevoPeso,
       };
-      if (esMejorOpcion(candidata, dp.get(nuevoPeso))) dp.set(nuevoPeso, candidata);
+      const llave = clave(nuevoPeso, creditos);
+      if (esMejorOpcion(candidata, dp.get(llave))) dp.set(llave, candidata);
     }
   }
 

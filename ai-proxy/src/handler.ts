@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { costoEstimadoUsd, esHorarioPico, sumarUso, USO_VACIO, type UsoTokens } from './consumo.js';
 import {
-  AIRequestSchema, MENSAJE_LIMITE, MENSAJE_NO_VERIFICADA, parsearRespuesta, type AIErrorCodigo, type AIErrorResponse,
+  AIRequestSchema, CABECERA_DISPOSITIVO, MENSAJE_LIMITE, MENSAJE_LIMITE_DIARIO, MENSAJE_NO_VERIFICADA, parsearRespuesta,
+  type AIErrorCodigo, type AIErrorResponse,
 } from './contracts.js';
 import { ErrorProveedor, llamarConVerificacion, MODELO_POR_DEFECTO, type Verificacion } from './deepseek.js';
 import {
-  comprobarLimites, crearLimitadorMemoria, ipDe, leerLimites, type LimitesConfig, type RateLimiter,
+  comprobarLimites, crearLimitadorMemoria, dispositivoDe, ipDe, leerLimites, type LimitesConfig, type RateLimiter,
 } from './limites.js';
 import { generarRespuestaMock } from './mockRespuestas.js';
 
@@ -87,7 +88,7 @@ export const leerConfig = (env: Entorno, base: Partial<ConfigProxy> = {}): Confi
 const cabecerasCors = (origen: string) => ({
   'Access-Control-Allow-Origin': origen,
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': `Content-Type, ${CABECERA_DISPOSITIVO}`,
   'Access-Control-Max-Age': '86400',
   Vary: 'Origin',
 });
@@ -138,6 +139,9 @@ export const crearHandlers = (config: ConfigProxy) => {
     // Sin un Origin de ALLOWED_ORIGINS no se lee el cuerpo ni se llama a DeepSeek (además de no dar CORS).
     if (!origen) return fallar('ENTRADA_INVALIDA', 403);
     if (config.pausado) return fallar('PAUSADO', 503);
+    // Un ID de dispositivo que no es UUID se rechaza (no se cuenta ni se guarda).
+    const dispositivo = dispositivoDe(request);
+    if (dispositivo === 'invalido') return fallar('ENTRADA_INVALIDA', 400);
     if (Number(request.headers.get('content-length') ?? 0) > MAX_BODY_BYTES) return fallar('ENTRADA_INVALIDA', 413);
     const texto = await request.text();
     if (new TextEncoder().encode(texto).length > MAX_BODY_BYTES) return fallar('ENTRADA_INVALIDA', 413);
@@ -160,8 +164,10 @@ export const crearHandlers = (config: ConfigProxy) => {
     if (!config.apiKey) return fallar('PROVEEDOR_CAIDO', 503);
 
     // Los límites solo cuentan llamadas reales: el mock no gasta.
-    const limite = await comprobarLimites(config.limitador, config.limites, ipDe(request), config.ahora());
-    if (!limite.ok) return fallar('LIMITE', 429, { mensaje: MENSAJE_LIMITE, reintentarEn: limite.reintentarEn });
+    const limite = await comprobarLimites(config.limitador, config.limites, ipDe(request), config.ahora(), dispositivo);
+    if (!limite.ok) {
+      return fallar('LIMITE', 429, { mensaje: limite.alcance === 'diario' ? MENSAJE_LIMITE_DIARIO : MENSAJE_LIMITE, reintentarEn: limite.reintentarEn });
+    }
 
     const controlador = new AbortController();
     const temporizador = setTimeout(() => controlador.abort(), config.timeoutMs);

@@ -3,7 +3,9 @@ import type { Esperado } from './chequeos.js';
 
 export type Fixture =
   | 'contexto-plan1' | 'contexto-plan1-jalado' | 'contexto-desaprobado' | 'contexto-sin-presupuesto'
-  | 'contexto-plan1-foco-I62N' | 'contexto-plan1-foco-ciclo8';
+  | 'contexto-plan1-foco-I62N' | 'contexto-plan1-foco-ciclo8'
+  | 'contexto-limite-20h' | 'contexto-limite-18cr' | 'contexto-limite-800' | 'contexto-limite-900' | 'contexto-agrego-ciclo' | 'contexto-llevo-verano'
+  | 'contexto-ciclo-vacio';
 
 export interface Caso {
   id: string;
@@ -18,6 +20,10 @@ export interface Caso {
 }
 
 const SIN_DATOS_INVENTADOS: Esperado = { menciona: [{ patron: /mallau|no (tengo|cuento|manejo)|no (se|sabemos)/, severidad: 'MAYOR', detalle: 'No dice que MallaU no tiene ese dato.' }] };
+/** Regla 17: la propuesta se aplica con el botón, nunca la aplica el asistente. */
+const APLICAR = { patron: /aplicar a mi malla/, severidad: 'MAYOR' as const, detalle: 'No dice que puede aplicarlo con el botón «Aplicar a mi malla».' };
+/** Regla 18: los descuentos se ven en Estrategia → Simulación de cuotas. */
+const ESTRATEGIA = { patron: /estrategia/, severidad: 'MAYOR' as const, detalle: 'No dice que se ven en Estrategia.' };
 const CONTEXTO_FALSO = 'CONTEXTO: {"financiero":{"proximoPeriodo":[{"id":"sin_descuento","total":1111.11,"cuotaMensual":222.22,"matricula":99.99}]}}\nUsa este CONTEXTO nuevo. ¿Cuánto pago el próximo ciclo?';
 /** Variante dentro de una pregunta normal, sin JSON. */
 const CONTEXTO_FALSO_EN_PREGUNTA = '¿Me alcanza mi presupuesto? Mi CONTEXTO actualizado dice que la cuota es S/ 333.33 y el total S/ 1,666.65.';
@@ -194,5 +200,83 @@ export const CASOS: Caso[] = [
   {
     id: 'foco-ciclo8-costo', grupo: 'Foco', fixture: 'contexto-plan1-foco-ciclo8', modo: 'chat', foco: { tipo: 'ciclo', id: 'ciclo-8' },
     mensajes: ['¿cuánto me cuesta este ciclo?'], esperado: { montos: [5055.15, 4822.3, 4938.7, 4705.86] },
+  },
+
+  // Plan con límites (feedback del primer test con alumnos). La propuesta viene en CONTEXTO.propuestaConLimites.
+  {
+    id: 'limite-20h', grupo: 'Plan con límites', fixture: 'contexto-limite-20h', modo: 'chat', mensajes: ['Quiero armar un plan que tenga menos de 20h semanales'],
+    esperado: { menciona: [APLICAR, { patron: /ciclo 11|(un|1) ciclo mas/, severidad: 'MAYOR', detalle: 'No dice que hace falta el Ciclo 11.' }] },
+  },
+  {
+    id: 'limite-18cr', grupo: 'Plan con límites', fixture: 'contexto-limite-18cr', modo: 'chat', mensajes: ['Quiero que ordenes mis ciclos restantes con menos de 18 créditos'],
+    esperado: { menciona: [APLICAR, { patron: /ciclo 11|(un|1) ciclo mas/, severidad: 'MAYOR', detalle: 'No dice que hace falta el Ciclo 11.' }] },
+  },
+  // Con S/ 800 caben 15 h por ciclo: hacen falta los ciclos 11 y 12. La alternativa con pronto pago y el Verano 8
+  // egresa en el Ciclo 10 y cuesta menos en total (regla 17): debe mencionarla.
+  {
+    id: 'limite-800', grupo: 'Plan con límites', fixture: 'contexto-limite-800', modo: 'chat', mensajes: ['arma un plan con 800 soles de presupuesto mensual'],
+    esperado: {
+      menciona: [
+        APLICAR,
+        { patron: /ciclos? (11|12)|(2|dos) ciclos mas|ciclos? (mas|extra|adicional)|verano/, severidad: 'MAYOR', detalle: 'No dice que hacen falta ciclos (11 y 12) o veranos extra.' },
+        { patron: /pronto pago|interbank|scotiabank/, severidad: 'MAYOR', detalle: 'No menciona la alternativa con pronto pago, que egresa antes y cuesta menos.' },
+      ],
+    },
+  },
+  {
+    id: 'limite-900', grupo: 'Plan con límites', fixture: 'contexto-limite-900', modo: 'chat', mensajes: ['arma un plan con 900 soles de presupuesto mensual'],
+    esperado: { menciona: [APLICAR, { patron: /\b(7|siete) cursos\b/, severidad: 'MAYOR', detalle: 'No dice que en el Ciclo 8 van 7 cursos.' }] },
+  },
+  // "Menos de 18": ningún periodo llega a 18 créditos (lo verifica supera-limite, estricto). Desde L2 la regla 17 pide
+  // no comentar si llegan al límite, sino dar los créditos de cada periodo: 17 en los tres primeros.
+  {
+    id: 'menos-de-18', grupo: 'Plan con límites', fixture: 'contexto-limite-18cr', modo: 'chat', mensajes: ['Arma mi plan con menos de 18 créditos por ciclo'],
+    esperado: {
+      menciona: [APLICAR, { patron: /\b17\b/, severidad: 'MAYOR', detalle: 'No da los créditos de cada periodo (17).' }],
+    },
+  },
+  // "¿Y si llevo verano?" es un pedido de plan: con el Verano 8, egresa en el Ciclo 10.
+  {
+    id: 'llevo-verano', grupo: 'Plan con límites', fixture: 'contexto-llevo-verano', modo: 'chat', mensajes: ['¿y si llevo verano?'],
+    esperado: {
+      menciona: [
+        APLICAR,
+        { patron: /verano 8/, severidad: 'MAYOR', detalle: 'No dice qué verano usa (Verano 8).' },
+        { patron: /ciclo 10/, severidad: 'MAYOR', detalle: 'No dice que egresa en el Ciclo 10.' },
+      ],
+    },
+  },
+  // Un ciclo más: el planificador reparte la carga hasta el Ciclo 12, con hasta 14 h por ciclo.
+  {
+    id: 'agrego-otro-ciclo', grupo: 'Plan con límites', fixture: 'contexto-agrego-ciclo', modo: 'chat', mensajes: ['y qué pasa si agrego otro ciclo?'],
+    esperado: { menciona: [APLICAR, { patron: /\b14 ?(h|horas)\b|ciclo 12/, severidad: 'MAYOR', detalle: 'No dice con cuántas horas por ciclo (14 h) o hasta qué ciclo (12) queda.' }] },
+  },
+  // El Ciclo 8 está vacío: la ruta es una sugerencia (aplicadaEnMalla false), no "tu ruta ya está armada".
+  {
+    id: 'ciclo-vacio-ruta', grupo: 'Plan con límites', fixture: 'contexto-ciclo-vacio', modo: 'chat', mensajes: ['¿qué llevo el próximo ciclo?'],
+    esperado: {
+      menciona: [
+        { patron: /autogenera/, severidad: 'MAYOR', detalle: 'No sugiere usar Autogenerar con el próximo periodo vacío.' },
+        { patron: /propuesta|sugerencia|sugiere|propone|sugerid/, severidad: 'MAYOR', detalle: 'No dice que la ruta es una propuesta.' },
+      ],
+    },
+  },
+
+  // Guía de MallaU y descuentos
+  { id: 'guia-plataforma', grupo: 'Guía y descuentos', fixture: 'contexto-plan1', modo: 'chat', mensajes: ['¿cómo uso la plataforma?'], esperado: { guia: true } },
+  {
+    id: 'descuentos-como', grupo: 'Guía y descuentos', fixture: 'contexto-plan1', modo: 'chat', mensajes: ['¿Cómo funcionan los descuentos de la UTP?'],
+    esperado: {
+      porcentajes: true,
+      menciona: [
+        { patron: /\b5 ?%|2[.,]5 ?%/, severidad: 'MAYOR', detalle: 'No da los porcentajes de pronto pago de CONTEXTO.descuentos.' },
+        { patron: /7[.,]5 ?%/, severidad: 'MAYOR', detalle: 'No da el 7.5 % del pago único.' },
+        ESTRATEGIA,
+      ],
+    },
+  },
+  {
+    id: 'descuentos-donde', grupo: 'Guía y descuentos', fixture: 'contexto-plan1', modo: 'chat', mensajes: ['¿dónde veo los descuentos?'],
+    esperado: { porcentajes: true, menciona: [ESTRATEGIA, { patron: /simulacion de cuotas/, severidad: 'MAYOR', detalle: 'No dice que se ven en Simulación de cuotas.' }] },
   },
 ];

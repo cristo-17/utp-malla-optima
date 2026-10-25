@@ -2,11 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { useShallow } from 'zustand/react/shallow';
 import { useAcademicStore } from '../../store/useAcademicStore';
 import { buildAIContext } from '../../application/ai/buildAIContext';
+import { detectarLimites } from '../../application/ai/limites';
 import { conexionActual, crearAIClient, escucharConexion } from '../../infrastructure/ai/HttpAIClient';
 import { AsistenteFab } from './AsistenteFab';
 import { AsistentePanel } from './AsistentePanel';
-import { almacen, CLAVES_ASISTENTE, debeOcultarFab, opcionesAdjuntar } from './asistenteLogica';
+import { almacen, CLAVES_ASISTENTE, codigosProximoPeriodo, debeOcultarFab, opcionesAdjuntar } from './asistenteLogica';
 import { crearControladorAsistente } from './controladorAsistente';
+import { cicloVacioProximo, textoPlanAplicado } from '../../presentation/messages/autogenerarMessages';
 import './asistente.css';
 
 const DURACION_TOOLTIP_MS = 6000;
@@ -33,17 +35,32 @@ const useArrastrando = () => {
   return arrastrando;
 };
 
-export function Asistente() {
-  const { cursos, cicloActual, cursoAMover, estrategiaAbierta } = useAcademicStore(useShallow((state) => ({
-    cursos: state.cursos, cicloActual: state.cicloActual,
-    cursoAMover: state.cursoAMover, estrategiaAbierta: state.panelPlanificadorAbierto,
-  })));
+/** Lleva al banco de pendientes para armar el ciclo a mano. */
+const irAlBanco = () => {
+  const buscador = document.querySelector<HTMLInputElement>('input[aria-label="Buscar cursos pendientes"]');
+  buscador?.scrollIntoView({ block: 'center' });
+  buscador?.focus({ preventScroll: true });
+};
+
+export function Asistente({ onSubirExcel }: { onSubirExcel?: () => void } = {}) {
+  const {
+    cursos, cicloActual, cursoAMover, estrategiaAbierta, abrirAutogenerar, avisoPlanDesdeChat, setAvisoPlanDesdeChat,
+    presupuestoMensual, setPresupuestoMensual,
+  } =
+    useAcademicStore(useShallow((state) => ({
+      cursos: state.cursos, cicloActual: state.cicloActual,
+      cursoAMover: state.cursoAMover, estrategiaAbierta: state.panelPlanificadorAbierto,
+      abrirAutogenerar: state.abrirAutogenerar,
+      avisoPlanDesdeChat: state.avisoPlanDesdeChat, setAvisoPlanDesdeChat: state.setAvisoPlanDesdeChat,
+      presupuestoMensual: state.presupuestoMensual, setPresupuestoMensual: state.setPresupuestoMensual,
+    })));
   const [controlador] = useState(() => {
     const cliente = crearAIClient();
     return Object.assign(crearControladorAsistente({
       cliente,
       // El contexto se recalcula en cada envío con el estado actual del store.
-      obtenerContexto: (opciones) => buildAIContext(useAcademicStore.getState(), opciones),
+      obtenerContexto: ({ mensaje, ...opciones }) =>
+        buildAIContext(useAcademicStore.getState(), { ...opciones, limites: mensaje ? detectarLimites(mensaje) : null }),
       privacidadAceptada: almacen.leer(CLAVES_ASISTENTE.privacidad),
       alAceptarPrivacidad: () => almacen.guardar(CLAVES_ASISTENTE.privacidad),
     }), { esMock: cliente.esMock });
@@ -61,10 +78,27 @@ export function Asistente() {
   const estabaAbierto = useRef(false);
 
   const sinMalla = cursos.length === 0;
-  const fabOculto = debeOcultarFab({ sinMalla, arrastrando, cursoAMover, panelAbierto: abierto, estrategiaAbierta });
+  const fabOculto = debeOcultarFab({ arrastrando, cursoAMover, panelAbierto: abierto, estrategiaAbierta });
   const mostrarSaludo = saludoPendiente && !fabOculto;
   const nombres = useMemo(() => new Map(cursos.map((curso) => [curso.codigo, curso.nombre])), [cursos]);
   const opciones = useMemo(() => opcionesAdjuntar(cursos, cicloActual), [cursos, cicloActual]);
+  const cicloVacio = useMemo(() => cicloVacioProximo(cursos, cicloActual), [cursos, cicloActual]);
+  const prioridadCursos = useMemo(() => codigosProximoPeriodo(cursos, cicloActual), [cursos, cicloActual]);
+
+  // Después de aplicar desde el chat, la app (no la IA) cuenta el ciclo armado y ofrece analizarlo.
+  useEffect(() => {
+    if (!avisoPlanDesdeChat) return;
+    controlador.agregarMensajeApp(textoPlanAplicado(avisoPlanDesdeChat));
+    setAvisoPlanDesdeChat(null);
+  }, [avisoPlanDesdeChat, controlador, setAvisoPlanDesdeChat]);
+  // El presupuesto es el mismo en "Analizar mi plan" y en Autogenerar (financialSlice.presupuestoMensual).
+  useEffect(() => {
+    if (controlador.obtener().presupuesto !== presupuestoMensual) controlador.setPresupuesto(presupuestoMensual);
+  }, [presupuestoMensual, controlador]);
+  // Si el ciclo vuelve a quedar vacío (Deshacer o Limpiar plan), vuelve la tarjeta de Autogenerar y el aviso sobra.
+  useEffect(() => {
+    if (cicloVacio !== null) controlador.quitarMensajesApp();
+  }, [cicloVacio, controlador]);
 
   // Padding inferior del contenido para que el botón nunca tape tarjetas.
   useEffect(() => {
@@ -171,14 +205,19 @@ export function Asistente() {
     {abierto && <>
       <div className="ia-fondo" aria-hidden="true" onClick={cerrar} />
       <AsistentePanel
-        estado={estado} enLinea={enLinea} nombres={nombres} opciones={opciones} esMock={controlador.esMock}
+        estado={estado} enLinea={enLinea} nombres={nombres} opciones={opciones} esMock={controlador.esMock} cicloVacio={cicloVacio}
+        sinMalla={sinMalla} prioridadCursos={prioridadCursos}
+        onSubirExcel={onSubirExcel ? () => { cerrar(); onSubirExcel(); } : undefined}
+        onArmarAMano={() => { cerrar(); window.setTimeout(irAlBanco, 0); }}
+        onAutogenerar={(alcance) => abrirAutogenerar({ alcance }, 'chat')}
+        onAplicarPropuesta={(opcionesPropuesta) => abrirAutogenerar(opcionesPropuesta, 'chat')}
         mostrarTooltipRapidas={mostrarTooltip} panelRef={panelRef} inputRef={inputRef} mensajesRef={mensajesRef} onKeyDown={alTeclear}
         onCerrar={cerrar}
         onNuevaConversacion={controlador.nuevaConversacion}
         onAceptarPrivacidad={controlador.aceptarPrivacidad}
         onCancelarPrivacidad={cerrar}
         onAnalizar={() => void controlador.analizar()}
-        onPresupuesto={controlador.setPresupuesto}
+        onPresupuesto={setPresupuestoMensual}
         onPreguntar={(texto) => void controlador.preguntar(texto)}
         onReintentar={(id) => void controlador.reintentar(id)}
         onAlternarPanel={(panel) => {

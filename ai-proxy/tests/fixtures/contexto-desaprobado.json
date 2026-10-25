@@ -724,7 +724,7 @@
       "origen": "EN_CURSO"
     }
   ],
-  "ruta": {
+  "rutaSugerida": {
     "propuesta": [
       {
         "periodoId": "ciclo-8",
@@ -735,7 +735,9 @@
           "100000I62N",
           "100000S71T",
           "100000SI82"
-        ]
+        ],
+        "horas": 21,
+        "creditos": 20
       },
       {
         "periodoId": "ciclo-9",
@@ -747,7 +749,9 @@
           "100000SI86",
           "100000N25I",
           "100000N11I"
-        ]
+        ],
+        "horas": 22,
+        "creditos": 19
       },
       {
         "periodoId": "ciclo-10",
@@ -758,15 +762,24 @@
           "10000096SI",
           "100000NI24",
           "100000SI95"
-        ]
+        ],
+        "horas": 22,
+        "creditos": 19
+      },
+      {
+        "periodoId": "ciclo-11",
+        "cursos": [
+          "100000CN47",
+          "100000SI97"
+        ],
+        "horas": 7,
+        "creditos": 6
       }
     ],
-    "ciclosRestantes": 3,
-    "cicloFinal": 10,
-    "noPlanificados": [
-      "100000SI97",
-      "100000CN47"
-    ]
+    "ciclosRestantes": 4,
+    "cicloFinal": 11,
+    "noPlanificados": [],
+    "aplicadaEnMalla": false
   },
   "electivos": [
     {
@@ -840,10 +853,43 @@
       "enCurso": 19,
       "faltanParaEgresar": 83,
       "faltanSiApruebaEnCurso": 64,
-      "ciclosRestantes": 3
+      "ciclosRestantes": 4
     },
     "cursosProximoPeriodo": [],
     "proximoPeriodoConJalados": null,
     "planificadosBloqueadosPorJalado": []
+  },
+  "propuestaConLimites": null,
+  "descuentos": {
+    "metodosPago": [
+      {
+        "id": "sin_descuento",
+        "nombre": "Sin descuento",
+        "descuentoPorcentaje": 0,
+        "requiereProntoPago": false
+      },
+      {
+        "id": "interbank_scotiabank",
+        "nombre": "Interbank / Scotiabank — pronto pago",
+        "descuentoPorcentaje": 5,
+        "requiereProntoPago": true
+      },
+      {
+        "id": "bcp_bbva",
+        "nombre": "BCP / BBVA — pronto pago",
+        "descuentoPorcentaje": 2.5,
+        "requiereProntoPago": true
+      }
+    ],
+    "pagoUnico": {
+      "descuentoPorcentaje": 7.5,
+      "seCobra": "todo junto al inicio del ciclo",
+      "soloCiclosRegulares": true
+    },
+    "costoHoraAdicional": 38.81,
+    "horasSinRecargo": 22,
+    "descuentoSobreRecargo": true,
+    "veranoConDescuento": false,
+    "ubicacionEnApp": "Estrategia → Simulación de cuotas: el método de pago se elige en Configuración y el pago único con \"Aplicar pago único\" en cada ciclo."
   }
 }

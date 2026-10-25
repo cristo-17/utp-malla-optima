@@ -1,1264 +1,1303 @@
 {
- "version": 1,
- "perfil": {
-  "periodoIngreso": "marzo",
-  "cicloActual": 7,
-  "totalCiclos": 10,
-  "disciplina": "Ingeniería y Arquitectura",
-  "creditos": {
-   "aprobados": 121,
-   "enCurso": 19,
-   "pendientesEnMalla": 70
-  },
-  "electivos": {
-   "cubiertos": 0,
-   "minimo": 3,
-   "faltantes": 3
-  }
- },
- "catalogo": [
-  {
-   "codigo": "100000N01I",
-   "nombre": "COMPRENSIÓN Y REDACCIÓN DE TEXTOS I",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 4,
-   "ubicacion": "ciclo-1"
-  },
-  {
-   "codigo": "100000N09I",
-   "nombre": "INDIVIDUO Y MEDIO AMBIENTE",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "ciclo-1"
-  },
-  {
-   "codigo": "100000N03I",
-   "nombre": "INGLÉS I",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-1"
-  },
-  {
-   "codigo": "100000VU01",
-   "nombre": "INTRODUCCIÓN A LA VIDA UNIVERSITARIA",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "ciclo-1"
-  },
-  {
-   "codigo": "100000I0N2",
-   "nombre": "MATEMÁTICA I",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-1"
-  },
-  {
-   "codigo": "100000I07N",
-   "nombre": "PRINCIPIOS DE ALGORITMOS",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "ciclo-1"
-  },
-  {
-   "codigo": "100000A16E",
-   "nombre": "COMPRENSIÓN Y REDACCIÓN DE TEXTOS II",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 4,
-   "ubicacion": "ciclo-2"
-  },
-  {
-   "codigo": "100000I13N",
-   "nombre": "ESTADÍSTICA DESCRIPTIVA Y PROBABILIDADES",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-2"
-  },
-  {
-   "codigo": "100000N05I",
-   "nombre": "INGLÉS II",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-2"
-  },
-  {
-   "codigo": "100000TI50",
-   "nombre": "INTRODUCCIÓN A LAS TIC",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "ciclo-2"
-  },
-  {
-   "codigo": "100000SI13",
-   "nombre": "MATEMÁTICA DISCRETA",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "ciclo-2"
-  },
-  {
-   "codigo": "100000I0N3",
-   "nombre": "MATEMÁTICA II",
-   "estado": "CONVALIDADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 4,
-   "ubicacion": "ciclo-2"
-  },
-  {
-   "codigo": "100000N06I",
-   "nombre": "PROBLEMAS Y DESAFÍOS EN EL PERÚ ACTUAL",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-2"
-  },
-  {
-   "codigo": "100000I0N6",
-   "nombre": "CÁLCULO I",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 4,
-   "ubicacion": "ciclo-3"
-  },
-  {
-   "codigo": "100000N07C",
-   "nombre": "CIUDADANÍA Y REFLEXIÓN ÉTICA",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-3"
-  },
-  {
-   "codigo": "100000I17N",
-   "nombre": "ESTADÍSTICA INFERENCIAL",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 4,
-   "ubicacion": "ciclo-3"
-  },
-  {
-   "codigo": "100000N08I",
-   "nombre": "INGLÉS III",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-3"
-  },
-  {
-   "codigo": "100000F1I2",
-   "nombre": "LABORATORIO DE MECÁNICA CLÁSICA",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 0.22,
-   "ubicacion": "ciclo-3"
-  },
-  {
-   "codigo": "100000F1I1",
-   "nombre": "MECÁNICA CLÁSICA",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3.78,
-   "ubicacion": "ciclo-3"
-  },
-  {
-   "codigo": "100000I50N",
-   "nombre": "TALLER DE PROGRAMACIÓN",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-3"
-  },
-  {
-   "codigo": "100000SI35",
-   "nombre": "ANÁLISIS Y DISEÑO DE ALGORITMOS",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-4"
-  },
-  {
-   "codigo": "100000I52N",
-   "nombre": "BASE DE DATOS",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-4"
-  },
-  {
-   "codigo": "100000I1N0",
-   "nombre": "CÁLCULO II",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "ciclo-4"
-  },
-  {
-   "codigo": "100000F2I1",
-   "nombre": "FUNDAMENTOS DE ELECTROMAGNETISMO",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3.78,
-   "ubicacion": "ciclo-4"
-  },
-  {
-   "codigo": "100000N10I",
-   "nombre": "INGLÉS IV",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-4"
-  },
-  {
-   "codigo": "100000N02C",
-   "nombre": "INVESTIGACIÓN ACADÉMICA",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 4,
-   "ubicacion": "ciclo-4"
-  },
-  {
-   "codigo": "100000F2I2",
-   "nombre": "LABORATORIO DE FUNDAMENTOS DE ELECTROMAGNETISMO",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 0.22,
-   "ubicacion": "ciclo-4"
-  },
-  {
-   "codigo": "100000I55N",
-   "nombre": "PROGRAMACIÓN ORIENTADA A OBJETOS",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-4"
-  },
-  {
-   "codigo": "100000I53N",
-   "nombre": "ALGORITMOS Y ESTRUCTURAS DE DATOS",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-5"
-  },
-  {
-   "codigo": "100000SI46",
-   "nombre": "BASE DE DATOS II",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 4,
-   "ubicacion": "ciclo-5"
-  },
-  {
-   "codigo": "100000SI47",
-   "nombre": "DISEÑO DE PATRONES",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "ciclo-5"
-  },
-  {
-   "codigo": "100000I04N",
-   "nombre": "HERRAMIENTAS INFORMÁTICAS PARA LA TOMA DE DECISIONES",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "ciclo-5"
-  },
-  {
-   "codigo": "100000I41N",
-   "nombre": "REDES Y COMUNICACIÓN DE DATOS I",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 4,
-   "ubicacion": "ciclo-5"
-  },
-  {
-   "codigo": "100000I56N",
-   "nombre": "SISTEMAS OPERATIVOS",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-5"
-  },
-  {
-   "codigo": "100000I57N",
-   "nombre": "TALLER DE PROGRAMACIÓN WEB",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "ciclo-5"
-  },
-  {
-   "codigo": "100000N21I",
-   "nombre": "ADMINISTRACIÓN Y ORGANIZACIÓN DE EMPRESAS",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-6"
-  },
-  {
-   "codigo": "100000I60N",
-   "nombre": "ANÁLISIS Y DISEÑO DE SISTEMAS DE INFORMACIÓN",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 4,
-   "ubicacion": "ciclo-6"
-  },
-  {
-   "codigo": "100000I58N",
-   "nombre": "CURSO INTEGRADOR I: SISTEMAS - SOFTWARE",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-6"
-  },
-  {
-   "codigo": "100000I33N",
-   "nombre": "GESTIÓN DE PROYECTOS",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-6"
-  },
-  {
-   "codigo": "100000SI58",
-   "nombre": "HOJAS DE ESTILO EN CASCADA AVANZADO",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "ciclo-6"
-  },
-  {
-   "codigo": "100000SI56",
-   "nombre": "JAVA SCRIPT AVANZADO",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-6"
-  },
-  {
-   "codigo": "100000SI57",
-   "nombre": "MARCOS DE DESARROLLO WEB",
-   "estado": "APROBADO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-6"
-  },
-  {
-   "codigo": "100000ST61",
-   "nombre": "DESARROLLO WEB INTEGRADO",
-   "estado": "EN_CURSO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "ciclo-7"
-  },
-  {
-   "codigo": "100000SI67",
-   "nombre": "DISEÑO DE PRODUCTOS Y SERVICIOS",
-   "estado": "EN_CURSO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-7"
-  },
-  {
-   "codigo": "100000S61T",
-   "nombre": "HERRAMIENTAS DE DESARROLLO",
-   "estado": "EN_CURSO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-7"
-  },
-  {
-   "codigo": "100000SI68",
-   "nombre": "LENGUAJES DE PROGRAMACIÓN",
-   "estado": "EN_CURSO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "ciclo-7"
-  },
-  {
-   "codigo": "100000SI66",
-   "nombre": "LIDERAZGO Y GESTIÓN DE EQUIPOS",
-   "estado": "EN_CURSO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-7"
-  },
-  {
-   "codigo": "100000I45N",
-   "nombre": "SEGURIDAD INFORMÁTICA",
-   "estado": "EN_CURSO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-7"
-  },
-  {
-   "codigo": "100000SI69",
-   "nombre": "TEORÍA DE SISTEMAS",
-   "estado": "EN_CURSO",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-7"
-  },
-  {
-   "codigo": "100000S06I",
-   "nombre": "DISEÑO E IMPLEMENTACIÓN DE ARQUITECTURA EMPRESARIAL",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-8"
-  },
-  {
-   "codigo": "100000S72T",
-   "nombre": "GESTIÓN DEL SERVICIO TI",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-8"
-  },
-  {
-   "codigo": "100000S73T",
-   "nombre": "HERRAMIENTAS DE PROTOTIPADO",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-8"
-  },
-  {
-   "codigo": "100000H01C",
-   "nombre": "HERRAMIENTAS PARA LA COMUNICACIÓN EFECTIVA",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-8"
-  },
-  {
-   "codigo": "100000TD09",
-   "nombre": "INNOVACIÓN Y TRANSFORMACIÓN DIGITAL",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "ciclo-8"
-  },
-  {
-   "codigo": "100000I62N",
-   "nombre": "INTELIGENCIA DE NEGOCIOS",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 4,
-   "ubicacion": "ciclo-8"
-  },
-  {
-   "codigo": "100000S71T",
-   "nombre": "NEGOCIACIÓN Y NARRATIVA",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "ciclo-8"
-  },
-  {
-   "codigo": "100000S09I",
-   "nombre": "CURSO INTEGRADOR II: SISTEMAS",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000SI82",
-   "nombre": "FORMACIÓN PARA LA INVESTIGACIÓN - SISTEMAS",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 4,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000S02I",
-   "nombre": "GESTIÓN DEL CONOCIMIENTO",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000SI87",
-   "nombre": "INTERACCIÓN HOMBRE MAQUINA",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000S07I",
-   "nombre": "PLANEAMIENTO ESTRATÉGICO DE LAS TICs",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 4,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000SI86",
-   "nombre": "SISTEMAS DE INFORMACIÓN EMPRESARIAL",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000I64M",
-   "nombre": "CALIDAD DE SOFTWARE",
-   "estado": "PENDIENTE",
-   "tipo": "ELECTIVO",
-   "creditos": 3,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000RI07",
-   "nombre": "CONTABILIDAD GENERAL",
-   "estado": "PENDIENTE",
-   "tipo": "ELECTIVO",
-   "creditos": 3,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000ZZ28",
-   "nombre": "ELEMENTARY BUSINESS ENGLISH",
-   "estado": "PENDIENTE",
-   "tipo": "ELECTIVO",
-   "creditos": 4,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000N25I",
-   "nombre": "ÉTICA PROFESIONAL",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000N11I",
-   "nombre": "FORMACIÓN PARA LA EMPLEABILIDAD",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000CN47",
-   "nombre": "FORMACIÓN PROFESIONAL CON ENFOQUE EN DISCAPACIDAD E INCLUSIÓN",
-   "estado": "PENDIENTE",
-   "tipo": "ELECTIVO",
-   "creditos": 3,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "10000096SI",
-   "nombre": "HERRAMIENTAS DE DESARROLLO PROFESIONAL - TIC",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 2,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000NI24",
-   "nombre": "INGENIERÍA ECONÓMICA",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000SI97",
-   "nombre": "SERVICIOS CLOUD",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 3,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000SI95",
-   "nombre": "TALLER DE INVESTIGACIÓN - SISTEMAS",
-   "estado": "PENDIENTE",
-   "tipo": "OBLIGATORIO",
-   "creditos": 4,
-   "ubicacion": "banco"
-  }
- ],
- "periodosPlanificados": [
-  {
-   "id": "ciclo-8",
-   "etiqueta": "Ciclo 8",
-   "cursos": [
-    "100000S06I",
-    "100000S72T",
-    "100000S73T",
-    "100000H01C",
-    "100000TD09",
-    "100000I62N",
-    "100000S71T"
-   ],
-   "horas": 25,
-   "creditos": 21
-  }
- ],
- "proximoPeriodo": {
-  "id": "ciclo-8",
-  "etiqueta": "Ciclo 8",
-  "cursos": [
-   {
-    "codigo": "100000S06I",
-    "nombre": "DISEÑO E IMPLEMENTACIÓN DE ARQUITECTURA EMPRESARIAL",
-    "creditos": 3,
-    "horas": 4,
-    "tipo": "OBLIGATORIO",
-    "impacto": 2,
-    "longitudCadena": 2,
-    "esLaboratorio": false,
-    "jalado": false
-   },
-   {
-    "codigo": "100000S72T",
-    "nombre": "GESTIÓN DEL SERVICIO TI",
-    "creditos": 3,
-    "horas": 4,
-    "tipo": "OBLIGATORIO",
-    "impacto": 0,
-    "longitudCadena": 1,
-    "esLaboratorio": false,
-    "jalado": false
-   },
-   {
-    "codigo": "100000S73T",
-    "nombre": "HERRAMIENTAS DE PROTOTIPADO",
-    "creditos": 3,
-    "horas": 4,
-    "tipo": "OBLIGATORIO",
-    "impacto": 0,
-    "longitudCadena": 1,
-    "esLaboratorio": false,
-    "jalado": false
-   },
-   {
-    "codigo": "100000H01C",
-    "nombre": "HERRAMIENTAS PARA LA COMUNICACIÓN EFECTIVA",
-    "creditos": 3,
-    "horas": 3,
-    "tipo": "OBLIGATORIO",
-    "impacto": 1,
-    "longitudCadena": 2,
-    "esLaboratorio": false,
-    "jalado": false
-   },
-   {
-    "codigo": "100000TD09",
-    "nombre": "INNOVACIÓN Y TRANSFORMACIÓN DIGITAL",
-    "creditos": 3,
-    "horas": 4,
-    "tipo": "OBLIGATORIO",
-    "impacto": 1,
-    "longitudCadena": 2,
-    "esLaboratorio": false,
-    "jalado": false
-   },
-   {
+  "version": 1,
+  "perfil": {
+    "periodoIngreso": "marzo",
+    "cicloActual": 7,
+    "totalCiclos": 10,
+    "disciplina": "Ingeniería y Arquitectura",
+    "creditos": {
+      "aprobados": 121,
+      "enCurso": 19,
+      "pendientesEnMalla": 70
+    },
+    "electivos": {
+      "cubiertos": 0,
+      "minimo": 3,
+      "faltantes": 3
+    }
+  },
+  "catalogo": [
+    {
+      "codigo": "100000N01I",
+      "nombre": "COMPRENSIÓN Y REDACCIÓN DE TEXTOS I",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 4,
+      "ubicacion": "ciclo-1"
+    },
+    {
+      "codigo": "100000N09I",
+      "nombre": "INDIVIDUO Y MEDIO AMBIENTE",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "ciclo-1"
+    },
+    {
+      "codigo": "100000N03I",
+      "nombre": "INGLÉS I",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-1"
+    },
+    {
+      "codigo": "100000VU01",
+      "nombre": "INTRODUCCIÓN A LA VIDA UNIVERSITARIA",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "ciclo-1"
+    },
+    {
+      "codigo": "100000I0N2",
+      "nombre": "MATEMÁTICA I",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-1"
+    },
+    {
+      "codigo": "100000I07N",
+      "nombre": "PRINCIPIOS DE ALGORITMOS",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "ciclo-1"
+    },
+    {
+      "codigo": "100000A16E",
+      "nombre": "COMPRENSIÓN Y REDACCIÓN DE TEXTOS II",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 4,
+      "ubicacion": "ciclo-2"
+    },
+    {
+      "codigo": "100000I13N",
+      "nombre": "ESTADÍSTICA DESCRIPTIVA Y PROBABILIDADES",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-2"
+    },
+    {
+      "codigo": "100000N05I",
+      "nombre": "INGLÉS II",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-2"
+    },
+    {
+      "codigo": "100000TI50",
+      "nombre": "INTRODUCCIÓN A LAS TIC",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "ciclo-2"
+    },
+    {
+      "codigo": "100000SI13",
+      "nombre": "MATEMÁTICA DISCRETA",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "ciclo-2"
+    },
+    {
+      "codigo": "100000I0N3",
+      "nombre": "MATEMÁTICA II",
+      "estado": "CONVALIDADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 4,
+      "ubicacion": "ciclo-2"
+    },
+    {
+      "codigo": "100000N06I",
+      "nombre": "PROBLEMAS Y DESAFÍOS EN EL PERÚ ACTUAL",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-2"
+    },
+    {
+      "codigo": "100000I0N6",
+      "nombre": "CÁLCULO I",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 4,
+      "ubicacion": "ciclo-3"
+    },
+    {
+      "codigo": "100000N07C",
+      "nombre": "CIUDADANÍA Y REFLEXIÓN ÉTICA",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-3"
+    },
+    {
+      "codigo": "100000I17N",
+      "nombre": "ESTADÍSTICA INFERENCIAL",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 4,
+      "ubicacion": "ciclo-3"
+    },
+    {
+      "codigo": "100000N08I",
+      "nombre": "INGLÉS III",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-3"
+    },
+    {
+      "codigo": "100000F1I2",
+      "nombre": "LABORATORIO DE MECÁNICA CLÁSICA",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 0.22,
+      "ubicacion": "ciclo-3"
+    },
+    {
+      "codigo": "100000F1I1",
+      "nombre": "MECÁNICA CLÁSICA",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3.78,
+      "ubicacion": "ciclo-3"
+    },
+    {
+      "codigo": "100000I50N",
+      "nombre": "TALLER DE PROGRAMACIÓN",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-3"
+    },
+    {
+      "codigo": "100000SI35",
+      "nombre": "ANÁLISIS Y DISEÑO DE ALGORITMOS",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-4"
+    },
+    {
+      "codigo": "100000I52N",
+      "nombre": "BASE DE DATOS",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-4"
+    },
+    {
+      "codigo": "100000I1N0",
+      "nombre": "CÁLCULO II",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "ciclo-4"
+    },
+    {
+      "codigo": "100000F2I1",
+      "nombre": "FUNDAMENTOS DE ELECTROMAGNETISMO",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3.78,
+      "ubicacion": "ciclo-4"
+    },
+    {
+      "codigo": "100000N10I",
+      "nombre": "INGLÉS IV",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-4"
+    },
+    {
+      "codigo": "100000N02C",
+      "nombre": "INVESTIGACIÓN ACADÉMICA",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 4,
+      "ubicacion": "ciclo-4"
+    },
+    {
+      "codigo": "100000F2I2",
+      "nombre": "LABORATORIO DE FUNDAMENTOS DE ELECTROMAGNETISMO",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 0.22,
+      "ubicacion": "ciclo-4"
+    },
+    {
+      "codigo": "100000I55N",
+      "nombre": "PROGRAMACIÓN ORIENTADA A OBJETOS",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-4"
+    },
+    {
+      "codigo": "100000I53N",
+      "nombre": "ALGORITMOS Y ESTRUCTURAS DE DATOS",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-5"
+    },
+    {
+      "codigo": "100000SI46",
+      "nombre": "BASE DE DATOS II",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 4,
+      "ubicacion": "ciclo-5"
+    },
+    {
+      "codigo": "100000SI47",
+      "nombre": "DISEÑO DE PATRONES",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "ciclo-5"
+    },
+    {
+      "codigo": "100000I04N",
+      "nombre": "HERRAMIENTAS INFORMÁTICAS PARA LA TOMA DE DECISIONES",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "ciclo-5"
+    },
+    {
+      "codigo": "100000I41N",
+      "nombre": "REDES Y COMUNICACIÓN DE DATOS I",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 4,
+      "ubicacion": "ciclo-5"
+    },
+    {
+      "codigo": "100000I56N",
+      "nombre": "SISTEMAS OPERATIVOS",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-5"
+    },
+    {
+      "codigo": "100000I57N",
+      "nombre": "TALLER DE PROGRAMACIÓN WEB",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "ciclo-5"
+    },
+    {
+      "codigo": "100000N21I",
+      "nombre": "ADMINISTRACIÓN Y ORGANIZACIÓN DE EMPRESAS",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-6"
+    },
+    {
+      "codigo": "100000I60N",
+      "nombre": "ANÁLISIS Y DISEÑO DE SISTEMAS DE INFORMACIÓN",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 4,
+      "ubicacion": "ciclo-6"
+    },
+    {
+      "codigo": "100000I58N",
+      "nombre": "CURSO INTEGRADOR I: SISTEMAS - SOFTWARE",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-6"
+    },
+    {
+      "codigo": "100000I33N",
+      "nombre": "GESTIÓN DE PROYECTOS",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-6"
+    },
+    {
+      "codigo": "100000SI58",
+      "nombre": "HOJAS DE ESTILO EN CASCADA AVANZADO",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "ciclo-6"
+    },
+    {
+      "codigo": "100000SI56",
+      "nombre": "JAVA SCRIPT AVANZADO",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-6"
+    },
+    {
+      "codigo": "100000SI57",
+      "nombre": "MARCOS DE DESARROLLO WEB",
+      "estado": "APROBADO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-6"
+    },
+    {
+      "codigo": "100000ST61",
+      "nombre": "DESARROLLO WEB INTEGRADO",
+      "estado": "EN_CURSO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "ciclo-7"
+    },
+    {
+      "codigo": "100000SI67",
+      "nombre": "DISEÑO DE PRODUCTOS Y SERVICIOS",
+      "estado": "EN_CURSO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-7"
+    },
+    {
+      "codigo": "100000S61T",
+      "nombre": "HERRAMIENTAS DE DESARROLLO",
+      "estado": "EN_CURSO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-7"
+    },
+    {
+      "codigo": "100000SI68",
+      "nombre": "LENGUAJES DE PROGRAMACIÓN",
+      "estado": "EN_CURSO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "ciclo-7"
+    },
+    {
+      "codigo": "100000SI66",
+      "nombre": "LIDERAZGO Y GESTIÓN DE EQUIPOS",
+      "estado": "EN_CURSO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-7"
+    },
+    {
+      "codigo": "100000I45N",
+      "nombre": "SEGURIDAD INFORMÁTICA",
+      "estado": "EN_CURSO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-7"
+    },
+    {
+      "codigo": "100000SI69",
+      "nombre": "TEORÍA DE SISTEMAS",
+      "estado": "EN_CURSO",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-7"
+    },
+    {
+      "codigo": "100000S06I",
+      "nombre": "DISEÑO E IMPLEMENTACIÓN DE ARQUITECTURA EMPRESARIAL",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-8"
+    },
+    {
+      "codigo": "100000S72T",
+      "nombre": "GESTIÓN DEL SERVICIO TI",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-8"
+    },
+    {
+      "codigo": "100000S73T",
+      "nombre": "HERRAMIENTAS DE PROTOTIPADO",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-8"
+    },
+    {
+      "codigo": "100000H01C",
+      "nombre": "HERRAMIENTAS PARA LA COMUNICACIÓN EFECTIVA",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-8"
+    },
+    {
+      "codigo": "100000TD09",
+      "nombre": "INNOVACIÓN Y TRANSFORMACIÓN DIGITAL",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "ciclo-8"
+    },
+    {
+      "codigo": "100000I62N",
+      "nombre": "INTELIGENCIA DE NEGOCIOS",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 4,
+      "ubicacion": "ciclo-8"
+    },
+    {
+      "codigo": "100000S71T",
+      "nombre": "NEGOCIACIÓN Y NARRATIVA",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "ciclo-8"
+    },
+    {
+      "codigo": "100000S09I",
+      "nombre": "CURSO INTEGRADOR II: SISTEMAS",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000SI82",
+      "nombre": "FORMACIÓN PARA LA INVESTIGACIÓN - SISTEMAS",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 4,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000S02I",
+      "nombre": "GESTIÓN DEL CONOCIMIENTO",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000SI87",
+      "nombre": "INTERACCIÓN HOMBRE MAQUINA",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000S07I",
+      "nombre": "PLANEAMIENTO ESTRATÉGICO DE LAS TICs",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 4,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000SI86",
+      "nombre": "SISTEMAS DE INFORMACIÓN EMPRESARIAL",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000I64M",
+      "nombre": "CALIDAD DE SOFTWARE",
+      "estado": "PENDIENTE",
+      "tipo": "ELECTIVO",
+      "creditos": 3,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000RI07",
+      "nombre": "CONTABILIDAD GENERAL",
+      "estado": "PENDIENTE",
+      "tipo": "ELECTIVO",
+      "creditos": 3,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000ZZ28",
+      "nombre": "ELEMENTARY BUSINESS ENGLISH",
+      "estado": "PENDIENTE",
+      "tipo": "ELECTIVO",
+      "creditos": 4,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000N25I",
+      "nombre": "ÉTICA PROFESIONAL",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000N11I",
+      "nombre": "FORMACIÓN PARA LA EMPLEABILIDAD",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000CN47",
+      "nombre": "FORMACIÓN PROFESIONAL CON ENFOQUE EN DISCAPACIDAD E INCLUSIÓN",
+      "estado": "PENDIENTE",
+      "tipo": "ELECTIVO",
+      "creditos": 3,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "10000096SI",
+      "nombre": "HERRAMIENTAS DE DESARROLLO PROFESIONAL - TIC",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 2,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000NI24",
+      "nombre": "INGENIERÍA ECONÓMICA",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000SI97",
+      "nombre": "SERVICIOS CLOUD",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 3,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000SI95",
+      "nombre": "TALLER DE INVESTIGACIÓN - SISTEMAS",
+      "estado": "PENDIENTE",
+      "tipo": "OBLIGATORIO",
+      "creditos": 4,
+      "ubicacion": "banco"
+    }
+  ],
+  "periodosPlanificados": [
+    {
+      "id": "ciclo-8",
+      "etiqueta": "Ciclo 8",
+      "cursos": [
+        "100000S06I",
+        "100000S72T",
+        "100000S73T",
+        "100000H01C",
+        "100000TD09",
+        "100000I62N",
+        "100000S71T"
+      ],
+      "horas": 25,
+      "creditos": 21
+    }
+  ],
+  "proximoPeriodo": {
+    "id": "ciclo-8",
+    "etiqueta": "Ciclo 8",
+    "cursos": [
+      {
+        "codigo": "100000S06I",
+        "nombre": "DISEÑO E IMPLEMENTACIÓN DE ARQUITECTURA EMPRESARIAL",
+        "creditos": 3,
+        "horas": 4,
+        "tipo": "OBLIGATORIO",
+        "impacto": 2,
+        "longitudCadena": 2,
+        "esLaboratorio": false,
+        "jalado": false
+      },
+      {
+        "codigo": "100000S72T",
+        "nombre": "GESTIÓN DEL SERVICIO TI",
+        "creditos": 3,
+        "horas": 4,
+        "tipo": "OBLIGATORIO",
+        "impacto": 0,
+        "longitudCadena": 1,
+        "esLaboratorio": false,
+        "jalado": false
+      },
+      {
+        "codigo": "100000S73T",
+        "nombre": "HERRAMIENTAS DE PROTOTIPADO",
+        "creditos": 3,
+        "horas": 4,
+        "tipo": "OBLIGATORIO",
+        "impacto": 0,
+        "longitudCadena": 1,
+        "esLaboratorio": false,
+        "jalado": false
+      },
+      {
+        "codigo": "100000H01C",
+        "nombre": "HERRAMIENTAS PARA LA COMUNICACIÓN EFECTIVA",
+        "creditos": 3,
+        "horas": 3,
+        "tipo": "OBLIGATORIO",
+        "impacto": 1,
+        "longitudCadena": 2,
+        "esLaboratorio": false,
+        "jalado": false
+      },
+      {
+        "codigo": "100000TD09",
+        "nombre": "INNOVACIÓN Y TRANSFORMACIÓN DIGITAL",
+        "creditos": 3,
+        "horas": 4,
+        "tipo": "OBLIGATORIO",
+        "impacto": 1,
+        "longitudCadena": 2,
+        "esLaboratorio": false,
+        "jalado": false
+      },
+      {
+        "codigo": "100000I62N",
+        "nombre": "INTELIGENCIA DE NEGOCIOS",
+        "creditos": 4,
+        "horas": 4,
+        "tipo": "OBLIGATORIO",
+        "impacto": 2,
+        "longitudCadena": 2,
+        "esLaboratorio": false,
+        "jalado": false
+      },
+      {
+        "codigo": "100000S71T",
+        "nombre": "NEGOCIACIÓN Y NARRATIVA",
+        "creditos": 2,
+        "horas": 2,
+        "tipo": "OBLIGATORIO",
+        "impacto": 0,
+        "longitudCadena": 1,
+        "esLaboratorio": false,
+        "jalado": false
+      }
+    ],
+    "totalHoras": 25,
+    "totalCreditos": 21,
+    "horasExceso": 3
+  },
+  "jalados": [],
+  "financiero": {
+    "moneda": "PEN",
+    "referencia": "Tarifario 2026 Ate (referencial)",
+    "metodoPagoElegido": {
+      "id": "sin_descuento",
+      "nombre": "Sin descuento"
+    },
+    "costoHoraAdicional": 38.81,
+    "presupuestoMensual": 900,
+    "presupuestoFuente": "plan",
+    "proximoPeriodo": [
+      {
+        "id": "sin_descuento",
+        "nombre": "Sin descuento",
+        "matricula": 398,
+        "numeroCuotas": 5,
+        "cuotaMensual": 931.43,
+        "total": 5055.15,
+        "diferenciaPresupuesto": -31.43
+      },
+      {
+        "id": "interbank_scotiabank",
+        "nombre": "Interbank / Scotiabank — pronto pago",
+        "matricula": 398,
+        "numeroCuotas": 5,
+        "cuotaMensual": 884.86,
+        "total": 4822.3,
+        "diferenciaPresupuesto": 15.14
+      },
+      {
+        "id": "bcp_bbva",
+        "nombre": "BCP / BBVA — pronto pago",
+        "matricula": 398,
+        "numeroCuotas": 5,
+        "cuotaMensual": 908.14,
+        "total": 4938.7,
+        "diferenciaPresupuesto": -8.14
+      },
+      {
+        "id": "pago_unico",
+        "nombre": "Pago único (7.5 % de descuento)",
+        "matricula": 398,
+        "numeroCuotas": 5,
+        "cuotaMensual": null,
+        "total": 4705.86,
+        "diferenciaPresupuesto": null
+      }
+    ],
+    "planCompleto": [
+      {
+        "id": "sin_descuento",
+        "nombre": "Sin descuento",
+        "total": 5055.15
+      },
+      {
+        "id": "interbank_scotiabank",
+        "nombre": "Interbank / Scotiabank — pronto pago",
+        "total": 4822.3
+      },
+      {
+        "id": "bcp_bbva",
+        "nombre": "BCP / BBVA — pronto pago",
+        "total": 4938.7
+      },
+      {
+        "id": "pago_unico",
+        "nombre": "Pago único (7.5 % de descuento)",
+        "total": 4705.86
+      }
+    ]
+  },
+  "carga": {
+    "nivel": "riesgo",
+    "puntos": 5,
+    "horas": 25,
+    "topeEscala": 22,
+    "limiteRecomendado": 24,
+    "cursos4HorasOMas": 5,
+    "laboratorios": 0,
+    "cadenasLargas": 0,
+    "motivos": [
+      "Supera las 24 h recomendadas (25 h).",
+      "5 cursos de 4 h o más."
+    ]
+  },
+  "whatIf": [
+    {
+      "codigo": "100000ST61",
+      "cursosBloqueados": [],
+      "planificadosInvalidos": [],
+      "ventanaSiJala": [
+        "ciclo-8"
+      ],
+      "origen": "EN_CURSO"
+    },
+    {
+      "codigo": "100000SI67",
+      "cursosBloqueados": [
+        "100000S73T",
+        "100000SI87"
+      ],
+      "planificadosInvalidos": [
+        {
+          "codigo": "100000S73T",
+          "periodoId": "ciclo-8"
+        }
+      ],
+      "ventanaSiJala": [
+        "ciclo-8"
+      ],
+      "origen": "EN_CURSO"
+    },
+    {
+      "codigo": "100000S61T",
+      "cursosBloqueados": [
+        "100000I62N",
+        "100000S02I",
+        "100000S09I"
+      ],
+      "planificadosInvalidos": [
+        {
+          "codigo": "100000I62N",
+          "periodoId": "ciclo-8"
+        }
+      ],
+      "ventanaSiJala": [
+        "ciclo-8"
+      ],
+      "origen": "EN_CURSO"
+    },
+    {
+      "codigo": "100000SI68",
+      "cursosBloqueados": [],
+      "planificadosInvalidos": [],
+      "ventanaSiJala": [
+        "ciclo-8"
+      ],
+      "origen": "EN_CURSO"
+    },
+    {
+      "codigo": "100000SI66",
+      "cursosBloqueados": [],
+      "planificadosInvalidos": [],
+      "ventanaSiJala": [
+        "ciclo-8"
+      ],
+      "origen": "EN_CURSO"
+    },
+    {
+      "codigo": "100000I45N",
+      "cursosBloqueados": [],
+      "planificadosInvalidos": [],
+      "ventanaSiJala": [
+        "ciclo-8"
+      ],
+      "origen": "EN_CURSO"
+    },
+    {
+      "codigo": "100000SI69",
+      "cursosBloqueados": [],
+      "planificadosInvalidos": [],
+      "ventanaSiJala": [
+        "ciclo-8"
+      ],
+      "origen": "EN_CURSO"
+    },
+    {
+      "codigo": "100000S06I",
+      "cursosBloqueados": [
+        "100000S07I",
+        "100000S09I"
+      ],
+      "planificadosInvalidos": [],
+      "ventanaSiJala": [
+        "verano-8",
+        "ciclo-9"
+      ],
+      "origen": "PROXIMO_PERIODO"
+    },
+    {
+      "codigo": "100000S72T",
+      "cursosBloqueados": [],
+      "planificadosInvalidos": [],
+      "ventanaSiJala": [
+        "verano-8",
+        "ciclo-9"
+      ],
+      "origen": "PROXIMO_PERIODO"
+    },
+    {
+      "codigo": "100000S73T",
+      "cursosBloqueados": [],
+      "planificadosInvalidos": [],
+      "ventanaSiJala": [
+        "verano-8",
+        "ciclo-9"
+      ],
+      "origen": "PROXIMO_PERIODO"
+    },
+    {
+      "codigo": "100000H01C",
+      "cursosBloqueados": [
+        "100000N11I"
+      ],
+      "planificadosInvalidos": [],
+      "ventanaSiJala": [
+        "verano-8",
+        "ciclo-9"
+      ],
+      "origen": "PROXIMO_PERIODO"
+    },
+    {
+      "codigo": "100000TD09",
+      "cursosBloqueados": [
+        "10000096SI"
+      ],
+      "planificadosInvalidos": [],
+      "ventanaSiJala": [
+        "verano-8",
+        "ciclo-9"
+      ],
+      "origen": "PROXIMO_PERIODO"
+    },
+    {
+      "codigo": "100000I62N",
+      "cursosBloqueados": [
+        "100000S02I",
+        "100000S09I"
+      ],
+      "planificadosInvalidos": [],
+      "ventanaSiJala": [
+        "verano-8",
+        "ciclo-9"
+      ],
+      "origen": "PROXIMO_PERIODO"
+    },
+    {
+      "codigo": "100000S71T",
+      "cursosBloqueados": [],
+      "planificadosInvalidos": [],
+      "ventanaSiJala": [
+        "verano-8",
+        "ciclo-9"
+      ],
+      "origen": "PROXIMO_PERIODO"
+    }
+  ],
+  "rutaSugerida": {
+    "propuesta": [
+      {
+        "periodoId": "ciclo-8",
+        "cursos": [
+          "100000S06I",
+          "100000S72T",
+          "100000S73T",
+          "100000H01C",
+          "100000TD09",
+          "100000I62N",
+          "100000S71T"
+        ],
+        "horas": 25,
+        "creditos": 21
+      },
+      {
+        "periodoId": "ciclo-9",
+        "cursos": [
+          "100000S09I",
+          "100000SI82",
+          "100000S02I",
+          "100000S07I",
+          "100000SI86",
+          "100000SI97"
+        ],
+        "horas": 22,
+        "creditos": 19
+      },
+      {
+        "periodoId": "ciclo-10",
+        "cursos": [
+          "100000SI87",
+          "100000N25I",
+          "100000N11I",
+          "100000CN47",
+          "10000096SI",
+          "100000NI24",
+          "100000SI95"
+        ],
+        "horas": 21,
+        "creditos": 20
+      }
+    ],
+    "ciclosRestantes": 3,
+    "cicloFinal": 10,
+    "noPlanificados": [],
+    "aplicadaEnMalla": false
+  },
+  "electivos": [
+    {
+      "codigo": "100000I64M",
+      "nombre": "CALIDAD DE SOFTWARE",
+      "creditos": 3,
+      "horas": 3,
+      "area": "Ingeniería de software",
+      "areaConfirmada": false,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000RI07",
+      "nombre": "CONTABILIDAD GENERAL",
+      "creditos": 3,
+      "horas": 3,
+      "area": "Gestión y finanzas",
+      "areaConfirmada": false,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000ZZ28",
+      "nombre": "ELEMENTARY BUSINESS ENGLISH",
+      "creditos": 4,
+      "horas": 4,
+      "area": "Idiomas",
+      "areaConfirmada": false,
+      "ubicacion": "banco"
+    },
+    {
+      "codigo": "100000CN47",
+      "nombre": "FORMACIÓN PROFESIONAL CON ENFOQUE EN DISCAPACIDAD E INCLUSIÓN",
+      "creditos": 3,
+      "horas": 3,
+      "area": "Responsabilidad social e inclusión",
+      "areaConfirmada": false,
+      "ubicacion": "banco"
+    }
+  ],
+  "limites": {
+    "creditosMinimos": 12,
+    "creditosMaximos": 40,
+    "horasRecomendadasPeriodo": 24,
+    "horasMaximasPlanificacion": 22,
+    "creditosMaximosVerano": 11,
+    "creditosMinimosElectivos": 3,
+    "factorHorasVerano": 2,
+    "topeEscalaPension": 22
+  },
+  "foco": {
+    "tipo": "curso",
     "codigo": "100000I62N",
     "nombre": "INTELIGENCIA DE NEGOCIOS",
+    "estado": "PENDIENTE",
+    "tipoCurso": "OBLIGATORIO",
     "creditos": 4,
     "horas": 4,
-    "tipo": "OBLIGATORIO",
+    "ubicacion": "ciclo-8",
+    "esLaboratorio": false,
+    "jalado": false,
     "impacto": 2,
     "longitudCadena": 2,
-    "esLaboratorio": false,
-    "jalado": false
-   },
-   {
-    "codigo": "100000S71T",
-    "nombre": "NEGOCIACIÓN Y NARRATIVA",
-    "creditos": 2,
-    "horas": 2,
-    "tipo": "OBLIGATORIO",
-    "impacto": 0,
-    "longitudCadena": 1,
-    "esLaboratorio": false,
-    "jalado": false
-   }
-  ],
-  "totalHoras": 25,
-  "totalCreditos": 21,
-  "horasExceso": 3
- },
- "jalados": [],
- "financiero": {
-  "moneda": "PEN",
-  "referencia": "Tarifario 2026 Ate (referencial)",
-  "metodoPagoElegido": {
-   "id": "sin_descuento",
-   "nombre": "Sin descuento"
+    "prerrequisitos": [
+      {
+        "codigo": "100000S61T",
+        "nombre": "HERRAMIENTAS DE DESARROLLO",
+        "estado": "EN_CURSO"
+      },
+      {
+        "codigo": "100000SI46",
+        "nombre": "BASE DE DATOS II",
+        "estado": "APROBADO"
+      }
+    ],
+    "habilitaA": [
+      "100000S09I",
+      "100000S02I"
+    ],
+    "whatIf": {
+      "codigo": "100000I62N",
+      "cursosBloqueados": [
+        "100000S02I",
+        "100000S09I"
+      ],
+      "planificadosInvalidos": [],
+      "ventanaSiJala": [
+        "verano-8",
+        "ciclo-9"
+      ]
+    },
+    "ventanaRecuperacion": [],
+    "area": null
   },
-  "costoHoraAdicional": 38.81,
-  "presupuestoMensual": 900,
-  "presupuestoFuente": "plan",
-  "proximoPeriodo": [
-   {
-    "id": "sin_descuento",
-    "nombre": "Sin descuento",
-    "matricula": 398,
-    "numeroCuotas": 5,
-    "cuotaMensual": 931.43,
-    "total": 5055.15,
-    "diferenciaPresupuesto": -31.43
-   },
-   {
-    "id": "interbank_scotiabank",
-    "nombre": "Interbank / Scotiabank — pronto pago",
-    "matricula": 398,
-    "numeroCuotas": 5,
-    "cuotaMensual": 884.86,
-    "total": 4822.3,
-    "diferenciaPresupuesto": 15.14
-   },
-   {
-    "id": "bcp_bbva",
-    "nombre": "BCP / BBVA — pronto pago",
-    "matricula": 398,
-    "numeroCuotas": 5,
-    "cuotaMensual": 908.14,
-    "total": 4938.7,
-    "diferenciaPresupuesto": -8.14
-   },
-   {
-    "id": "pago_unico",
-    "nombre": "Pago único (7.5 % de descuento)",
-    "matricula": 398,
-    "numeroCuotas": 5,
-    "cuotaMensual": null,
-    "total": 4705.86,
-    "diferenciaPresupuesto": null
-   }
-  ],
-  "planCompleto": [
-   {
-    "id": "sin_descuento",
-    "nombre": "Sin descuento",
-    "total": 5055.15
-   },
-   {
-    "id": "interbank_scotiabank",
-    "nombre": "Interbank / Scotiabank — pronto pago",
-    "total": 4822.3
-   },
-   {
-    "id": "bcp_bbva",
-    "nombre": "BCP / BBVA — pronto pago",
-    "total": 4938.7
-   },
-   {
-    "id": "pago_unico",
-    "nombre": "Pago único (7.5 % de descuento)",
-    "total": 4705.86
-   }
-  ]
- },
- "carga": {
-  "nivel": "riesgo",
-  "puntos": 5,
-  "horas": 25,
-  "topeEscala": 22,
-  "limiteRecomendado": 24,
-  "cursos4HorasOMas": 5,
-  "laboratorios": 0,
-  "cadenasLargas": 0,
-  "motivos": [
-   "Supera las 24 h recomendadas (25 h).",
-   "5 cursos de 4 h o más."
-  ]
- },
- "whatIf": [
-  {
-   "codigo": "100000ST61",
-   "cursosBloqueados": [],
-   "planificadosInvalidos": [],
-   "ventanaSiJala": [
-    "ciclo-8"
-   ],
-   "origen": "EN_CURSO"
+  "derivados": {
+    "horas": {
+      "proximoPeriodo": 25,
+      "topeEscala": 22,
+      "sobreTopeEscala": 3,
+      "margenTopeEscala": 0,
+      "recomendadas": 24,
+      "sobreRecomendadas": 1,
+      "margenRecomendadas": 0
+    },
+    "presupuesto": [
+      {
+        "id": "sin_descuento",
+        "alcanza": false,
+        "diferenciaMes": -31.43,
+        "faltaPorMes": 31.43,
+        "sobraPorMes": 0,
+        "diferenciaCiclo": -157.15,
+        "faltaPorCiclo": 157.15,
+        "sobraPorCiclo": 0
+      },
+      {
+        "id": "interbank_scotiabank",
+        "alcanza": true,
+        "diferenciaMes": 15.14,
+        "faltaPorMes": 0,
+        "sobraPorMes": 15.14,
+        "diferenciaCiclo": 75.7,
+        "faltaPorCiclo": 0,
+        "sobraPorCiclo": 75.7
+      },
+      {
+        "id": "bcp_bbva",
+        "alcanza": false,
+        "diferenciaMes": -8.14,
+        "faltaPorMes": 8.14,
+        "sobraPorMes": 0,
+        "diferenciaCiclo": -40.7,
+        "faltaPorCiclo": 40.7,
+        "sobraPorCiclo": 0
+      }
+    ],
+    "pagoUnico": {
+      "pensionAlInicio": 4307.86,
+      "matricula": 398,
+      "totalCiclo": 4705.86,
+      "ahorroVsSinDescuento": 349.29,
+      "diferenciaVsPresupuestoDelCiclo": 192.14,
+      "comparacion": "comparación referencial"
+    },
+    "horasSinCadaCurso": [
+      {
+        "codigo": "100000S06I",
+        "nombre": "DISEÑO E IMPLEMENTACIÓN DE ARQUITECTURA EMPRESARIAL",
+        "horasSinElCurso": 21,
+        "quedaBajoTopeEscala": true
+      },
+      {
+        "codigo": "100000S72T",
+        "nombre": "GESTIÓN DEL SERVICIO TI",
+        "horasSinElCurso": 21,
+        "quedaBajoTopeEscala": true
+      },
+      {
+        "codigo": "100000S73T",
+        "nombre": "HERRAMIENTAS DE PROTOTIPADO",
+        "horasSinElCurso": 21,
+        "quedaBajoTopeEscala": true
+      },
+      {
+        "codigo": "100000H01C",
+        "nombre": "HERRAMIENTAS PARA LA COMUNICACIÓN EFECTIVA",
+        "horasSinElCurso": 22,
+        "quedaBajoTopeEscala": true
+      },
+      {
+        "codigo": "100000TD09",
+        "nombre": "INNOVACIÓN Y TRANSFORMACIÓN DIGITAL",
+        "horasSinElCurso": 21,
+        "quedaBajoTopeEscala": true
+      },
+      {
+        "codigo": "100000I62N",
+        "nombre": "INTELIGENCIA DE NEGOCIOS",
+        "horasSinElCurso": 21,
+        "quedaBajoTopeEscala": true
+      },
+      {
+        "codigo": "100000S71T",
+        "nombre": "NEGOCIACIÓN Y NARRATIVA",
+        "horasSinElCurso": 23,
+        "quedaBajoTopeEscala": false
+      }
+    ],
+    "creditosElectivosFaltantes": 3,
+    "creditos": {
+      "totalMalla": 210,
+      "obligatorios": 197,
+      "electivosMinimos": 3,
+      "paraEgresar": 200,
+      "aprobadosQueCuentan": 121,
+      "enCurso": 19,
+      "faltanParaEgresar": 79,
+      "faltanSiApruebaEnCurso": 60,
+      "ciclosRestantes": 3
+    },
+    "cursosProximoPeriodo": [
+      {
+        "codigo": "100000S06I",
+        "nombre": "DISEÑO E IMPLEMENTACIÓN DE ARQUITECTURA EMPRESARIAL",
+        "creditos": 3,
+        "horas": 4,
+        "estado": "PENDIENTE",
+        "jalado": false,
+        "sePuedeMover": true,
+        "bloquearia": []
+      },
+      {
+        "codigo": "100000S72T",
+        "nombre": "GESTIÓN DEL SERVICIO TI",
+        "creditos": 3,
+        "horas": 4,
+        "estado": "PENDIENTE",
+        "jalado": false,
+        "sePuedeMover": true,
+        "bloquearia": []
+      },
+      {
+        "codigo": "100000S73T",
+        "nombre": "HERRAMIENTAS DE PROTOTIPADO",
+        "creditos": 3,
+        "horas": 4,
+        "estado": "PENDIENTE",
+        "jalado": false,
+        "sePuedeMover": true,
+        "bloquearia": []
+      },
+      {
+        "codigo": "100000H01C",
+        "nombre": "HERRAMIENTAS PARA LA COMUNICACIÓN EFECTIVA",
+        "creditos": 3,
+        "horas": 3,
+        "estado": "PENDIENTE",
+        "jalado": false,
+        "sePuedeMover": true,
+        "bloquearia": []
+      },
+      {
+        "codigo": "100000TD09",
+        "nombre": "INNOVACIÓN Y TRANSFORMACIÓN DIGITAL",
+        "creditos": 3,
+        "horas": 4,
+        "estado": "PENDIENTE",
+        "jalado": false,
+        "sePuedeMover": true,
+        "bloquearia": []
+      },
+      {
+        "codigo": "100000I62N",
+        "nombre": "INTELIGENCIA DE NEGOCIOS",
+        "creditos": 4,
+        "horas": 4,
+        "estado": "PENDIENTE",
+        "jalado": false,
+        "sePuedeMover": true,
+        "bloquearia": []
+      },
+      {
+        "codigo": "100000S71T",
+        "nombre": "NEGOCIACIÓN Y NARRATIVA",
+        "creditos": 2,
+        "horas": 2,
+        "estado": "PENDIENTE",
+        "jalado": false,
+        "sePuedeMover": true,
+        "bloquearia": []
+      }
+    ],
+    "proximoPeriodoConJalados": null,
+    "planificadosBloqueadosPorJalado": []
   },
-  {
-   "codigo": "100000SI67",
-   "cursosBloqueados": [
-    "100000S73T",
-    "100000SI87"
-   ],
-   "planificadosInvalidos": [
-    {
-     "codigo": "100000S73T",
-     "periodoId": "ciclo-8"
-    }
-   ],
-   "ventanaSiJala": [
-    "ciclo-8"
-   ],
-   "origen": "EN_CURSO"
-  },
-  {
-   "codigo": "100000S61T",
-   "cursosBloqueados": [
-    "100000I62N",
-    "100000S02I",
-    "100000S09I"
-   ],
-   "planificadosInvalidos": [
-    {
-     "codigo": "100000I62N",
-     "periodoId": "ciclo-8"
-    }
-   ],
-   "ventanaSiJala": [
-    "ciclo-8"
-   ],
-   "origen": "EN_CURSO"
-  },
-  {
-   "codigo": "100000SI68",
-   "cursosBloqueados": [],
-   "planificadosInvalidos": [],
-   "ventanaSiJala": [
-    "ciclo-8"
-   ],
-   "origen": "EN_CURSO"
-  },
-  {
-   "codigo": "100000SI66",
-   "cursosBloqueados": [],
-   "planificadosInvalidos": [],
-   "ventanaSiJala": [
-    "ciclo-8"
-   ],
-   "origen": "EN_CURSO"
-  },
-  {
-   "codigo": "100000I45N",
-   "cursosBloqueados": [],
-   "planificadosInvalidos": [],
-   "ventanaSiJala": [
-    "ciclo-8"
-   ],
-   "origen": "EN_CURSO"
-  },
-  {
-   "codigo": "100000SI69",
-   "cursosBloqueados": [],
-   "planificadosInvalidos": [],
-   "ventanaSiJala": [
-    "ciclo-8"
-   ],
-   "origen": "EN_CURSO"
-  },
-  {
-   "codigo": "100000S06I",
-   "cursosBloqueados": [
-    "100000S07I",
-    "100000S09I"
-   ],
-   "planificadosInvalidos": [],
-   "ventanaSiJala": [
-    "verano-8",
-    "ciclo-9"
-   ],
-   "origen": "PROXIMO_PERIODO"
-  },
-  {
-   "codigo": "100000S72T",
-   "cursosBloqueados": [],
-   "planificadosInvalidos": [],
-   "ventanaSiJala": [
-    "verano-8",
-    "ciclo-9"
-   ],
-   "origen": "PROXIMO_PERIODO"
-  },
-  {
-   "codigo": "100000S73T",
-   "cursosBloqueados": [],
-   "planificadosInvalidos": [],
-   "ventanaSiJala": [
-    "verano-8",
-    "ciclo-9"
-   ],
-   "origen": "PROXIMO_PERIODO"
-  },
-  {
-   "codigo": "100000H01C",
-   "cursosBloqueados": [
-    "100000N11I"
-   ],
-   "planificadosInvalidos": [],
-   "ventanaSiJala": [
-    "verano-8",
-    "ciclo-9"
-   ],
-   "origen": "PROXIMO_PERIODO"
-  },
-  {
-   "codigo": "100000TD09",
-   "cursosBloqueados": [
-    "10000096SI"
-   ],
-   "planificadosInvalidos": [],
-   "ventanaSiJala": [
-    "verano-8",
-    "ciclo-9"
-   ],
-   "origen": "PROXIMO_PERIODO"
-  },
-  {
-   "codigo": "100000I62N",
-   "cursosBloqueados": [
-    "100000S02I",
-    "100000S09I"
-   ],
-   "planificadosInvalidos": [],
-   "ventanaSiJala": [
-    "verano-8",
-    "ciclo-9"
-   ],
-   "origen": "PROXIMO_PERIODO"
-  },
-  {
-   "codigo": "100000S71T",
-   "cursosBloqueados": [],
-   "planificadosInvalidos": [],
-   "ventanaSiJala": [
-    "verano-8",
-    "ciclo-9"
-   ],
-   "origen": "PROXIMO_PERIODO"
+  "propuestaConLimites": null,
+  "descuentos": {
+    "metodosPago": [
+      {
+        "id": "sin_descuento",
+        "nombre": "Sin descuento",
+        "descuentoPorcentaje": 0,
+        "requiereProntoPago": false
+      },
+      {
+        "id": "interbank_scotiabank",
+        "nombre": "Interbank / Scotiabank — pronto pago",
+        "descuentoPorcentaje": 5,
+        "requiereProntoPago": true
+      },
+      {
+        "id": "bcp_bbva",
+        "nombre": "BCP / BBVA — pronto pago",
+        "descuentoPorcentaje": 2.5,
+        "requiereProntoPago": true
+      }
+    ],
+    "pagoUnico": {
+      "descuentoPorcentaje": 7.5,
+      "seCobra": "todo junto al inicio del ciclo",
+      "soloCiclosRegulares": true
+    },
+    "costoHoraAdicional": 38.81,
+    "horasSinRecargo": 22,
+    "descuentoSobreRecargo": true,
+    "veranoConDescuento": false,
+    "ubicacionEnApp": "Estrategia → Simulación de cuotas: el método de pago se elige en Configuración y el pago único con \"Aplicar pago único\" en cada ciclo."
   }
- ],
- "ruta": {
-  "propuesta": [
-   {
-    "periodoId": "ciclo-8",
-    "cursos": [
-     "100000S06I",
-     "100000H01C",
-     "100000TD09",
-     "100000I62N",
-     "100000SI82",
-     "100000SI86"
-    ]
-   },
-   {
-    "periodoId": "ciclo-9",
-    "cursos": [
-     "100000S72T",
-     "100000S73T",
-     "100000S71T",
-     "100000S02I",
-     "100000SI87",
-     "100000N11I",
-     "10000096SI"
-    ]
-   },
-   {
-    "periodoId": "ciclo-10",
-    "cursos": [
-     "100000S09I",
-     "100000S07I",
-     "100000N25I",
-     "100000NI24",
-     "100000SI97",
-     "100000SI95"
-    ]
-   }
-  ],
-  "ciclosRestantes": 3,
-  "cicloFinal": 10,
-  "noPlanificados": [
-   "100000CN47"
-  ]
- },
- "electivos": [
-  {
-   "codigo": "100000I64M",
-   "nombre": "CALIDAD DE SOFTWARE",
-   "creditos": 3,
-   "horas": 3,
-   "area": "Ingeniería de software",
-   "areaConfirmada": false,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000RI07",
-   "nombre": "CONTABILIDAD GENERAL",
-   "creditos": 3,
-   "horas": 3,
-   "area": "Gestión y finanzas",
-   "areaConfirmada": false,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000ZZ28",
-   "nombre": "ELEMENTARY BUSINESS ENGLISH",
-   "creditos": 4,
-   "horas": 4,
-   "area": "Idiomas",
-   "areaConfirmada": false,
-   "ubicacion": "banco"
-  },
-  {
-   "codigo": "100000CN47",
-   "nombre": "FORMACIÓN PROFESIONAL CON ENFOQUE EN DISCAPACIDAD E INCLUSIÓN",
-   "creditos": 3,
-   "horas": 3,
-   "area": "Responsabilidad social e inclusión",
-   "areaConfirmada": false,
-   "ubicacion": "banco"
-  }
- ],
- "limites": {
-  "creditosMinimos": 12,
-  "creditosMaximos": 40,
-  "horasRecomendadasPeriodo": 24,
-  "horasMaximasPlanificacion": 22,
-  "creditosMaximosVerano": 11,
-  "creditosMinimosElectivos": 3,
-  "factorHorasVerano": 2,
-  "topeEscalaPension": 22
- },
- "foco": {
-  "tipo": "curso",
-  "codigo": "100000I62N",
-  "nombre": "INTELIGENCIA DE NEGOCIOS",
-  "estado": "PENDIENTE",
-  "tipoCurso": "OBLIGATORIO",
-  "creditos": 4,
-  "horas": 4,
-  "ubicacion": "ciclo-8",
-  "esLaboratorio": false,
-  "jalado": false,
-  "impacto": 2,
-  "longitudCadena": 2,
-  "prerrequisitos": [
-   {
-    "codigo": "100000S61T",
-    "nombre": "HERRAMIENTAS DE DESARROLLO",
-    "estado": "EN_CURSO"
-   },
-   {
-    "codigo": "100000SI46",
-    "nombre": "BASE DE DATOS II",
-    "estado": "APROBADO"
-   }
-  ],
-  "habilitaA": [
-   "100000S09I",
-   "100000S02I"
-  ],
-  "whatIf": {
-   "codigo": "100000I62N",
-   "cursosBloqueados": [
-    "100000S02I",
-    "100000S09I"
-   ],
-   "planificadosInvalidos": [],
-   "ventanaSiJala": [
-    "verano-8",
-    "ciclo-9"
-   ]
-  },
-  "ventanaRecuperacion": [],
-  "area": null
- },
- "derivados": {
-  "horas": {
-   "proximoPeriodo": 25,
-   "topeEscala": 22,
-   "sobreTopeEscala": 3,
-   "margenTopeEscala": 0,
-   "recomendadas": 24,
-   "sobreRecomendadas": 1,
-   "margenRecomendadas": 0
-  },
-  "presupuesto": [
-   {
-    "id": "sin_descuento",
-    "alcanza": false,
-    "diferenciaMes": -31.43,
-    "faltaPorMes": 31.43,
-    "sobraPorMes": 0,
-    "diferenciaCiclo": -157.15,
-    "faltaPorCiclo": 157.15,
-    "sobraPorCiclo": 0
-   },
-   {
-    "id": "interbank_scotiabank",
-    "alcanza": true,
-    "diferenciaMes": 15.14,
-    "faltaPorMes": 0,
-    "sobraPorMes": 15.14,
-    "diferenciaCiclo": 75.7,
-    "faltaPorCiclo": 0,
-    "sobraPorCiclo": 75.7
-   },
-   {
-    "id": "bcp_bbva",
-    "alcanza": false,
-    "diferenciaMes": -8.14,
-    "faltaPorMes": 8.14,
-    "sobraPorMes": 0,
-    "diferenciaCiclo": -40.7,
-    "faltaPorCiclo": 40.7,
-    "sobraPorCiclo": 0
-   }
-  ],
-  "pagoUnico": {
-   "pensionAlInicio": 4307.86,
-   "matricula": 398,
-   "totalCiclo": 4705.86,
-   "ahorroVsSinDescuento": 349.29,
-   "diferenciaVsPresupuestoDelCiclo": 192.14,
-   "comparacion": "comparación referencial"
-  },
-  "horasSinCadaCurso": [
-   {
-    "codigo": "100000S06I",
-    "nombre": "DISEÑO E IMPLEMENTACIÓN DE ARQUITECTURA EMPRESARIAL",
-    "horasSinElCurso": 21,
-    "quedaBajoTopeEscala": true
-   },
-   {
-    "codigo": "100000S72T",
-    "nombre": "GESTIÓN DEL SERVICIO TI",
-    "horasSinElCurso": 21,
-    "quedaBajoTopeEscala": true
-   },
-   {
-    "codigo": "100000S73T",
-    "nombre": "HERRAMIENTAS DE PROTOTIPADO",
-    "horasSinElCurso": 21,
-    "quedaBajoTopeEscala": true
-   },
-   {
-    "codigo": "100000H01C",
-    "nombre": "HERRAMIENTAS PARA LA COMUNICACIÓN EFECTIVA",
-    "horasSinElCurso": 22,
-    "quedaBajoTopeEscala": true
-   },
-   {
-    "codigo": "100000TD09",
-    "nombre": "INNOVACIÓN Y TRANSFORMACIÓN DIGITAL",
-    "horasSinElCurso": 21,
-    "quedaBajoTopeEscala": true
-   },
-   {
-    "codigo": "100000I62N",
-    "nombre": "INTELIGENCIA DE NEGOCIOS",
-    "horasSinElCurso": 21,
-    "quedaBajoTopeEscala": true
-   },
-   {
-    "codigo": "100000S71T",
-    "nombre": "NEGOCIACIÓN Y NARRATIVA",
-    "horasSinElCurso": 23,
-    "quedaBajoTopeEscala": false
-   }
-  ],
-  "creditosElectivosFaltantes": 3,
-  "creditos": {
-   "totalMalla": 210,
-   "obligatorios": 197,
-   "electivosMinimos": 3,
-   "paraEgresar": 200,
-   "aprobadosQueCuentan": 121,
-   "enCurso": 19,
-   "faltanParaEgresar": 79,
-   "faltanSiApruebaEnCurso": 60,
-   "ciclosRestantes": 3
-  },
-  "cursosProximoPeriodo": [
-   {
-    "codigo": "100000S06I",
-    "nombre": "DISEÑO E IMPLEMENTACIÓN DE ARQUITECTURA EMPRESARIAL",
-    "creditos": 3,
-    "horas": 4,
-    "estado": "PENDIENTE",
-    "jalado": false,
-    "sePuedeMover": true,
-    "bloquearia": []
-   },
-   {
-    "codigo": "100000S72T",
-    "nombre": "GESTIÓN DEL SERVICIO TI",
-    "creditos": 3,
-    "horas": 4,
-    "estado": "PENDIENTE",
-    "jalado": false,
-    "sePuedeMover": true,
-    "bloquearia": []
-   },
-   {
-    "codigo": "100000S73T",
-    "nombre": "HERRAMIENTAS DE PROTOTIPADO",
-    "creditos": 3,
-    "horas": 4,
-    "estado": "PENDIENTE",
-    "jalado": false,
-    "sePuedeMover": true,
-    "bloquearia": []
-   },
-   {
-    "codigo": "100000H01C",
-    "nombre": "HERRAMIENTAS PARA LA COMUNICACIÓN EFECTIVA",
-    "creditos": 3,
-    "horas": 3,
-    "estado": "PENDIENTE",
-    "jalado": false,
-    "sePuedeMover": true,
-    "bloquearia": []
-   },
-   {
-    "codigo": "100000TD09",
-    "nombre": "INNOVACIÓN Y TRANSFORMACIÓN DIGITAL",
-    "creditos": 3,
-    "horas": 4,
-    "estado": "PENDIENTE",
-    "jalado": false,
-    "sePuedeMover": true,
-    "bloquearia": []
-   },
-   {
-    "codigo": "100000I62N",
-    "nombre": "INTELIGENCIA DE NEGOCIOS",
-    "creditos": 4,
-    "horas": 4,
-    "estado": "PENDIENTE",
-    "jalado": false,
-    "sePuedeMover": true,
-    "bloquearia": []
-   },
-   {
-    "codigo": "100000S71T",
-    "nombre": "NEGOCIACIÓN Y NARRATIVA",
-    "creditos": 2,
-    "horas": 2,
-    "estado": "PENDIENTE",
-    "jalado": false,
-    "sePuedeMover": true,
-    "bloquearia": []
-   }
-  ],
-  "proximoPeriodoConJalados": null,
-  "planificadosBloqueadosPorJalado": []
- }
 }

@@ -1,16 +1,17 @@
 import { useEffect } from 'react';
-import { AlertTriangle, Clock3, Gauge, LockKeyhole, X } from 'lucide-react';
+import { AlertTriangle, Clock3, Gauge, LockKeyhole, Sparkles, X } from 'lucide-react';
 import { pluralizar } from '../utils/pluralizar';
 import { useAcademicStore } from '../store/useAcademicStore';
 
 export function PrerequisitoToast() {
-  const { notificacionMovimiento, limpiarNotificacionMovimiento, desmarcarJalado } = useAcademicStore();
+  const { notificacionMovimiento, limpiarNotificacionMovimiento, desmarcarJalado, deshacerPlanificacion } = useAcademicStore();
 
   useEffect(() => {
     if (!notificacionMovimiento) return;
     // Se deja más tiempo cuando hay una acción Deshacer disponible.
     const timer = window.setTimeout(limpiarNotificacionMovimiento,
-      notificacionMovimiento.deshacerJalado || notificacionMovimiento.tipo === 'DATOS_DESACTUALIZADOS' ? 10000 : 5500);
+      notificacionMovimiento.deshacerJalado || notificacionMovimiento.deshacerPlan ||
+        notificacionMovimiento.tipo === 'DATOS_DESACTUALIZADOS' ? 10000 : 5500);
     return () => window.clearTimeout(timer);
   }, [notificacionMovimiento, limpiarNotificacionMovimiento]);
 
@@ -18,11 +19,13 @@ export function PrerequisitoToast() {
 
   const { tipo } = notificacionMovimiento;
   const esAdvertencia = tipo === 'LIMITE_HORAS' || tipo === 'IMPACTO_DESCENDIENTE' || tipo === 'JALADO' ||
-    tipo === 'DATOS_DESACTUALIZADOS';
+    tipo === 'DATOS_DESACTUALIZADOS' || tipo === 'PLAN_APLICADO';
   const faltantes = notificacionMovimiento.faltantes ?? [];
   const titulo =
     tipo === 'ERROR_PERSISTENCIA'
       ? 'No se pudo guardar'
+      : tipo === 'PLAN_APLICADO'
+      ? 'Propuesta aplicada'
       : tipo === 'INMOVIBLE'
       ? 'Curso bloqueado'
       : tipo === 'IMPACTO_DESCENDIENTE'
@@ -42,7 +45,9 @@ export function PrerequisitoToast() {
             : 'Carga horaria recomendada superada';
 
   const Icono =
-    tipo === 'INMOVIBLE'
+    tipo === 'PLAN_APLICADO'
+      ? Sparkles
+      : tipo === 'INMOVIBLE'
       ? LockKeyhole
       : tipo === 'PERIODO_ANTERIOR' || tipo === 'PERIODO_ACTUAL'
         ? Clock3
@@ -77,6 +82,10 @@ export function PrerequisitoToast() {
           {faltantes.length > 0 && <ul>{faltantes.map((curso) => <li key={curso.codigo}><span>{curso.codigo}</span><strong>{curso.nombre}</strong></li>)}</ul>}
           {notificacionMovimiento.deshacerJalado && <button type="button" className="planner-toast-undo"
             onClick={() => void desmarcarJalado(notificacionMovimiento.deshacerJalado!)}>Deshacer</button>}</>
+      ) : tipo === 'PLAN_APLICADO' ? (
+        <><p>{notificacionMovimiento.mensaje}</p>
+          {notificacionMovimiento.deshacerPlan && <button type="button" className="planner-toast-undo"
+            onClick={() => void deshacerPlanificacion()}>Deshacer</button>}</>
       ) : tipo === 'PRERREQUISITOS' ? (
         <>
           <p>

@@ -1,7 +1,27 @@
 import type { Curso, CursoReferencia, NotificacionMovimiento, PeriodoAcademico, PeriodoIngreso } from '../types/academic';
 import type { Tarifario } from '../types/financial';
 import type { ResultadoPlanificacionAutomatica } from '../domain/services/automaticPlanningService';
+import type { GenerateOptimalPlanInput, PropuestaPlan } from '../application/usecases/generateOptimalPlanUseCase';
 import type { StateCreator } from 'zustand';
+
+/** Límites que el alumno elige en Autogenerar (o que detecta el asistente); todos opcionales. */
+export type OpcionesAutogenerar = Pick<GenerateOptimalPlanInput,
+  'alcance' | 'maxHorasPorPeriodo' | 'maxCreditosPorPeriodo' | 'maxCuotaMensual' | 'usarVeranos' | 'conservarUbicados' | 'metodoPago' |
+  'horasEstricto' | 'creditosEstricto'>;
+
+/** Modal Autogenerar abierto, con los valores con los que se abre. */
+export interface EstadoAutogenerar {
+  inicial: OpcionesAutogenerar;
+  /** "chat": al aplicar, el chat muestra el resumen del ciclo armado (avisoPlanDesdeChat). */
+  origen?: 'chat';
+}
+
+/** Lo que la app (no la IA) cuenta en el chat después de aplicar desde él. */
+export interface AvisoPlanDesdeChat {
+  ciclo: number;
+  cursos: number;
+  horas: number;
+}
 
 export interface AcademicStore {
   cursos: Curso[];
@@ -10,6 +30,9 @@ export interface AcademicStore {
   metodoPago: string;
   /** Periodos regulares con pago único activo en la simulación. */
   pagoUnicoPorPeriodo: Record<string, boolean>;
+  /** Presupuesto mensual que el alumno escribe en Autogenerar o en "Analizar mi plan" (el mismo campo en los dos). */
+  presupuestoMensual: string;
+  setPresupuestoMensual: (valor: string) => void;
   disciplinaActiva: string;
   cursosSeleccionadosParaMatricula: string[];
   panelPlanificadorAbierto: boolean;
@@ -38,8 +61,19 @@ export interface AcademicStore {
   agregarJaladosARecuperacion: (destino?: PeriodoAcademico) => Promise<boolean>;
   reiniciarPlanificacion: () => Promise<void>;
   generarPlanificacionOptima: () => Promise<ResultadoPlanificacionAutomatica>;
-  previsualizarPlanificacionOptima: () => ResultadoPlanificacionAutomatica;
+  /** La propuesta del planificador con el estado actual y los límites dados (nada cambia en la malla). */
+  previsualizarPlanificacionOptima: (opciones?: OpcionesAutogenerar) => PropuestaPlan;
+  /** Aplica la propuesta y guarda el estado anterior para deshacerPlanificacion. */
   aplicarPlanificacionOptima: (resultado: ResultadoPlanificacionAutomatica) => Promise<void>;
+  /** Malla y total de ciclos antes del último "Aplicar a mi malla"; null si no hay nada que deshacer. */
+  planAnterior: { cursos: Curso[]; totalCiclos: number } | null;
+  /** Restaura exactamente el estado anterior al último plan aplicado. */
+  deshacerPlanificacion: () => Promise<boolean>;
+  autogenerar: EstadoAutogenerar | null;
+  abrirAutogenerar: (inicial?: OpcionesAutogenerar, origen?: 'chat') => void;
+  cerrarAutogenerar: () => void;
+  avisoPlanDesdeChat: AvisoPlanDesdeChat | null;
+  setAvisoPlanDesdeChat: (aviso: AvisoPlanDesdeChat | null) => void;
   toggleSeleccionMatricula: (codigo: string) => void;
   setTarifario: (tarifario: Tarifario) => Promise<void>;
   setMetodoPago: (metodoPago: string) => void;

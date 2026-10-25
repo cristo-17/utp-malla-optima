@@ -203,6 +203,78 @@ const DerivadosSchema = z.object({
   })),
 });
 
+/**
+ * Propuesta del planificador con los límites que el alumno pidió en su mensaje (horas, créditos, presupuesto,
+ * un ciclo más o veranos). La arma el código (D-001); la IA solo la explica y el alumno la aplica con
+ * "Aplicar a mi malla". null si el mensaje no pide límites.
+ */
+const PropuestaConLimitesSchema = z.object({
+  limites: z.object({
+    maxHorasPorPeriodo: z.number().nullable(),
+    maxCreditosPorPeriodo: z.number().nullable(),
+    /** "Menos de N": ningún periodo llega a N horas (o créditos). "Máximo / hasta / no más de N" permite N. */
+    horasEstricto: z.boolean(),
+    creditosEstricto: z.boolean(),
+    /** Presupuesto mensual que pidió el alumno; se traduce en horas con la escala del tarifario. */
+    maxCuotaMensual: monto.nullable(),
+    metodoPago: z.string().nullable(),
+    /** Horas por ciclo cuya cuota mensual no pasa maxCuotaMensual (null sin presupuesto). */
+    horasPorCuota: z.number().nullable(),
+    /** Horas máximas por ciclo con las que se armó (el menor de los límites; 22 si no pidió horas). */
+    horasAplicadas: z.number(),
+    creditosAplicados: z.number().nullable(),
+    usarVeranos: z.boolean(),
+    /** Pidió un ciclo más: la propuesta reparte la carga en un ciclo más que sin límites, con las horas mínimas. */
+    agregarCiclo: z.boolean(),
+    alcance: z.enum(['proximoPeriodo', 'hastaEgresar']),
+  }),
+  periodos: z.array(z.object({
+    periodoId: PeriodoIdSchema,
+    etiqueta: z.string(),
+    cursos: z.array(z.string()),
+    numeroCursos: z.number().int(),
+    horas: z.number(),
+    creditos: z.number(),
+    /** Cuota mensual con el método de pago elegido (en verano, sin descuento); null sin tarifario. */
+    cuotaMensual: monto.nullable(),
+    /** Pago único: la pensión del ciclo, toda al inicio; null en verano o sin tarifario. */
+    pagoUnicoAlInicio: monto.nullable(),
+  })),
+  /** Ciclos que hay que agregar después del último de la malla (11, 12…). */
+  ciclosAgregados: z.array(z.number().int()),
+  veranosUsados: z.array(PeriodoIdSchema),
+  cicloEgreso: z.number().int().nullable(),
+  /** Ciclos más que la ruta sin límites (22 h, sin veranos); null si solo se arma el próximo periodo. */
+  ciclosExtraVsSinLimites: z.number().int().nullable(),
+  noEntraron: z.array(z.object({ codigo: z.string(), motivo: z.string() })),
+  /** Total de todos los periodos de la propuesta con su método de pago (el motor financiero); null sin tarifario. */
+  costoTotalHastaEgresar: monto.nullable(),
+  /**
+   * Alternativas del mismo planificador que egresan antes o cuestan menos en total que la propuesta: otro método de
+   * pago con el mismo presupuesto, usar veranos, o las horas mínimas para no agregar un ciclo (puede tener recargo).
+   */
+  alternativas: z.array(z.object({
+    tipo: z.enum(['metodoPago', 'veranos', 'metodoPagoYVeranos', 'topeSinCicloExtra']),
+    /** Qué cambia, para decírselo al alumno ("Con Interbank / Scotiabank — pronto pago y el Verano 8"). */
+    descripcion: z.string(),
+    metodoPago: z.string().nullable(),
+    usarVeranos: z.boolean(),
+    maxHorasPorPeriodo: z.number().nullable(),
+    cicloEgreso: z.number().int().nullable(),
+    horasPorPeriodo: z.array(z.object({ periodoId: PeriodoIdSchema, horas: z.number() })),
+    ciclosAgregados: z.array(z.number().int()),
+    veranosUsados: z.array(PeriodoIdSchema),
+    costoTotalHastaEgresar: monto.nullable(),
+    /** costoTotalHastaEgresar de la propuesta − el de esta alternativa (positivo = cuesta menos); null sin costos. */
+    ahorroVsPropuesta: monto.nullable(),
+    /** Ciclos antes que egresa que la propuesta (0 si egresa en el mismo). */
+    ciclosAntes: z.number().int(),
+    conRecargo: z.boolean(),
+  })),
+  /** Nunca está en la malla: el alumno la aplica con el botón "Aplicar a mi malla". */
+  aplicadaEnMalla: z.literal(false),
+});
+
 const WhatIfSchema = z.object({
   codigo: z.string(),
   origen: z.enum(['EN_CURSO', 'PROXIMO_PERIODO']),
@@ -282,11 +354,18 @@ export const AIContextSchema = z.object({
   }).nullable(),
   carga: CargaSchema,
   whatIf: z.array(WhatIfSchema),
-  ruta: z.object({
-    propuesta: z.array(z.object({ periodoId: PeriodoIdSchema, cursos: z.array(z.string()) })),
+  /**
+   * Ruta que SUGIERE el planificador hasta egresar (sin límites del alumno). No es la malla del alumno salvo que
+   * aplicadaEnMalla sea true: si es false, es una propuesta que puede aplicar con Autogenerar.
+   */
+  rutaSugerida: z.object({
+    /** Cada periodo de la ruta: sus cursos, horas efectivas y créditos. */
+    propuesta: z.array(z.object({ periodoId: PeriodoIdSchema, cursos: z.array(z.string()), horas: z.number(), creditos: z.number() })),
     ciclosRestantes: z.number().int(),
     cicloFinal: z.number().int().nullable(),
     noPlanificados: z.array(z.string()),
+    /** true si la malla del alumno ya tiene exactamente esta ruta (cada pendiente en el mismo periodo o en el banco). */
+    aplicadaEnMalla: z.boolean(),
   }),
   electivos: z.array(z.object({
     codigo: z.string(),
@@ -309,8 +388,35 @@ export const AIContextSchema = z.object({
   }),
   foco: z.discriminatedUnion('tipo', [z.object({ tipo: z.literal('plan') }), FocoCicloSchema, FocoCursoSchema]).nullable(),
   derivados: DerivadosSchema,
+  propuestaConLimites: PropuestaConLimitesSchema.nullable(),
+  /** Descuentos y formas de pago del tarifario, para explicarlos sin inventar porcentajes; null sin tarifario. */
+  descuentos: z.object({
+    /** Pronto pago por banco: porcentaje sobre cada cuota mensual de un ciclo regular. */
+    metodosPago: z.array(z.object({
+      id: z.string(),
+      nombre: z.string(),
+      descuentoPorcentaje: z.number(),
+      requiereProntoPago: z.boolean(),
+    })),
+    /** Pago único: todas las pensiones del ciclo juntas, al inicio, con este descuento. Solo en ciclos regulares. */
+    pagoUnico: z.object({
+      descuentoPorcentaje: z.number(),
+      seCobra: z.literal('todo junto al inicio del ciclo'),
+      soloCiclosRegulares: z.literal(true),
+    }),
+    /** Costo de cada hora sobre el tope de la escala (horasSinRecargo), por cuota. */
+    costoHoraAdicional: monto.nullable(),
+    horasSinRecargo: z.number().nullable(),
+    /** Cómo calcula hoy MallaU: el descuento se aplica sobre la cuota con el recargo incluido (por confirmar con la UTP). */
+    descuentoSobreRecargo: z.boolean(),
+    /** En verano no hay pronto pago ni pago único. */
+    veranoConDescuento: z.literal(false),
+    /** Dónde lo ve el alumno en la app. */
+    ubicacionEnApp: z.string(),
+  }).nullable(),
 });
 export type AIContext = z.infer<typeof AIContextSchema>;
+export type AIPropuestaConLimites = z.infer<typeof PropuestaConLimitesSchema>;
 export type AIDerivados = z.infer<typeof DerivadosSchema>;
 export type AICursoPlanificado = z.infer<typeof CursoPlanificadoSchema>;
 export type AIEscenarioPeriodo = z.infer<typeof EscenarioPeriodoSchema>;
@@ -396,6 +502,15 @@ export const AIErrorCodigoSchema = z.enum(CODIGOS_ERROR);
 export type AIErrorCodigo = z.infer<typeof AIErrorCodigoSchema>;
 
 export const MENSAJE_LIMITE = 'Llegaste al límite de consultas por ahora. Intenta de nuevo en un rato.';
+/** Límite global del día (todos los alumnos): mensaje distinto del límite por dispositivo o por red. */
+export const MENSAJE_LIMITE_DIARIO = 'El asistente llegó a su límite de hoy. Vuelve a intentarlo mañana.';
+
+/**
+ * ID anónimo por dispositivo (D-050): un UUID que genera el navegador, sin datos personales. El proxy solo guarda
+ * su hash con AI_SALT y rechaza un valor que no tenga formato UUID.
+ */
+export const CABECERA_DISPOSITIVO = 'X-MallaU-Dispositivo';
+export const FORMATO_ID_DISPOSITIVO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Respuesta segura fija cuando el filtro de salida del proxy no pudo verificar los datos. */
 export const MENSAJE_NO_VERIFICADA = 'No pude verificar esos datos con seguridad. Revisa la pestaña Simulación de cuotas o pregúntame de otra forma.';
 

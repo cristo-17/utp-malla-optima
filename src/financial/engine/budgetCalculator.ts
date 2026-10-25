@@ -169,3 +169,43 @@ export const calcularPresupuesto = (
     descuentoPagoUnicoMonto,
   };
 };
+
+/**
+ * Cuota mensual de un periodo con escala de pensión, para unas horas tarifarias (en verano, horas × multiplicador):
+ * el mismo cálculo y redondeo que calcularPresupuesto. En verano no hay pronto pago. null si el tarifario no usa escala.
+ */
+export const cuotaMensualPorHoras = (
+  horasTarifarias: number,
+  tarifario: Tarifario,
+  disciplinaActiva: string,
+  opciones: Pick<OpcionesPresupuesto, 'metodoPago' | 'tipoPeriodo'> = {}
+): number | null => {
+  if (tarifario.modalidadPrincipal !== 'ESCALA_FIJA') return null;
+  const tarifas = obtenerTarifas(tarifario, disciplinaActiva);
+  const cuotaBase = redondearMoneda(
+    calcularCuotaEscalaFija(horasTarifarias, tarifas.rangosPension ?? [], tarifas.costoHoraAdicional ?? 0).cuota
+  );
+  const metodo = opciones.tipoPeriodo !== 'VERANO' && opciones.metodoPago ? tarifario.metodosPago?.[opciones.metodoPago] : undefined;
+  return redondearMoneda(cuotaBase - redondearMoneda(cuotaBase * ((metodo?.descuentoPorcentaje ?? 0) / 100)));
+};
+
+/** Tope de la búsqueda de horasMaximasParaCuota (horas tarifarias). */
+export const HORAS_MAXIMAS_BUSQUEDA_CUOTA = 60;
+
+/**
+ * Horas tarifarias máximas cuya cuota mensual no supera `cuotaMaxima` con el método de pago (en verano, sin
+ * descuento): la escala es creciente, así que es la última hora entera que cabe. 0 si ni 1 hora cabe; null si el
+ * tarifario no usa escala de pensión.
+ */
+export const horasMaximasParaCuota = (
+  cuotaMaxima: number,
+  tarifario: Tarifario,
+  disciplinaActiva: string,
+  opciones: Pick<OpcionesPresupuesto, 'metodoPago' | 'tipoPeriodo'> = {}
+): number | null => {
+  if (tarifario.modalidadPrincipal !== 'ESCALA_FIJA') return null;
+  let horas = 0;
+  while (horas < HORAS_MAXIMAS_BUSQUEDA_CUOTA &&
+    (cuotaMensualPorHoras(horas + 1, tarifario, disciplinaActiva, opciones) ?? Infinity) <= cuotaMaxima + 1e-9) horas += 1;
+  return horas;
+};

@@ -3,6 +3,7 @@ import {
   type AIAnalisisResponse, type AIContext, type AIErrorCodigo, type AIFoco, type AIMensaje, type AIRequest,
 } from '../../application/ai/contracts';
 import type { AIClient } from '../../infrastructure/ai/HttpAIClient';
+import { opcionesDePropuesta, type OpcionesPropuesta } from '../../application/ai/limites';
 import { focoParaEnviar, mismoFoco, type FocoUI } from './asistenteLogica';
 
 export interface Solicitud {
@@ -13,8 +14,14 @@ export interface Solicitud {
 
 export type MensajeChat =
   | { id: number; rol: 'user'; texto: string; foco: FocoUI | null }
-  | { id: number; rol: 'assistant'; tipo: 'texto'; texto: string; cursos: string[]; preguntas: string[] }
+  | {
+    id: number; rol: 'assistant'; tipo: 'texto'; texto: string; cursos: string[]; preguntas: string[];
+    /** La respuesta explica una propuesta con límites: el botón "Aplicar a mi malla" abre su vista previa. */
+    propuesta?: OpcionesPropuesta;
+  }
   | { id: number; rol: 'assistant'; tipo: 'analisis'; analisis: AIAnalisisResponse }
+  /** Lo escribe la app, no la IA (no va en el historial): el resumen después de aplicar, con "Analizar mi plan". */
+  | { id: number; rol: 'assistant'; tipo: 'app'; texto: string }
   | { id: number; rol: 'assistant'; tipo: 'error'; error: AIErrorCodigo; mensaje: string; reintento: Solicitud };
 
 export type PanelEntrada = 'rapidas' | 'adjuntar' | null;
@@ -33,7 +40,7 @@ export interface EstadoAsistente {
 export interface DependenciasAsistente {
   cliente: AIClient;
   /** Recalcula el contexto en cada envío (buildAIContext con el estado actual del store). */
-  obtenerContexto: (opciones: { foco?: AIFoco; presupuestoMensual?: number | null }) => AIContext;
+  obtenerContexto: (opciones: { foco?: AIFoco; presupuestoMensual?: number | null; mensaje?: string }) => AIContext;
   privacidadAceptada?: boolean;
   alAceptarPrivacidad?: () => void;
 }
@@ -48,6 +55,7 @@ const estadoInicial = (privacidadAceptada: boolean): EstadoAsistente => ({
 const textoHistorial = (mensaje: MensajeChat): string | null => {
   if (mensaje.rol === 'user') return mensaje.texto;
   if (mensaje.tipo === 'texto') return mensaje.texto;
+  if (mensaje.tipo === 'app') return null;
   if (mensaje.tipo === 'analisis') {
     const { resumen, secciones } = mensaje.analisis;
     return [resumen, ...secciones.map((seccion) => `${seccion.titulo}: ${seccion.detalle}`)].join('\n');
@@ -91,9 +99,13 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
     actualizar({ mensajes, enviando: true, panel: null, focoEnviado: estado.focoEnviado || Boolean(solicitud.foco && mismoFoco(solicitud.foco, estado.foco)) });
 
     const foco = focoParaEnviar(solicitud.foco);
+    // En el chat, el mensaje puede pedir límites (detectarLimites): el contexto trae la propuesta del planificador.
+    const contexto = dependencias.obtenerContexto({
+      foco, presupuestoMensual: presupuestoNumerico(estado.presupuesto), ...(solicitud.modo === 'chat' ? { mensaje: texto } : {}),
+    });
     const peticion: AIRequest = {
       modo: solicitud.modo,
-      contexto: dependencias.obtenerContexto({ foco, presupuestoMensual: presupuestoNumerico(estado.presupuesto) }),
+      contexto,
       ...(foco ? { foco } : {}),
       mensajes: historialParaEnviar(mensajes),
     };
@@ -107,7 +119,11 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
       ? { id, rol: 'assistant', tipo: 'error', error: resultado.error, mensaje: resultado.mensaje, reintento: { ...solicitud, texto } }
       : 'secciones' in resultado.respuesta
         ? { id, rol: 'assistant', tipo: 'analisis', analisis: resultado.respuesta }
-        : { id, rol: 'assistant', tipo: 'texto', texto: resultado.respuesta.texto, cursos: resultado.respuesta.cursos, preguntas: resultado.respuesta.preguntasSugeridas };
+        : {
+          id, rol: 'assistant', tipo: 'texto', texto: resultado.respuesta.texto, cursos: resultado.respuesta.cursos,
+          preguntas: resultado.respuesta.preguntasSugeridas,
+          ...(contexto.propuestaConLimites ? { propuesta: opcionesDePropuesta(contexto.propuestaConLimites) } : {}),
+        };
     actualizar({ mensajes: [...estado.mensajes, respuesta], enviando: false });
   };
 
@@ -143,6 +159,14 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
     setPanel: (panel: PanelEntrada) => actualizar({ panel }),
     alternarPanel: (panel: Exclude<PanelEntrada, null>) => actualizar({ panel: estado.panel === panel ? null : panel }),
     setPresupuesto: (presupuesto: string) => actualizar({ presupuesto }),
+    /** Mensaje de la app en el chat (no lo escribió la IA). */
+    agregarMensajeApp: (texto: string) => actualizar({ mensajes: [...estado.mensajes, { id: siguienteId++, rol: 'assistant', tipo: 'app', texto }] }),
+    /** Quita los mensajes de la app (por ejemplo, después de Deshacer). */
+    quitarMensajesApp: () => {
+      if (estado.mensajes.some((mensaje) => mensaje.rol === 'assistant' && mensaje.tipo === 'app')) {
+        actualizar({ mensajes: estado.mensajes.filter((mensaje) => mensaje.rol === 'user' || mensaje.tipo !== 'app') });
+      }
+    },
   };
 };
 

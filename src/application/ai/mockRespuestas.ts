@@ -108,19 +108,22 @@ const seccionCarga = (contexto: AIContext): AISeccion => {
 };
 
 const seccionRuta = (contexto: AIContext): AISeccion => {
-  const { ruta } = contexto;
+  const { rutaSugerida: ruta } = contexto;
   const primeros = ruta.propuesta.slice(0, 2)
     .map((item) => `${periodo(item.periodoId)}: ${item.cursos.length} cursos`).join('; ');
   const pendientes = ruta.noPlanificados.map((codigo) => conCodigo(contexto, codigo));
-  const detalle = ruta.cicloFinal
-    ? `Con la propuesta del planificador terminarías en el Ciclo ${ruta.cicloFinal} (${ruta.ciclosRestantes} ciclos más). ${primeros}.`
-    : 'No quedan cursos por planificar.';
+  // Regla de rutaSugerida: si no está aplicada, es una propuesta, no el plan del alumno.
+  const detalle = !ruta.cicloFinal ? 'No quedan cursos por planificar.'
+    : ruta.aplicadaEnMalla
+      ? `Con tu plan terminarías en el Ciclo ${ruta.cicloFinal} (${ruta.ciclosRestantes} ciclos más). ${primeros}.`
+      : `El planificador te propone terminar en el Ciclo ${ruta.cicloFinal} (${ruta.ciclosRestantes} ciclos más). ${primeros}. Es una propuesta: puedes aplicarla con Autogenerar.`;
   return {
     tipo: 'ruta',
     nivel: pendientes.length ? 'atencion' : 'ok',
     titulo: 'Tu ruta hasta egresar',
     detalle: pendientes.length ? `${detalle} Quedan sin ubicar: ${listar(pendientes)}.` : detalle,
-    acciones: ['Revisa la propuesta en Estrategia.', ...(pendientes.length ? ['Agrega un ciclo para ubicar lo pendiente.'] : [])],
+    acciones: [ruta.aplicadaEnMalla ? 'Revisa tu ruta en Estrategia.' : 'Aplica la propuesta con Autogenerar.',
+      ...(pendientes.length ? ['Agrega un ciclo para ubicar lo pendiente.'] : [])],
     cursos: [...(ruta.propuesta[0]?.cursos.slice(0, 4) ?? []), ...ruta.noPlanificados].slice(0, 6),
   };
 };
@@ -186,7 +189,7 @@ export const mockAnalisis = (contexto: AIContext): AIAnalisisResponse => {
   return { resumen, secciones, preguntasSugeridas: PREGUNTAS_BASE };
 };
 
-type Tema = 'bienestar' | 'identidad' | 'sinDatos' | 'intentos' | 'cachimbo' | 'estadoCurso' | 'creditos'
+type Tema = 'bienestar' | 'identidad' | 'guia' | 'sinDatos' | 'intentos' | 'cachimbo' | 'estadoCurso' | 'creditos'
   | 'financiero' | 'carga' | 'whatIf' | 'ruta' | 'electivos' | 'conviene' | 'fuera';
 
 const normalizar = (texto: string) => texto.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
@@ -199,6 +202,7 @@ const detectarTema = (texto: string): Tema => {
   const t = normalizar(texto);
   if (/estres|no puedo mas|dejar la (u|carrera|universidad)|quiero dejar|agobi|ansios/.test(t)) return 'bienestar';
   if (/eres (una |un )?(persona|humano|profe|profesor|docente|real)|hablo con (una persona|alguien)/.test(t)) return 'identidad';
+  if (/como (uso|usar|se usa|funciona) (la |esta )?(plataforma|app|aplicacion|mallau|pagina|web)|donde (veo|esta|estan|encuentro|subo|marco|cambio)|como (subo|marco|agrego|anado|guardo|exporto)/.test(t)) return 'guia';
   if (/horario|hueco|cruce|seccion|profe|docente|\bnotas?\b|tranca|yuca|dificil/.test(t)) return 'sinDatos';
   if (/\bbika\b|\btrika\b|(segunda|tercera) vez|(dos|tres|2|3) veces/.test(t)) return 'intentos';
   if (/cachimbo|primer ciclo/.test(t)) return 'cachimbo';
@@ -413,10 +417,86 @@ const metodoMencionado = (pregunta: string) => {
   return null;
 };
 
+/** Regla de la propuesta con límites: cuántos cursos van en cada periodo, ciclos o veranos extra y el botón. */
+const respuestaPropuesta = (contexto: AIContext): AIChatResponse | null => {
+  const propuesta = contexto.propuestaConLimites;
+  if (!propuesta) return null;
+  const { limites } = propuesta;
+  const pedido = limites.agregarCiclo ? `con un ciclo más, hasta ${horas(limites.horasAplicadas)} por ciclo`
+    : limites.maxCuotaMensual !== null ? `con ${soles(limites.maxCuotaMensual)} al mes, hasta ${horas(limites.horasAplicadas)} por ciclo`
+      : limites.maxCreditosPorPeriodo !== null
+        ? `con ${limites.creditosEstricto ? 'menos de' : 'hasta'} ${limites.maxCreditosPorPeriodo} créditos por ciclo`
+        : `con ${limites.horasEstricto ? 'menos de' : 'hasta'} ${horas(limites.horasAplicadas)} por ciclo`;
+  // Con muchos periodos, un resumen (máximo 80 palabras en chat).
+  const cantidades = propuesta.periodos.map((item) => item.numeroCursos);
+  const periodos = propuesta.periodos.length > 4
+    ? [`son ${propuesta.periodos.length} periodos, con ${Math.min(...cantidades)} a ${Math.max(...cantidades)} cursos cada uno. Egresas en el ${propuesta.periodos.at(-1)!.etiqueta}`]
+    // Regla 17: las horas o, si el límite es de créditos, los créditos de cada periodo.
+    : propuesta.periodos.map((item) => `${item.etiqueta}: ${item.numeroCursos} cursos (${limites.maxCreditosPorPeriodo !== null
+      ? `${item.creditos} créditos` : horas(item.horas)})`);
+  const extra = [
+    ...(propuesta.ciclosAgregados.length ? [`Necesitas ${propuesta.ciclosAgregados.length === 1 ? '1 ciclo más' : `${propuesta.ciclosAgregados.length} ciclos más`}.`] : []),
+    ...propuesta.veranosUsados.map((id) => `Se usa el ${periodo(id)}.`),
+  ];
+  // Regla 17: si hay una alternativa que egresa antes o cuesta menos, en una frase con sus cifras.
+  const [alternativa] = propuesta.alternativas;
+  const otraOpcion = alternativa && alternativa.cicloEgreso !== null && alternativa.costoTotalHastaEgresar !== null
+    ? ` ${alternativa.descripcion} egresas en el Ciclo ${alternativa.cicloEgreso} y pagas ${soles(alternativa.costoTotalHastaEgresar)} en total.`
+    : '';
+  return {
+    texto: periodos.length
+      ? `Así queda tu plan ${pedido}: ${periodos.join('; ')}.${extra.length ? ` ${extra.join(' ')}` : ''}${otraOpcion}\n` +
+        'Es una propuesta: si te convence, aplícala con el botón «Aplicar a mi malla».'
+      : 'Con esos límites no queda ningún curso por ubicar. Puedes probar otros en Autogenerar.',
+    cursos: [], preguntasSugeridas: ['¿Me alcanza mi presupuesto?', '¿Estoy sobrecargado?'],
+  };
+};
+
+/** Regla 16: con el próximo periodo vacío, la ruta es una propuesta del planificador y se arma con Autogenerar. */
+const respuestaCicloVacio = (contexto: AIContext): AIChatResponse | null => {
+  const ruta = contexto.rutaSugerida;
+  const primero = ruta.propuesta[0];
+  if (contexto.proximoPeriodo || ruta.aplicadaEnMalla || !primero) return null;
+  return {
+    texto: `Tu ${periodo(primero.periodoId)} todavía está vacío. El planificador te propone ${primero.cursos.length} cursos (${horas(primero.horas)}): ` +
+      `${listar(primero.cursos.slice(0, 3).map((codigo) => nombreDe(contexto, codigo)))}${primero.cursos.length > 3 ? ' y más' : ''}.\n` +
+      'Es una propuesta, no tu malla: ármala con Autogenerar y la aplicas si te convence.',
+    cursos: primero.cursos.slice(0, 3), preguntasSugeridas: ['¿Me alcanza mi presupuesto?', 'Mi ruta hasta egresar'],
+  };
+};
+
+/** Regla 14 con la guía: cómo usar MallaU, con los nombres reales de los botones. */
+const respuestaGuia = (): AIChatResponse => ({
+  texto: 'Sube tu plan con «Subir Excel» y arrastra cursos del «Banco de pendientes» a cada ciclo; con «Añadir ciclo» sumas uno más. ' +
+    'En «Estrategia» → «Simulación de cuotas» ves los costos. Con «Autogenerar» armas tu plan con tus límites y lo aplicas con «Aplicar a mi malla».',
+  cursos: [], preguntasSugeridas: ['¿Cómo funcionan los descuentos de la UTP?', '¿Me alcanza mi presupuesto?'],
+});
+
+/** Regla de descuentos: porcentajes de CONTEXTO.descuentos y dónde se ven (Estrategia → Simulación de cuotas). */
+const respuestaDescuentos = (contexto: AIContext): AIChatResponse | null => {
+  const descuentos = contexto.descuentos;
+  if (!descuentos) return null;
+  const pronto = descuentos.metodosPago.filter((metodo) => metodo.descuentoPorcentaje > 0)
+    .map((metodo) => `${metodo.nombre}: ${metodo.descuentoPorcentaje} % en cada cuota`);
+  return {
+    texto: `Hay dos formas de ahorrar en un ciclo regular: pronto pago (${listar(pronto)}) o pago único, con ${descuentos.pagoUnico.descuentoPorcentaje} % ` +
+      `pagando todo junto al inicio del ciclo. En verano no hay descuento.
+Lo ves en Estrategia → Simulación de cuotas. Son montos referenciales.`,
+    cursos: [], preguntasSugeridas: ['¿Me alcanza mi presupuesto?', '¿Cómo funciona el pago único?'],
+  };
+};
+
 export const mockChat = (contexto: AIContext, pregunta: string): AIChatResponse => {
   const tema = detectarTema(pregunta);
   if (tema === 'bienestar') return respuestaBienestar();
   if (tema === 'identidad') return respuestaIdentidad();
+  const conPropuesta = respuestaPropuesta(contexto);
+  if (conPropuesta) return conPropuesta;
+  if (tema === 'guia' && !/descuento/.test(normalizar(pregunta))) return respuestaGuia();
+  if (/descuento/.test(normalizar(pregunta)) && !/\d/.test(pregunta)) {
+    const descuentos = respuestaDescuentos(contexto);
+    if (descuentos) return descuentos;
+  }
   if (tema === 'sinDatos') return respuestaSinDatos(contexto, pregunta);
   if (tema === 'intentos') return respuestaIntentos(contexto, pregunta);
   if (tema === 'cachimbo') {
@@ -509,6 +589,8 @@ export const mockChat = (contexto: AIContext, pregunta: string): AIChatResponse 
     case 'electivos': return desdeSeccion(seccionElectivos(contexto), otras('electivo'));
     case 'ruta': return desdeSeccion(seccionRuta(contexto), otras('ruta'));
     default: {
+      const vacio = respuestaCicloVacio(contexto);
+      if (vacio) return vacio;
       if (focoCiclo) {
         const { periodo: resumen, carga, escenarios } = focoCiclo;
         return {

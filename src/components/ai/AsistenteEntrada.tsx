@@ -2,21 +2,26 @@ import { useEffect, useRef, useState, type FormEvent, type Ref } from 'react';
 import { BookOpen, CalendarRange, ChevronLeft, LayoutGrid, Paperclip, Search, SendHorizontal, Smile, WifiOff, X } from 'lucide-react';
 import { MAX_TEXTO_MENSAJE } from '../../application/ai/contracts';
 import {
-  FOCO_PLAN, PREGUNTAS_RAPIDAS, filtrarCursos, type FocoUI, type OpcionesAdjuntar,
+  ACCION_ARMAR_PLAN, FOCO_PLAN, PREGUNTAS_RAPIDAS, filtrarCursos, type FocoUI, type OpcionesAdjuntar,
 } from './asistenteLogica';
 import type { PanelEntrada } from './controladorAsistente';
 
 interface PanelRapidasProps {
   onElegir: (texto: string) => void;
+  /** "🗓️ Armar mi plan con límites": abre Autogenerar (no envía nada al asistente). */
+  onArmarPlan?: () => void;
 }
 
-export function PanelRapidas({ onElegir }: PanelRapidasProps) {
+export function PanelRapidas({ onElegir, onArmarPlan }: PanelRapidasProps) {
   return <div className="ia-subpanel" id="ia-panel-rapidas" role="group" aria-label="Preguntas rápidas">
     <p className="ia-subpanel-titulo">Preguntas rápidas</p>
     <div className="ia-chips">
       {PREGUNTAS_RAPIDAS.map(({ emoji, texto }) => <button key={texto} type="button" className="ia-chip" onClick={() => onElegir(texto)}>
         <span aria-hidden="true">{emoji}</span> {texto}
       </button>)}
+      {onArmarPlan && <button type="button" className="ia-chip ia-chip-accion" onClick={onArmarPlan}>
+        <span aria-hidden="true">{ACCION_ARMAR_PLAN.emoji}</span> {ACCION_ARMAR_PLAN.texto}
+      </button>}
     </div>
   </div>;
 }
@@ -88,6 +93,7 @@ interface EntradaProps {
   onElegirFoco: (foco: FocoUI) => void;
   onQuitarFoco: () => void;
   onEnviar: (texto: string) => void;
+  onArmarPlan?: () => void;
 }
 
 export function AsistenteEntrada(props: EntradaProps) {
@@ -119,7 +125,7 @@ export function AsistenteEntrada(props: EntradaProps) {
 
   return <div className="ia-entrada-zona" ref={zonaRef}>
     {!enLinea && <p className="ia-offline" role="status"><WifiOff size={16} aria-hidden="true" /> Sin conexión: el asistente necesita internet</p>}
-    {panel === 'rapidas' && !deshabilitado && <PanelRapidas onElegir={enviar} />}
+    {panel === 'rapidas' && !deshabilitado && <PanelRapidas onElegir={enviar} onArmarPlan={props.onArmarPlan} />}
     {panel === 'adjuntar' && !deshabilitado && <PanelAdjuntar opciones={opciones} onElegir={props.onElegirFoco} />}
     {foco && <div className="ia-foco">
       <span className="ia-foco-chip">📎 {foco.etiqueta}
