@@ -945,7 +945,7 @@
    "origen": "PROXIMO_PERIODO"
   }
  ],
- "ruta": {
+ "rutaSugerida": {
   "propuesta": [
    {
     "periodoId": "ciclo-8",
@@ -986,7 +986,8 @@
   "cicloFinal": 10,
   "noPlanificados": [
    "100000CN47"
-  ]
+  ],
+  "aplicadaEnMalla": false
  },
  "electivos": [
   {

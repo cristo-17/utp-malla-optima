@@ -724,7 +724,7 @@
       "origen": "EN_CURSO"
     }
   ],
-  "ruta": {
+  "rutaSugerida": {
     "propuesta": [
       {
         "periodoId": "ciclo-8",
@@ -770,7 +770,8 @@
     ],
     "ciclosRestantes": 4,
     "cicloFinal": 11,
-    "noPlanificados": []
+    "noPlanificados": [],
+    "aplicadaEnMalla": false
   },
   "electivos": [
     {

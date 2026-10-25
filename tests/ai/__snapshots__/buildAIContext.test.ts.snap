@@ -1066,7 +1066,8 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > con S6
     "totalCreditos": 21,
     "totalHoras": 25,
   },
-  "ruta": {
+  "rutaSugerida": {
+    "aplicadaEnMalla": false,
     "cicloFinal": 11,
     "ciclosRestantes": 4,
     "noPlanificados": [],
@@ -2294,7 +2295,8 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > cumple
     "totalCreditos": 21,
     "totalHoras": 25,
   },
-  "ruta": {
+  "rutaSugerida": {
+    "aplicadaEnMalla": false,
     "cicloFinal": 10,
     "ciclosRestantes": 3,
     "noPlanificados": [],

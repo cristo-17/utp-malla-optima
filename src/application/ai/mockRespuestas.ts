@@ -108,19 +108,22 @@ const seccionCarga = (contexto: AIContext): AISeccion => {
 };
 
 const seccionRuta = (contexto: AIContext): AISeccion => {
-  const { ruta } = contexto;
+  const { rutaSugerida: ruta } = contexto;
   const primeros = ruta.propuesta.slice(0, 2)
     .map((item) => `${periodo(item.periodoId)}: ${item.cursos.length} cursos`).join('; ');
   const pendientes = ruta.noPlanificados.map((codigo) => conCodigo(contexto, codigo));
-  const detalle = ruta.cicloFinal
-    ? `Con la propuesta del planificador terminarías en el Ciclo ${ruta.cicloFinal} (${ruta.ciclosRestantes} ciclos más). ${primeros}.`
-    : 'No quedan cursos por planificar.';
+  // Regla de rutaSugerida: si no está aplicada, es una propuesta, no el plan del alumno.
+  const detalle = !ruta.cicloFinal ? 'No quedan cursos por planificar.'
+    : ruta.aplicadaEnMalla
+      ? `Con tu plan terminarías en el Ciclo ${ruta.cicloFinal} (${ruta.ciclosRestantes} ciclos más). ${primeros}.`
+      : `El planificador te propone terminar en el Ciclo ${ruta.cicloFinal} (${ruta.ciclosRestantes} ciclos más). ${primeros}. Es una propuesta: puedes aplicarla con Autogenerar.`;
   return {
     tipo: 'ruta',
     nivel: pendientes.length ? 'atencion' : 'ok',
     titulo: 'Tu ruta hasta egresar',
     detalle: pendientes.length ? `${detalle} Quedan sin ubicar: ${listar(pendientes)}.` : detalle,
-    acciones: ['Revisa la propuesta en Estrategia.', ...(pendientes.length ? ['Agrega un ciclo para ubicar lo pendiente.'] : [])],
+    acciones: [ruta.aplicadaEnMalla ? 'Revisa tu ruta en Estrategia.' : 'Aplica la propuesta con Autogenerar.',
+      ...(pendientes.length ? ['Agrega un ciclo para ubicar lo pendiente.'] : [])],
     cursos: [...(ruta.propuesta[0]?.cursos.slice(0, 4) ?? []), ...ruta.noPlanificados].slice(0, 6),
   };
 };

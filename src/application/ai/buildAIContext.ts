@@ -23,7 +23,7 @@ import { pagoUnicoDe, positivo, presupuestoPorEscenario, r2 } from './presupuest
 
 /**
  * Contexto del asistente IA. Función PURA: lee el estado del store y devuelve
- * todo ya calculado (créditos, costos, carga, what-if, ruta), para que la IA
+ * todo ya calculado (créditos, costos, carga, what-if, ruta sugerida), para que la IA
  * solo redacte. Copia campos explícitos: nunca nombreArchivoCargado ni otro
  * dato identificable.
  */
@@ -470,17 +470,20 @@ export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesConte
   const financieroProximo = siguiente && entorno
     ? calcularEscenario('sin_descuento', entorno).periodos.find((item) => item.id === siguiente.periodo.id) : undefined;
 
-  const ruta = (() => {
+  const rutaSugerida = (() => {
     const propuesta = generateOptimalPlanUseCase({
       cursos, totalCiclos: estado.totalCiclos, ciclosExcluidos: estado.ciclosExcluidos, cicloActual, periodoIngreso,
     });
     const periodos = agruparPorPeriodo(propuesta.cursos, cicloActual);
     const cicloFinal = periodos.length ? Math.max(...periodos.map((item) => item.periodo.cicloReferencia)) : null;
+    const actuales = new Map(cursos.map((curso) => [curso.codigo, ubicacionDe(curso)]));
     return {
       propuesta: periodos.map((item) => ({ periodoId: item.periodo.id, cursos: item.cursos.map((curso) => curso.codigo) })),
       ciclosRestantes: cicloFinal && cicloActual ? Math.max(0, cicloFinal - cicloActual) : periodos.length,
       cicloFinal,
       noPlanificados: propuesta.noPlanificados.map((curso) => curso.codigo),
+      // La sugerencia no es la malla del alumno salvo que cada pendiente ya esté donde ella lo pone.
+      aplicadaEnMalla: propuesta.cursos.every((curso) => curso.estado !== 'PENDIENTE' || actuales.get(curso.codigo) === ubicacionDe(curso)),
     };
   })();
 
@@ -545,7 +548,7 @@ export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesConte
       ...conEstado('EN_CURSO').map((curso) => ({ ...whatIfDe(curso, estado), origen: 'EN_CURSO' as const })),
       ...whatIfProximos.map((item) => ({ ...item, origen: 'PROXIMO_PERIODO' as const })),
     ],
-    ruta,
+    rutaSugerida,
     electivos: cursos.filter((curso) => curso.tipo === 'ELECTIVO' && curso.estado === 'PENDIENTE').map((curso) => ({
       codigo: curso.codigo,
       nombre: curso.nombre,
@@ -559,7 +562,7 @@ export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesConte
     foco: construirFoco(opciones.foco, estado, prioridades, topeEscala, entorno),
     derivados: {
       ...calcularDerivados(
-        cursos, carga, escenariosProximos, entorno ? presupuesto : null, cursosProximos, whatIfProximos, ruta.ciclosRestantes,
+        cursos, carga, escenariosProximos, entorno ? presupuesto : null, cursosProximos, whatIfProximos, rutaSugerida.ciclosRestantes,
         siguiente && entorno ? pensionPagoUnico(siguiente.periodo.id, entorno) : null, siguiente?.periodo.tipo,
       ),
       proximoPeriodoConJalados: proximoPeriodoConJalados(estado, siguiente, topeEscala, entorno),

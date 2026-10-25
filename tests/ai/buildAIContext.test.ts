@@ -39,7 +39,7 @@ describe('buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado', () =>
   });
 
   it('derivados: horas sobre el tope y las 24 h, diferencia por escenario, créditos para egresar (D-001)', () => {
-    const { derivados, financiero, ruta } = buildAIContext(store.getState(), { presupuestoMensual: 900 });
+    const { derivados, financiero, rutaSugerida } = buildAIContext(store.getState(), { presupuestoMensual: 900 });
     expect(derivados.horas).toEqual({
       proximoPeriodo: 25, topeEscala: 22, sobreTopeEscala: 3, margenTopeEscala: 0, recomendadas: 24, sobreRecomendadas: 1, margenRecomendadas: 0,
     });
@@ -69,7 +69,7 @@ describe('buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado', () =>
     // 197 obligatorios + 3 electivos mínimos (academic.json); 121 aprobados o convalidados; 19 en curso.
     expect(derivados.creditos).toEqual({
       totalMalla: 210, obligatorios: 197, electivosMinimos: 3, paraEgresar: 200, aprobadosQueCuentan: 121, enCurso: 19,
-      faltanParaEgresar: 79, faltanSiApruebaEnCurso: 60, ciclosRestantes: ruta.ciclosRestantes,
+      faltanParaEgresar: 79, faltanSiApruebaEnCurso: 60, ciclosRestantes: rutaSugerida.ciclosRestantes,
     });
     expect(derivados.cursosProximoPeriodo.map((curso) => curso.codigo)).toEqual(CURSOS_OCTAVO);
     expect(derivados.cursosProximoPeriodo[0]).toMatchObject({ creditos: 3, horas: 4, estado: 'PENDIENTE', jalado: false, sePuedeMover: true, bloquearia: [] });
@@ -144,15 +144,24 @@ describe('buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado', () =>
     expect(buildAIContext(store.getState()).financiero!.metodoPagoElegido.id).toBe('bcp_bbva');
   });
 
-  it('incluye what-if de los EN_CURSO y del próximo periodo, y la ruta sin aplicarla', () => {
+  it('incluye what-if de los EN_CURSO y del próximo periodo, y la ruta sugerida sin aplicarla', () => {
     const antes = structuredClone(store.getState().cursos);
-    const { whatIf, ruta } = buildAIContext(store.getState());
+    const { whatIf, rutaSugerida } = buildAIContext(store.getState());
     expect(whatIf.filter((item) => item.origen === 'EN_CURSO')).toHaveLength(7);
     expect(whatIf.filter((item) => item.origen === 'PROXIMO_PERIODO')).toHaveLength(7);
     expect(whatIf.find((item) => item.codigo === '100000S61T')!.cursosBloqueados).toContain('100000I62N');
-    expect(ruta.propuesta[0].periodoId).toBe('ciclo-8');
-    expect(ruta.ciclosRestantes).toBeGreaterThan(0);
+    expect(rutaSugerida.propuesta[0].periodoId).toBe('ciclo-8');
+    expect(rutaSugerida.ciclosRestantes).toBeGreaterThan(0);
     expect(store.getState().cursos).toEqual(antes);
+  });
+
+  it('rutaSugerida.aplicadaEnMalla: false mientras solo es sugerencia; true después de aplicarla', async () => {
+    // F-038: la IA presentaba la sugerencia como si fuera la malla del alumno ("parece que guarda planes pasados").
+    expect(buildAIContext(store.getState()).rutaSugerida.aplicadaEnMalla).toBe(false);
+    await store.getState().aplicarPlanificacionOptima(store.getState().previsualizarPlanificacionOptima());
+    const { rutaSugerida, periodosPlanificados } = buildAIContext(store.getState());
+    expect(rutaSugerida.aplicadaEnMalla).toBe(true);
+    expect(periodosPlanificados.map((periodo) => periodo.id)).toEqual(rutaSugerida.propuesta.map((periodo) => periodo.periodoId));
   });
 
   it('lista los electivos con su área propuesta sin confirmar', () => {

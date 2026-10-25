@@ -327,11 +327,17 @@ export const AIContextSchema = z.object({
   }).nullable(),
   carga: CargaSchema,
   whatIf: z.array(WhatIfSchema),
-  ruta: z.object({
+  /**
+   * Ruta que SUGIERE el planificador hasta egresar (sin límites del alumno). No es la malla del alumno salvo que
+   * aplicadaEnMalla sea true: si es false, es una propuesta que puede aplicar con Autogenerar.
+   */
+  rutaSugerida: z.object({
     propuesta: z.array(z.object({ periodoId: PeriodoIdSchema, cursos: z.array(z.string()) })),
     ciclosRestantes: z.number().int(),
     cicloFinal: z.number().int().nullable(),
     noPlanificados: z.array(z.string()),
+    /** true si la malla del alumno ya tiene exactamente esta ruta (cada pendiente en el mismo periodo o en el banco). */
+    aplicadaEnMalla: z.boolean(),
   }),
   electivos: z.array(z.object({
     codigo: z.string(),
