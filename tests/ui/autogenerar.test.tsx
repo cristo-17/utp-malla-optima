@@ -167,3 +167,12 @@ describe('Asistente - tarjeta del periodo vacío', () => {
     expect(cicloVacioProximo(store.getState().cursos, null)).toBeNull();
   });
 });
+
+describe('😊 "Armar mi plan con límites"', () => {
+  it('es un botón de acción (abre Autogenerar), distinto de las preguntas', async () => {
+    const { PanelRapidas } = await import('../../src/components/ai/AsistenteEntrada');
+    const html = renderToStaticMarkup(<PanelRapidas onElegir={() => undefined} onArmarPlan={() => undefined} />);
+    expect(html).toContain('ia-chip ia-chip-accion');
+    expect(html).toContain('Armar mi plan con límites');
+  });
+});

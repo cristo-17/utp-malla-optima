@@ -129,7 +129,8 @@ export function AsistentePanel({ panelRef, inputRef, mensajesRef, onKeyDown, ...
         <AsistenteEntrada panel={estado.panel} foco={estado.foco} sugerenciasFoco={sugerenciasFoco} enLinea={enLinea} enviando={estado.enviando} bloqueado={pidePrivacidad}
           opciones={opciones} mostrarTooltipRapidas={props.mostrarTooltipRapidas} inputRef={inputRef}
           onAlternarPanel={props.onAlternarPanel} onCerrarPanel={props.onCerrarPanel} onElegirFoco={props.onElegirFoco}
-          onQuitarFoco={props.onQuitarFoco} onEnviar={props.onPreguntar} />
+          onQuitarFoco={props.onQuitarFoco} onEnviar={props.onPreguntar}
+          onArmarPlan={props.onAutogenerar ? () => { props.onCerrarPanel(); props.onAutogenerar?.('hastaEgresar'); } : undefined} />
       </>}
   </div>;
 }

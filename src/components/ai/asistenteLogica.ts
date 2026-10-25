@@ -21,7 +21,11 @@ export const PREGUNTAS_RAPIDAS = [
   { emoji: '🔀', texto: '¿Qué pasa si jalo un curso?' },
   { emoji: '🗺️', texto: 'Mi ruta hasta egresar' },
   { emoji: '🎯', texto: '¿Qué electivo me conviene?' },
+  { emoji: '💸', texto: '¿Cómo funcionan los descuentos de la UTP?' },
 ] as const;
+
+/** Entrada de 😊 que no es una pregunta: abre Autogenerar para armar el plan con límites. */
+export const ACCION_ARMAR_PLAN = { emoji: '🗓️', texto: 'Armar mi plan con límites' } as const;
 
 export const preguntasPorFoco = (foco: FocoUI | null): string[] => {
   if (!foco) return [];
