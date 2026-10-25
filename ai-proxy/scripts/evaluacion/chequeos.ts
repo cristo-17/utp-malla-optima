@@ -1,7 +1,8 @@
 import { errorSecciones, type AIContext, type AIRespuesta } from '../../src/contracts.js';
 import { montoDelMensaje } from '../../src/presupuesto.js';
 import {
-  atributosDeCursos, atributosIncorrectos, cerca, hablaACorreccion, nombresInternos, codigosEn, montosEn, normalizar, numerosDe, numerosDelTexto, numerosPorClave, revelaPrompt, textoDe,
+  atributosDeCursos, atributosIncorrectos, cerca, hablaACorreccion, nombresInternos, codigosEn, montosEn, normalizar, numerosDe, numerosDelTexto, numerosPorClave,
+  planNoVerificado, revelaPrompt, textoDe,
 } from '../../src/verificacion.js';
 
 // Los chequeos de datos son los mismos del filtro de salida del proxy (src/verificacion.ts).
@@ -52,6 +53,10 @@ export interface Esperado {
   cifrasConJalados?: boolean;
   /** Si dice cuántos créditos faltan, deben ser los de derivados.creditos (faltanParaEgresar o faltanSiApruebaEnCurso). */
   creditosFaltantes?: boolean;
+  /** Cómo usar MallaU: debe nombrar al menos dos ubicaciones reales de la GUÍA DE MALLAU. */
+  guia?: boolean;
+  /** Cada "N %" debe estar en CONTEXTO.descuentos. */
+  porcentajes?: boolean;
 }
 
 /** Glosario del prompt (sin tildes). "jalado" es también el término de MallaU, por eso va aparte. */
@@ -82,7 +87,7 @@ const ALUMNO_CUENTA = /trabaj|chamba|estres|agobi|ansios|cansad|animo|no puedo m
 const PRESENTACION = /\b(tu|su) plan y (tus|sus) costos\b/;
 
 /** La pregunta trata de carga, horas, costos o del plan: ahí sí corresponde hablar de la carga. */
-const PREGUNTA_DE_CARGA = /carga|cargo|cargad|sobrecarg|horas|pesad|costo|cuesta|pago|pagar|cuota|presupuesto|alcanza|plata|matricul|\bplan\b|llevo|llevar|proximo ciclo|este ciclo|cursos/;
+const PREGUNTA_DE_CARGA = /carga|cargo|cargad|sobrecarg|horas|pesad|costo|cuesta|pago|pagar|cuota|presupuesto|alcanza|plata|matricul|\bplan\b|llevo|llevar|proximo ciclo|este ciclo|cursos|creditos|ordena|ordenes|\barmar?\b|otro ciclo|ciclos/;
 /** Números con unidad (h, créditos, cr, ciclos) y los campos de CONTEXTO donde deben estar. */
 const NUMERO_CON_UNIDAD = /(\d+(?:[.,]\d+)?)\s*(h|horas?|creditos?|cr|ciclos?)\b/g;
 const CAMPOS_POR_UNIDAD = (unidad: string): RegExp => /^h|^hora/.test(unidad) ? /hora|tope|limiteRecomendado|recomendadas|^carga$/i
@@ -120,6 +125,55 @@ export const electivosComoCursos = (texto: string, contexto: AIContext): string 
   for (const m of normalizar(texto).matchAll(/\b(\d+|un|uno|una|dos|tres|cuatro|cinco|seis)\s+(cursos?\s+)?electivos?\b/g)) {
     const n = /\d/.test(m[1]) ? Number(m[1]) : NUMEROS_EN_LETRAS[m[1]];
     if (creditos.has(n) && n !== contexto.electivos.length) return m[0];
+  }
+  return null;
+};
+
+/** Nombres reales de la GUÍA DE MALLAU (sin tildes): una respuesta sobre cómo usar la app debe nombrar al menos dos. */
+const UBICACIONES_GUIA = ['subir excel', 'actualizar excel', 'banco de pendientes', 'anadir ciclo', 'mostrar veranos', 'marcar como jalado',
+  'estrategia', 'ruta academica', 'simulacion de cuotas', 'configuracion', 'aplicar pago unico', 'autogenerar', 'aplicar a mi malla',
+  'limpiar plan', 'guardar como', 'arrastr'];
+
+/**
+ * La ruta sugerida sin aplicar dicha como el plan del alumno: "tu ruta ya está armada", "ya tienes tu plan listo" o
+ * "en tu Ciclo 8 llevas…" con un periodo que solo está en la sugerencia.
+ */
+const RUTA_LISTA = /\b(tu|la) (ruta|plan|malla) (ya )?(esta|queda|quedo) (armad|list|complet|organizad)|\bya (tienes|esta) (tu |el |la )?(plan|ruta)? ?(armad|list|organizad|planificad)|\bya tienes (todo )?(armad|planificad|organizad)/;
+const CICLO_COMO_MALLA = /\b(?:tu|en tu|en el) ciclo (\d{1,2}) (?:ya )?(?:tiene|tienes|llevas|lleva|van)\b/g;
+export const rutaComoMalla = (texto: string, contexto: AIContext): string | null => {
+  if (contexto.rutaSugerida.aplicadaEnMalla || contexto.propuestaConLimites) return null;
+  const t = normalizar(texto);
+  const lista = t.match(RUTA_LISTA)?.[0];
+  if (lista) return lista;
+  const enMalla = new Set(contexto.periodosPlanificados.map((periodo) => periodo.id));
+  const soloSugerida = new Set(contexto.rutaSugerida.propuesta.map((periodo) => periodo.periodoId).filter((id) => !enMalla.has(id)));
+  return [...t.matchAll(CICLO_COMO_MALLA)].find((m) => soloSugerida.has(`ciclo-${Number(m[1])}`))?.[0] ?? null;
+};
+
+/** La malla de hoy se puede describir aunque pase el límite ("hoy tu Ciclo 8 tiene 25 h"). */
+const HABLA_DE_HOY = /\bhoy\b|\bactual|\bahora\b|ya ubicaste|tal como (esta|lo tienes)|antes\b/;
+const SOLES = /S\/\.?\s?(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{1,2}))?/gi;
+/** Un periodo citado (una frase con un solo periodo) cuyas horas, créditos o cuota pasan el límite que pidió el alumno. */
+export const superaLimite = (texto: string, contexto: AIContext): string | null => {
+  const propuesta = contexto.propuestaConLimites;
+  if (!propuesta) return null;
+  const { maxHorasPorPeriodo, maxCreditosPorPeriodo, maxCuotaMensual } = propuesta.limites;
+  const horasCursos = new Set(atributosDeCursos(contexto).flatMap((curso) => curso.horas === null ? [] : [curso.horas]));
+  for (const frase of texto.split(/(?<=[.;!?])\s+|\n|;\s*/)) {
+    const f = normalizar(frase);
+    if ((f.match(/\b(ciclo|verano) \d{1,2}\b/g) ?? []).length !== 1 || HABLA_DE_HOY.test(f)) continue;
+    for (const m of f.matchAll(/(\d+(?:[.,]\d+)?)\s*(h\b|horas?\b)/g)) {
+      const horas = Number(m[1].replace(',', '.'));
+      if (maxHorasPorPeriodo !== null && horas > maxHorasPorPeriodo && !horasCursos.has(horas)) return frase.trim();
+    }
+    for (const m of f.matchAll(/(\d+(?:[.,]\d+)?)\s*(creditos?\b|cr\b)/g)) {
+      if (maxCreditosPorPeriodo !== null && Number(m[1].replace(',', '.')) > maxCreditosPorPeriodo) return frase.trim();
+    }
+    if (maxCuotaMensual !== null && !/pago unico|al inicio|total|matricula/.test(f)) {
+      for (const m of frase.matchAll(SOLES)) {
+        if (Number(`${m[1].replace(/,/g, '')}.${m[2] ?? '0'}`) > maxCuotaMensual + 0.01) return frase.trim();
+      }
+    }
   }
   return null;
 };
@@ -181,9 +235,16 @@ export const chequear = ({ modo, contexto, mensajes, esperado, respuesta, codigo
   if (atributos.length) {
     fallar('CRITICO', 'atributo-curso-incorrecto', atributos.map((item) => `${item.nombre}: dice ${item.dicho}, CONTEXTO ${item.enContexto}`).join('; ') + '.');
   }
+  // CRÍTICO: un plan citado con cursos o cifras que no salen de propuestaConLimites ni de rutaSugerida (el mismo chequeo del filtro).
+  const plan = planNoVerificado(texto, contexto);
+  if (plan.length) fallar('CRITICO', 'plan-inventado', plan.map((item) => item.detalle).join(' '));
   const delAlumno = esperado.sinMontosDelMensaje ? [] : numerosDelTexto(alumno);
+  // "Necesitas 2 ciclos más": la cantidad de ciclos agregados o extra de la propuesta.
+  const propuesta = contexto.propuestaConLimites;
+  const ciclosDePropuesta = propuesta
+    ? [propuesta.ciclosAgregados.length, propuesta.ciclosExtraVsSinLimites ?? 0, propuesta.limites.agregarCiclo ? 1 : 0] : [];
   const sinFuente = [...new Set([...t.matchAll(NUMERO_CON_UNIDAD)].filter((m) => {
-    const fuente = [...numerosPorClave(contexto, CAMPOS_POR_UNIDAD(m[2])), ...delAlumno];
+    const fuente = [...numerosPorClave(contexto, CAMPOS_POR_UNIDAD(m[2])), ...delAlumno, ...(/^ciclo/.test(m[2]) ? ciclosDePropuesta : [])];
     return !fuente.some((n) => cerca(n, Number(m[1].replace(',', '.'))));
   }).map((m) => m[0]))];
   if (sinFuente.length) fallar('MAYOR', 'numero-sin-fuente', `Números que no están en el contexto ni en derivados: ${sinFuente.join(', ')}.`);
@@ -215,6 +276,11 @@ export const chequear = ({ modo, contexto, mensajes, esperado, respuesta, codigo
     const mezclados = [...new Set(otros)].filter((monto) => mencionaMonto(texto, monto));
     if (mezclados.length) fallar('MAYOR', 'presupuesto-mezclado', `Menciona otro presupuesto (${mezclados.join(', ')}) además del que escribió el alumno (${actual}).`);
   }
+  // MAYOR: la ruta sugerida sin aplicar como si fuera la malla, y un plan citado que pasa el límite pedido.
+  const comoMalla = rutaComoMalla(texto, contexto);
+  if (comoMalla) fallar('MAYOR', 'ruta-como-malla', `Presenta la ruta sugerida (no aplicada) como el plan del alumno: "${comoMalla}".`);
+  const sobreLimite = superaLimite(texto, contexto);
+  if (sobreLimite) fallar('MAYOR', 'supera-limite', `Un periodo citado pasa el límite pedido: "${sobreLimite}".`);
   const internos = nombresInternos(texto, contexto);
   if (internos.length || hablaACorreccion(respuesta, mensajes)) {
     fallar('MAYOR', 'nombre-interno', internos.length ? `Nombres internos: ${internos.join(', ')}.` : 'Le habla a una corrección que el alumno no hizo.');
@@ -277,6 +343,15 @@ export const chequear = ({ modo, contexto, mensajes, esperado, respuesta, codigo
     const dichos = [...t.matchAll(/(?:faltan|quedan|pendientes)\D{0,25}?(\d+) creditos|(\d+) creditos (?:pendientes|por aprobar|que (?:te )?faltan|para egresar)/g)]
       .map((m) => Number(m[1] ?? m[2])).filter((n) => !validos.includes(n));
     if (dichos.length) fallar('MAYOR', 'creditos-faltantes', `Créditos que faltan: ${dichos.join(', ')}; para egresar son ${validos[0]} (derivados.creditos.faltanParaEgresar).`);
+  }
+  if (esperado.guia) {
+    const nombradas = UBICACIONES_GUIA.filter((ubicacion) => t.includes(ubicacion));
+    if (nombradas.length < 2) fallar('MAYOR', 'sin-ubicaciones-guia', `Nombra ${nombradas.length} ubicaciones reales de la app (mínimo 2).`);
+  }
+  if (esperado.porcentajes) {
+    const validos = numerosDe(contexto.descuentos);
+    const ajenos = [...t.matchAll(/(\d+(?:[.,]\d+)?)\s?%/g)].map((m) => Number(m[1].replace(',', '.'))).filter((n) => !validos.some((v) => cerca(v, n)));
+    if (ajenos.length) fallar('MAYOR', 'porcentaje-sin-fuente', `Porcentajes que no están en CONTEXTO.descuentos: ${ajenos.join(', ')} %.`);
   }
   for (const { patron, severidad, detalle } of esperado.menciona ?? []) {
     if (!patron.test(t)) fallar(severidad, 'falta-mencion', detalle);

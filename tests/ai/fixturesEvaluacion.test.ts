@@ -85,4 +85,24 @@ describe('fixtures de la evaluación (buildAIContext)', () => {
     expect(contexto.propuestaConLimites?.periodos.every((periodo) => periodo.horas <= 20)).toBe(true);
     await expect(comoJson(contexto)).toMatchFileSnapshot(destino('contexto-limite-20h.json'));
   });
+
+  /** E1 (feedback del primer test con alumnos): un fixture por pedido de límites, con la propuesta del planificador. */
+  it.each([
+    ['contexto-limite-18cr.json', 'Quiero que ordenes mis ciclos restantes con menos de 18 créditos'],
+    ['contexto-limite-800.json', 'arma un plan con 800 soles de presupuesto mensual'],
+    ['contexto-limite-900.json', 'arma un plan con 900 soles de presupuesto mensual'],
+    ['contexto-agrego-ciclo.json', 'y qué pasa si agrego otro ciclo?'],
+  ])('%s: el mismo plan con "%s"', async (archivo, mensaje) => {
+    const contexto = buildAIContext((await crearPlan1ConOctavo()).getState(), { presupuestoMensual: 900, limites: detectarLimites(mensaje) });
+    expect(contexto.propuestaConLimites).not.toBeNull();
+    await expect(comoJson(contexto)).toMatchFileSnapshot(destino(archivo));
+  });
+
+  it('contexto-ciclo-vacio.json: Plan_de_Estudio_1 recién importado (Ciclo 8 vacío), con la ruta sugerida sin aplicar', async () => {
+    const contexto = buildAIContext((await crearStore('Plan_de_Estudio_1.xlsx')).getState(), { presupuestoMensual: 900 });
+    expect(contexto.proximoPeriodo).toBeNull();
+    expect(contexto.rutaSugerida).toMatchObject({ aplicadaEnMalla: false });
+    expect(contexto.rutaSugerida.propuesta[0].periodoId).toBe('ciclo-8');
+    await expect(comoJson(contexto)).toMatchFileSnapshot(destino('contexto-ciclo-vacio.json'));
+  });
 });

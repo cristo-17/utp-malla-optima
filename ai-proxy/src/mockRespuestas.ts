@@ -441,6 +441,19 @@ const respuestaPropuesta = (contexto: AIContext): AIChatResponse | null => {
   };
 };
 
+/** Regla 16: con el próximo periodo vacío, la ruta es una propuesta del planificador y se arma con Autogenerar. */
+const respuestaCicloVacio = (contexto: AIContext): AIChatResponse | null => {
+  const ruta = contexto.rutaSugerida;
+  const primero = ruta.propuesta[0];
+  if (contexto.proximoPeriodo || ruta.aplicadaEnMalla || !primero) return null;
+  return {
+    texto: `Tu ${periodo(primero.periodoId)} todavía está vacío. El planificador te propone ${primero.cursos.length} cursos (${horas(primero.horas)}): ` +
+      `${listar(primero.cursos.slice(0, 3).map((codigo) => nombreDe(contexto, codigo)))}${primero.cursos.length > 3 ? ' y más' : ''}.\n` +
+      'Es una propuesta, no tu malla: ármala con Autogenerar y la aplicas si te convence.',
+    cursos: primero.cursos.slice(0, 3), preguntasSugeridas: ['¿Me alcanza mi presupuesto?', 'Mi ruta hasta egresar'],
+  };
+};
+
 /** Regla 14 con la guía: cómo usar MallaU, con los nombres reales de los botones. */
 const respuestaGuia = (): AIChatResponse => ({
   texto: 'Sube tu plan con «Subir Excel» y arrastra cursos del «Banco de pendientes» a cada ciclo; con «Añadir ciclo» sumas uno más. ' +
@@ -565,6 +578,8 @@ export const mockChat = (contexto: AIContext, pregunta: string): AIChatResponse 
     case 'electivos': return desdeSeccion(seccionElectivos(contexto), otras('electivo'));
     case 'ruta': return desdeSeccion(seccionRuta(contexto), otras('ruta'));
     default: {
+      const vacio = respuestaCicloVacio(contexto);
+      if (vacio) return vacio;
       if (focoCiclo) {
         const { periodo: resumen, carga, escenarios } = focoCiclo;
         return {
