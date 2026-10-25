@@ -64,3 +64,7 @@ export const cicloVacioProximo = (
   const quedaPendiente = cursos.some((curso) => curso.estado === 'PENDIENTE');
   return !tieneCursos && quedaPendiente ? proximo : null;
 };
+
+/** El mensaje de la app en el chat después de aplicar desde él. */
+export const textoPlanAplicado = ({ ciclo, cursos, horas }: { ciclo: number; cursos: number; horas: number }): string =>
+  `Listo, armé tu Ciclo ${ciclo}: ${pluralizar(cursos, '1 curso', `${cursos} cursos`)}, ${horas} h. ¿Lo analizo?`;

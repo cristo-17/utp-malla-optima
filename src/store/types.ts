@@ -11,6 +11,15 @@ export type OpcionesAutogenerar = Pick<GenerateOptimalPlanInput,
 /** Modal Autogenerar abierto, con los valores con los que se abre. */
 export interface EstadoAutogenerar {
   inicial: OpcionesAutogenerar;
+  /** "chat": al aplicar, el chat muestra el resumen del ciclo armado (avisoPlanDesdeChat). */
+  origen?: 'chat';
+}
+
+/** Lo que la app (no la IA) cuenta en el chat después de aplicar desde él. */
+export interface AvisoPlanDesdeChat {
+  ciclo: number;
+  cursos: number;
+  horas: number;
 }
 
 export interface AcademicStore {
@@ -57,8 +66,10 @@ export interface AcademicStore {
   /** Restaura exactamente el estado anterior al último plan aplicado. */
   deshacerPlanificacion: () => Promise<boolean>;
   autogenerar: EstadoAutogenerar | null;
-  abrirAutogenerar: (inicial?: OpcionesAutogenerar) => void;
+  abrirAutogenerar: (inicial?: OpcionesAutogenerar, origen?: 'chat') => void;
   cerrarAutogenerar: () => void;
+  avisoPlanDesdeChat: AvisoPlanDesdeChat | null;
+  setAvisoPlanDesdeChat: (aviso: AvisoPlanDesdeChat | null) => void;
   toggleSeleccionMatricula: (codigo: string) => void;
   setTarifario: (tarifario: Tarifario) => Promise<void>;
   setMetodoPago: (metodoPago: string) => void;

@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
 import {
-  AlertTriangle, Bot, Check, CircleCheck, GitBranch, Gauge, OctagonAlert, RefreshCw, Route, Target, Wallet,
+  AlertTriangle, Bot, Check, CircleCheck, GitBranch, Gauge, OctagonAlert, RefreshCw, Route, Sparkles, Target, Wallet,
 } from 'lucide-react';
 import type { OpcionesPropuesta } from '../../application/ai/limites';
 import type { AISeccion, Nivel } from '../../application/ai/contracts';
@@ -82,10 +82,11 @@ interface MensajesProps {
   onPreguntar: (texto: string) => void;
   onReintentar: (id: number) => void;
   onAplicarPropuesta?: (opciones: OpcionesPropuesta) => void;
+  onAnalizar?: () => void;
 }
 
 export function AsistenteMensajes({
-  mensajes, nombres, enviando, deshabilitado, excluirPreguntas = [], onPreguntar, onReintentar, onAplicarPropuesta,
+  mensajes, nombres, enviando, deshabilitado, excluirPreguntas = [], onPreguntar, onReintentar, onAplicarPropuesta, onAnalizar,
 }: MensajesProps) {
   const ultimo = mensajes.at(-1);
   return <>
@@ -106,6 +107,16 @@ export function AsistenteMensajes({
             <button type="button" className="ia-reintentar" disabled={deshabilitado} onClick={() => onReintentar(mensaje.id)}>
               <RefreshCw size={15} aria-hidden="true" /> Reintentar
             </button>
+          </div>
+        </div>;
+      }
+      if (mensaje.tipo === 'app') {
+        return <div key={mensaje.id} className="ia-fila">
+          <div className="ia-burbuja ia-burbuja-bot ia-mensaje-app" role="status">
+            <p>{mensaje.texto}</p>
+            {onAnalizar && <button type="button" className="ia-btn-primario ia-accion-plan" disabled={deshabilitado} onClick={onAnalizar}>
+              <Sparkles size={16} aria-hidden="true" /> Analizar mi plan
+            </button>}
           </div>
         </div>;
       }

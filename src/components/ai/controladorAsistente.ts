@@ -20,6 +20,8 @@ export type MensajeChat =
     propuesta?: OpcionesPropuesta;
   }
   | { id: number; rol: 'assistant'; tipo: 'analisis'; analisis: AIAnalisisResponse }
+  /** Lo escribe la app, no la IA (no va en el historial): el resumen después de aplicar, con "Analizar mi plan". */
+  | { id: number; rol: 'assistant'; tipo: 'app'; texto: string }
   | { id: number; rol: 'assistant'; tipo: 'error'; error: AIErrorCodigo; mensaje: string; reintento: Solicitud };
 
 export type PanelEntrada = 'rapidas' | 'adjuntar' | null;
@@ -53,6 +55,7 @@ const estadoInicial = (privacidadAceptada: boolean): EstadoAsistente => ({
 const textoHistorial = (mensaje: MensajeChat): string | null => {
   if (mensaje.rol === 'user') return mensaje.texto;
   if (mensaje.tipo === 'texto') return mensaje.texto;
+  if (mensaje.tipo === 'app') return null;
   if (mensaje.tipo === 'analisis') {
     const { resumen, secciones } = mensaje.analisis;
     return [resumen, ...secciones.map((seccion) => `${seccion.titulo}: ${seccion.detalle}`)].join('\n');
@@ -156,6 +159,14 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
     setPanel: (panel: PanelEntrada) => actualizar({ panel }),
     alternarPanel: (panel: Exclude<PanelEntrada, null>) => actualizar({ panel: estado.panel === panel ? null : panel }),
     setPresupuesto: (presupuesto: string) => actualizar({ presupuesto }),
+    /** Mensaje de la app en el chat (no lo escribió la IA). */
+    agregarMensajeApp: (texto: string) => actualizar({ mensajes: [...estado.mensajes, { id: siguienteId++, rol: 'assistant', tipo: 'app', texto }] }),
+    /** Quita los mensajes de la app (por ejemplo, después de Deshacer). */
+    quitarMensajesApp: () => {
+      if (estado.mensajes.some((mensaje) => mensaje.rol === 'assistant' && mensaje.tipo === 'app')) {
+        actualizar({ mensajes: estado.mensajes.filter((mensaje) => mensaje.rol === 'user' || mensaje.tipo !== 'app') });
+      }
+    },
   };
 };
 

@@ -3,7 +3,7 @@ import type { AcademicSlice, AcademicStore } from './types';
 type UiSlice = Pick<AcademicStore,
   'panelPlanificadorAbierto' | 'cursoAMover' | 'notificacionMovimiento' |
   'setPanelPlanificadorAbierto' | 'setCursoAMover' | 'limpiarNotificacionMovimiento' |
-  'autogenerar' | 'abrirAutogenerar' | 'cerrarAutogenerar'>;
+  'autogenerar' | 'abrirAutogenerar' | 'cerrarAutogenerar' | 'avisoPlanDesdeChat' | 'setAvisoPlanDesdeChat'>;
 
 export const createUiSlice: AcademicSlice<UiSlice> = (set) => ({
   panelPlanificadorAbierto: false,
@@ -13,6 +13,8 @@ export const createUiSlice: AcademicSlice<UiSlice> = (set) => ({
   setCursoAMover: (cursoAMover) => set({ cursoAMover }),
   limpiarNotificacionMovimiento: () => set({ notificacionMovimiento: null }),
   autogenerar: null,
-  abrirAutogenerar: (inicial = {}) => set({ autogenerar: { inicial } }),
+  abrirAutogenerar: (inicial = {}, origen) => set({ autogenerar: { inicial, ...(origen ? { origen } : {}) } }),
   cerrarAutogenerar: () => set({ autogenerar: null }),
+  avisoPlanDesdeChat: null,
+  setAvisoPlanDesdeChat: (avisoPlanDesdeChat) => set({ avisoPlanDesdeChat }),
 });

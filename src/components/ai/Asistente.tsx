@@ -8,7 +8,7 @@ import { AsistenteFab } from './AsistenteFab';
 import { AsistentePanel } from './AsistentePanel';
 import { almacen, CLAVES_ASISTENTE, debeOcultarFab, opcionesAdjuntar } from './asistenteLogica';
 import { crearControladorAsistente } from './controladorAsistente';
-import { cicloVacioProximo } from '../../presentation/messages/autogenerarMessages';
+import { cicloVacioProximo, textoPlanAplicado } from '../../presentation/messages/autogenerarMessages';
 import './asistente.css';
 
 const DURACION_TOOLTIP_MS = 6000;
@@ -43,11 +43,13 @@ const irAlBanco = () => {
 };
 
 export function Asistente({ onSubirExcel }: { onSubirExcel?: () => void } = {}) {
-  const { cursos, cicloActual, cursoAMover, estrategiaAbierta, abrirAutogenerar } = useAcademicStore(useShallow((state) => ({
-    cursos: state.cursos, cicloActual: state.cicloActual,
-    cursoAMover: state.cursoAMover, estrategiaAbierta: state.panelPlanificadorAbierto,
-    abrirAutogenerar: state.abrirAutogenerar,
-  })));
+  const { cursos, cicloActual, cursoAMover, estrategiaAbierta, abrirAutogenerar, avisoPlanDesdeChat, setAvisoPlanDesdeChat } =
+    useAcademicStore(useShallow((state) => ({
+      cursos: state.cursos, cicloActual: state.cicloActual,
+      cursoAMover: state.cursoAMover, estrategiaAbierta: state.panelPlanificadorAbierto,
+      abrirAutogenerar: state.abrirAutogenerar,
+      avisoPlanDesdeChat: state.avisoPlanDesdeChat, setAvisoPlanDesdeChat: state.setAvisoPlanDesdeChat,
+    })));
   const [controlador] = useState(() => {
     const cliente = crearAIClient();
     return Object.assign(crearControladorAsistente({
@@ -77,6 +79,17 @@ export function Asistente({ onSubirExcel }: { onSubirExcel?: () => void } = {}) 
   const nombres = useMemo(() => new Map(cursos.map((curso) => [curso.codigo, curso.nombre])), [cursos]);
   const opciones = useMemo(() => opcionesAdjuntar(cursos, cicloActual), [cursos, cicloActual]);
   const cicloVacio = useMemo(() => cicloVacioProximo(cursos, cicloActual), [cursos, cicloActual]);
+
+  // Después de aplicar desde el chat, la app (no la IA) cuenta el ciclo armado y ofrece analizarlo.
+  useEffect(() => {
+    if (!avisoPlanDesdeChat) return;
+    controlador.agregarMensajeApp(textoPlanAplicado(avisoPlanDesdeChat));
+    setAvisoPlanDesdeChat(null);
+  }, [avisoPlanDesdeChat, controlador, setAvisoPlanDesdeChat]);
+  // Si el ciclo vuelve a quedar vacío (Deshacer o Limpiar plan), vuelve la tarjeta de Autogenerar y el aviso sobra.
+  useEffect(() => {
+    if (cicloVacio !== null) controlador.quitarMensajesApp();
+  }, [cicloVacio, controlador]);
 
   // Padding inferior del contenido para que el botón nunca tape tarjetas.
   useEffect(() => {
@@ -187,8 +200,8 @@ export function Asistente({ onSubirExcel }: { onSubirExcel?: () => void } = {}) 
         sinMalla={sinMalla}
         onSubirExcel={onSubirExcel ? () => { cerrar(); onSubirExcel(); } : undefined}
         onArmarAMano={() => { cerrar(); window.setTimeout(irAlBanco, 0); }}
-        onAutogenerar={(alcance) => abrirAutogenerar({ alcance })}
-        onAplicarPropuesta={abrirAutogenerar}
+        onAutogenerar={(alcance) => abrirAutogenerar({ alcance }, 'chat')}
+        onAplicarPropuesta={(opcionesPropuesta) => abrirAutogenerar(opcionesPropuesta, 'chat')}
         mostrarTooltipRapidas={mostrarTooltip} panelRef={panelRef} inputRef={inputRef} mensajesRef={mensajesRef} onKeyDown={alTeclear}
         onCerrar={cerrar}
         onNuevaConversacion={controlador.nuevaConversacion}

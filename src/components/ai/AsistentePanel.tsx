@@ -147,7 +147,7 @@ export function AsistentePanel({ panelRef, inputRef, mensajesRef, onKeyDown, ...
                 onPresupuesto={props.onPresupuesto} onAnalizar={props.onAnalizar} />}
           <AsistenteMensajes mensajes={estado.mensajes} nombres={nombres} enviando={estado.enviando}
             deshabilitado={!enLinea || estado.enviando} excluirPreguntas={sugerenciasFoco} onPreguntar={props.onPreguntar} onReintentar={props.onReintentar}
-            onAplicarPropuesta={props.onAplicarPropuesta} />
+            onAplicarPropuesta={props.onAplicarPropuesta} onAnalizar={props.onAnalizar} />
         </div>
         <AsistenteEntrada panel={estado.panel} foco={estado.foco} sugerenciasFoco={sugerenciasFoco} enLinea={enLinea} enviando={estado.enviando} bloqueado={pidePrivacidad}
           opciones={opciones} mostrarTooltipRapidas={props.mostrarTooltipRapidas} inputRef={inputRef}

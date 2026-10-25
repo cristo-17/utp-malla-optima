@@ -26,7 +26,7 @@ const aTexto = (valor: number | null | undefined) => typeof valor === 'number' ?
  */
 type StoreModal = ReturnType<typeof useStoreModal>;
 const useStoreModal = () => useAcademicStore(useShallow((state) => ({
-  autogenerar: state.autogenerar, cerrarAutogenerar: state.cerrarAutogenerar,
+  autogenerar: state.autogenerar, cerrarAutogenerar: state.cerrarAutogenerar, setAvisoPlanDesdeChat: state.setAvisoPlanDesdeChat,
   previsualizar: state.previsualizarPlanificacionOptima, aplicar: state.aplicarPlanificacionOptima,
   cursos: state.cursos, totalCiclos: state.totalCiclos, ciclosExcluidos: state.ciclosExcluidos,
   cicloActual: state.cicloActual, periodoIngreso: state.periodoIngreso, tarifario: state.tarifario,
@@ -36,10 +36,10 @@ const useStoreModal = () => useAcademicStore(useShallow((state) => ({
 export function AutogenerarModal() {
   const store = useStoreModal();
   if (!store.autogenerar) return null;
-  return <Contenido key={JSON.stringify(store.autogenerar.inicial)} inicial={store.autogenerar.inicial} store={store} />;
+  return <Contenido key={JSON.stringify(store.autogenerar)} inicial={store.autogenerar.inicial} origen={store.autogenerar.origen} store={store} />;
 }
 
-function Contenido({ inicial, store }: { inicial: OpcionesAutogenerar; store: StoreModal }) {
+function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; origen?: 'chat'; store: StoreModal }) {
   const [alcance, setAlcance] = useState(inicial.alcance ?? 'hastaEgresar');
   const [horas, setHoras] = useState(aTexto(inicial.maxHorasPorPeriodo));
   const [creditos, setCreditos] = useState(aTexto(inicial.maxCreditosPorPeriodo));
@@ -89,6 +89,11 @@ function Contenido({ inicial, store }: { inicial: OpcionesAutogenerar; store: St
     setError('');
     try {
       await store.aplicar(propuesta);
+      // Desde el chat, la app (no la IA) cuenta qué quedó en el próximo ciclo.
+      const proximo = propuesta.periodos.find((item) => item.periodo.id === propuesta.periodoInicio.id);
+      if (origen === 'chat' && proximo) {
+        store.setAvisoPlanDesdeChat({ ciclo: proximo.periodo.cicloReferencia, cursos: proximo.cursos.length, horas: proximo.horas });
+      }
       cerrar();
     } catch (causa) {
       setError(causa instanceof Error ? causa.message : 'No se pudo aplicar la propuesta.');
