@@ -1228,6 +1228,8 @@
     "limites": {
       "maxHorasPorPeriodo": null,
       "maxCreditosPorPeriodo": 18,
+      "horasEstricto": false,
+      "creditosEstricto": true,
       "maxCuotaMensual": null,
       "metodoPago": null,
       "horasPorCuota": null,
@@ -1262,13 +1264,13 @@
           "100000S73T",
           "100000S71T",
           "100000S02I",
-          "100000SI87",
           "100000SI86",
+          "100000N25I",
           "10000096SI"
         ],
         "numeroCursos": 7,
-        "horas": 22,
-        "creditos": 18,
+        "horas": 21,
+        "creditos": 17,
         "cuotaMensual": 815,
         "pagoUnicoAlInicio": 3769.37
       },
@@ -1277,15 +1279,14 @@
         "etiqueta": "Ciclo 10",
         "cursos": [
           "100000S09I",
+          "100000SI87",
           "100000S07I",
-          "100000N25I",
-          "100000N11I",
-          "100000NI24",
-          "100000SI97"
+          "100000SI97",
+          "100000SI95"
         ],
-        "numeroCursos": 6,
-        "horas": 20,
-        "creditos": 18,
+        "numeroCursos": 5,
+        "horas": 19,
+        "creditos": 17,
         "cuotaMensual": 815,
         "pagoUnicoAlInicio": 3769.37
       },
@@ -1293,12 +1294,13 @@
         "periodoId": "ciclo-11",
         "etiqueta": "Ciclo 11",
         "cursos": [
+          "100000N11I",
           "100000CN47",
-          "100000SI95"
+          "100000NI24"
         ],
-        "numeroCursos": 2,
-        "horas": 7,
-        "creditos": 7,
+        "numeroCursos": 3,
+        "horas": 9,
+        "creditos": 9,
         "cuotaMensual": 570.5,
         "pagoUnicoAlInicio": 2638.56
       }

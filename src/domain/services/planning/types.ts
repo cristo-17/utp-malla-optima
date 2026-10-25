@@ -35,7 +35,7 @@ export interface CursoNoPlanificado {
 
 export type ExplicacionPlan =
   | { tipo: 'RESUMEN'; total: number; cicloInicio: number; cicloFinal: number; jaladosEnVerano?: number; conVeranos?: boolean }
-  | { tipo: 'LIMITE'; horas: number; creditos?: number | null }
+  | { tipo: 'LIMITE'; horas: number; creditos?: number | null; estricto?: boolean }
   | { tipo: 'CICLOS_AGREGADOS'; ciclos: number[] }
   | { tipo: 'VERANOS_USADOS'; periodos: string[] }
   | { tipo: 'PRIORIDAD_OBLIGATORIOS' }
@@ -58,6 +58,9 @@ export interface LimitesPlanificacion {
   horasVerano: number;
   creditos: number | null;
   creditosVerano: number;
+  /** "Menos de N": ningún periodo llega a N horas (o créditos); si no, N está permitido. */
+  horasEstricto: boolean;
+  creditosEstricto: boolean;
 }
 
 export interface CursoPropuesto {
@@ -126,6 +129,9 @@ export interface OpcionesPlanificacion {
   /** Horas efectivas por verano (horas × factor); por defecto, las mismas que maxHorasPorPeriodo. */
   maxHorasVerano?: number | null;
   maxCreditosPorPeriodo?: number | null;
+  /** "Menos de N" (D-053): el límite de horas o de créditos no se alcanza. */
+  horasEstricto?: boolean;
+  creditosEstricto?: boolean;
   /** Permite ubicar cursos en los veranos del calendario, solo si hacen falta para egresar antes. */
   usarVeranos?: boolean;
   /** "hastaEgresar" (por defecto) o solo el próximo ciclo regular. */

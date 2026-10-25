@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { detectarLimites } from '../../src/application/ai/limites';
 
 const sinNada = {
-  maxHorasPorPeriodo: null, maxCreditosPorPeriodo: null, maxCuotaMensual: null,
+  maxHorasPorPeriodo: null, maxCreditosPorPeriodo: null, horasEstricto: false, creditosEstricto: false, maxCuotaMensual: null,
   agregarCiclo: false, usarVeranos: null, ciclos: [], unSoloCiclo: false,
 };
 
@@ -14,12 +14,12 @@ describe('detectarLimites con las frases reales del feedback', () => {
 
   it('"Quiero que ordenes mis ciclos restantes con menos de 18 créditos"', () => {
     expect(detectarLimites('Quiero que ordenes mis ciclos restantes con menos de 18 créditos'))
-      .toEqual({ ...sinNada, maxCreditosPorPeriodo: 18 });
+      .toEqual({ ...sinNada, maxCreditosPorPeriodo: 18, creditosEstricto: true });
   });
 
   it('"Quiero armar un plan que tenga menos de 20h semanales"', () => {
     expect(detectarLimites('Quiero armar un plan que tenga menos de 20h semanales'))
-      .toEqual({ ...sinNada, maxHorasPorPeriodo: 20 });
+      .toEqual({ ...sinNada, maxHorasPorPeriodo: 20, horasEstricto: true });
   });
 
   it('"y qué pasa si agrego otro ciclo?"', () => {
@@ -32,6 +32,14 @@ describe('detectarLimites con las frases reales del feedback', () => {
 });
 
 describe('detectarLimites: variantes', () => {
+  it('"menos de N" es estricto; "máximo", "hasta" y "no más de N" permiten N (D-053)', () => {
+    expect(detectarLimites('arma mi plan con menos de 20 h')).toMatchObject({ maxHorasPorPeriodo: 20, horasEstricto: true });
+    for (const frase of ['máximo 20 h', 'hasta 20 h', 'no más de 20 horas', '20 horas como máximo']) {
+      expect(detectarLimites(frase), frase).toMatchObject({ maxHorasPorPeriodo: 20, horasEstricto: false });
+    }
+    expect(detectarLimites('ordena mi plan con máximo 18 créditos')).toMatchObject({ maxCreditosPorPeriodo: 18, creditosEstricto: false });
+  });
+
   it('máximo, no más de, hasta y "como máximo" después del número; h, hrs, horas, créditos y cr', () => {
     expect(detectarLimites('máximo 22 horas por ciclo')?.maxHorasPorPeriodo).toBe(22);
     expect(detectarLimites('no más de 19 hrs')?.maxHorasPorPeriodo).toBe(19);

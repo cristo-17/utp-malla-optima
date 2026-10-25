@@ -152,22 +152,27 @@ export const rutaComoMalla = (texto: string, contexto: AIContext): string | null
 
 /** La malla de hoy se puede describir aunque pase el límite ("hoy tu Ciclo 8 tiene 25 h"). */
 const HABLA_DE_HOY = /\bhoy\b|\bactual|\bahora\b|ya ubicaste|tal como (esta|lo tienes)|antes\b/;
+const NOMBRA_LIMITE = /(menos de|hasta|maximo(?: de)?|limite de|tope de|no mas de|no llega a|ninguno llega a)\s*$/;
 const SOLES = /S\/\.?\s?(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{1,2}))?/gi;
 /** Un periodo citado (una frase con un solo periodo) cuyas horas, créditos o cuota pasan el límite que pidió el alumno. */
 export const superaLimite = (texto: string, contexto: AIContext): string | null => {
   const propuesta = contexto.propuestaConLimites;
   if (!propuesta) return null;
-  const { maxHorasPorPeriodo, maxCreditosPorPeriodo, maxCuotaMensual } = propuesta.limites;
+  const { maxHorasPorPeriodo, maxCreditosPorPeriodo, maxCuotaMensual, horasEstricto, creditosEstricto } = propuesta.limites;
+  // "Menos de N": llegar a N también pasa el límite.
+  const pasa = (valor: number, tope: number | null, estricto: boolean) => tope !== null && (estricto ? valor >= tope : valor > tope);
   const horasCursos = new Set(atributosDeCursos(contexto).flatMap((curso) => curso.horas === null ? [] : [curso.horas]));
   for (const frase of texto.split(/(?<=[.;!?])\s+|\n|;\s*/)) {
     const f = normalizar(frase);
     if ((f.match(/\b(ciclo|verano) \d{1,2}\b/g) ?? []).length !== 1 || HABLA_DE_HOY.test(f)) continue;
+    // "con menos de 20 h", "hasta 18 créditos": el número es el límite, no lo que lleva el periodo.
+    const esElLimite = (indice: number | undefined) => NOMBRA_LIMITE.test(f.slice(Math.max(0, (indice ?? 0) - 20), indice));
     for (const m of f.matchAll(/(\d+(?:[.,]\d+)?)\s*(h\b|horas?\b)/g)) {
       const horas = Number(m[1].replace(',', '.'));
-      if (maxHorasPorPeriodo !== null && horas > maxHorasPorPeriodo && !horasCursos.has(horas)) return frase.trim();
+      if (!esElLimite(m.index) && pasa(horas, maxHorasPorPeriodo, horasEstricto) && !horasCursos.has(horas)) return frase.trim();
     }
     for (const m of f.matchAll(/(\d+(?:[.,]\d+)?)\s*(creditos?\b|cr\b)/g)) {
-      if (maxCreditosPorPeriodo !== null && Number(m[1].replace(',', '.')) > maxCreditosPorPeriodo) return frase.trim();
+      if (!esElLimite(m.index) && pasa(Number(m[1].replace(',', '.')), maxCreditosPorPeriodo, creditosEstricto)) return frase.trim();
     }
     if (maxCuotaMensual !== null && !/pago unico|al inicio|total|matricula/.test(f)) {
       for (const m of frase.matchAll(SOLES)) {

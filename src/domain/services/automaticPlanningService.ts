@@ -19,8 +19,11 @@ export const validarCargaPlanificacionAutomatica = (resultado: ResultadoPlanific
     const verano = ciclo.periodo.tipo === 'VERANO';
     const creditos = carga.reduce((suma, curso) => suma + curso.creditos, 0);
     const horas = verano ? limites.horasVerano : limites.horas;
-    const excede = calcularHorasEfectivas(carga, ciclo.periodo.tipo) > horas ||
-      creditos > (verano ? limites.creditosVerano : limites.creditos ?? Infinity);
+    const tope = verano ? limites.creditosVerano : limites.creditos ?? Infinity;
+    const horasCarga = calcularHorasEfectivas(carga, ciclo.periodo.tipo);
+    // "Menos de N": llegar a N también excede.
+    const excede = (limites.horasEstricto ? horasCarga >= horas : horasCarga > horas) ||
+      (limites.creditosEstricto && !verano ? creditos >= tope : creditos > tope);
     if (carga.some((curso) => !horasValidas(curso)) || excede) {
       throw new Error(`La propuesta supera los límites (${horas} horas${limites.creditos !== null || verano ? ` o ${verano ? limites.creditosVerano : limites.creditos} créditos` : ''}) o contiene una carga inválida en ${ciclo.periodo.etiqueta}. Genera una propuesta nueva.`);
     }

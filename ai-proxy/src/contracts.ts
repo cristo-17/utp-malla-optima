@@ -212,6 +212,9 @@ const PropuestaConLimitesSchema = z.object({
   limites: z.object({
     maxHorasPorPeriodo: z.number().nullable(),
     maxCreditosPorPeriodo: z.number().nullable(),
+    /** "Menos de N": ningún periodo llega a N horas (o créditos). "Máximo / hasta / no más de N" permite N. */
+    horasEstricto: z.boolean(),
+    creditosEstricto: z.boolean(),
     /** Presupuesto mensual que pidió el alumno; se traduce en horas con la escala del tarifario. */
     maxCuotaMensual: monto.nullable(),
     metodoPago: z.string().nullable(),

@@ -24,6 +24,8 @@ import type {
 
 const ESTADOS_COMPLETADOS = new Set(['APROBADO', 'CONVALIDADO']);
 const EPSILON = 1e-9;
+/** "Menos de N": el tope efectivo queda apenas debajo de N, así ningún periodo llega a N. */
+const MARGEN_ESTRICTO = 1e-6;
 
 const limitePositivo = (valor: number | null | undefined): number | null =>
   typeof valor === 'number' && Number.isFinite(valor) && valor >= 0 ? valor : null;
@@ -46,6 +48,9 @@ const planificar = (
   const limiteHorasVerano = limitePositivo(opciones.maxHorasVerano) ?? limiteHoras;
   const limiteCreditos = limitePositivo(opciones.maxCreditosPorPeriodo);
   const limiteCreditosVerano = Math.min(LIMITE_CREDITOS_VERANO, limiteCreditos ?? Infinity);
+  const horasEstricto = Boolean(opciones.horasEstricto);
+  const creditosEstricto = Boolean(opciones.creditosEstricto && limiteCreditos !== null);
+  const efectivo = (limite: number, estricto: boolean) => estricto ? limite - MARGEN_ESTRICTO : limite;
 
   const originales = new Map(cursosEntrada.map((curso) => [curso.codigo, curso]));
   const cursosBase = cursosEntrada.map((curso) => ({ ...curso }));
@@ -185,8 +190,9 @@ const planificar = (
     if (cargaConservada.some((curso) => !horasValidas(curso))) continue;
     const factor = esVerano ? FACTOR_HORAS_VERANO : 1;
     let horasDisponibles = Math.max(0,
-      ((esVerano ? limiteHorasVerano : limiteHoras) - calcularHorasEfectivas(cargaConservada, periodo.tipo)) / factor);
-    let creditosDisponibles = (esVerano ? limiteCreditosVerano : limiteCreditos ?? Infinity) - sumarCreditos(cargaConservada);
+      (efectivo(esVerano ? limiteHorasVerano : limiteHoras, horasEstricto) - calcularHorasEfectivas(cargaConservada, periodo.tipo)) / factor);
+    let creditosDisponibles = efectivo(esVerano ? limiteCreditosVerano : limiteCreditos ?? Infinity, creditosEstricto) -
+      sumarCreditos(cargaConservada);
     const prioridades = calcularPrioridadesPendientes([...restantes.values()]);
     const disponibles = [...restantes.values()].filter((curso) => horasValidas(curso) &&
       prerrequisitosCumplidos(curso, periodo, porCodigo, asignaciones));
@@ -305,7 +311,8 @@ const planificar = (
     { tipo: 'RESUMEN', total: nuevasAsignaciones.size, cicloInicio, cicloFinal: cicloUltimo,
       jaladosEnVerano: [...destinoJalado.values()].filter((destino) => destino.tipo === 'VERANO').length,
       ...(veranosUsados.length ? { conVeranos: true } : {}) },
-    { tipo: 'LIMITE', horas: limiteHoras, ...(limiteCreditos !== null ? { creditos: limiteCreditos } : {}) },
+    { tipo: 'LIMITE', horas: limiteHoras, ...(limiteCreditos !== null ? { creditos: limiteCreditos } : {}),
+      ...(horasEstricto || creditosEstricto ? { estricto: true } : {}) },
     { tipo: 'PRIORIDAD_OBLIGATORIOS' },
     { tipo: 'APROBADOS_SIN_CARGA' },
     { tipo: 'REQUISITOS_EXTERNOS' },
@@ -342,7 +349,10 @@ const planificar = (
   return { cursos, cicloInicio, cicloFinal: cicloUltimo, periodoInicio, limiteHoras,
     totalPlanificados: nuevasAsignaciones.size, totalConservados,
     ciclos, noPlanificados, explicacion, advertenciasHoras,
-    alcance, limites: { horas: limiteHoras, horasVerano: limiteHorasVerano, creditos: limiteCreditos, creditosVerano: limiteCreditosVerano },
+    alcance, limites: {
+      horas: limiteHoras, horasVerano: limiteHorasVerano, creditos: limiteCreditos, creditosVerano: limiteCreditosVerano,
+      horasEstricto, creditosEstricto,
+    },
     periodos, ciclosAgregados, veranosUsados, periodoEgreso, cicloEgreso: periodoEgreso?.cicloReferencia ?? null };
 };
 

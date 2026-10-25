@@ -8,7 +8,7 @@ export const explicarPlan = (explicacion: ExplicacionPlan): string => {
       return `${pluralizar(explicacion.total, 'Se organizó 1 curso pendiente', `Se organizaron ${explicacion.total} cursos pendientes`)} desde el ciclo ${explicacion.cicloInicio} hasta el ${explicacion.cicloFinal}, ${explicacion.conVeranos ? 'con ciclos regulares y veranos' : 'utilizando solo ciclos regulares'}${!explicacion.conVeranos && explicacion.jaladosEnVerano
         ? ` (el verano se usa únicamente para ${pluralizar(explicacion.jaladosEnVerano, 'tu curso jalado', `tus ${explicacion.jaladosEnVerano} cursos jalados`)})` : ''}.`;
     case 'LIMITE':
-      return `Cada ciclo que recibe nuevas asignaciones respeta hasta ${explicacion.horas} horas semanales${explicacion.creditos
+      return `Cada ciclo que recibe nuevas asignaciones respeta ${explicacion.estricto ? 'menos de' : 'hasta'} ${explicacion.horas} horas semanales${explicacion.creditos
         ? ` y ${formatCredits(explicacion.creditos)} créditos.` : '. Los créditos son informativos y no limitan la propuesta.'}`;
     case 'CICLOS_AGREGADOS':
       return `Con estos límites hace falta ${pluralizar(explicacion.ciclos.length, 'agregar el ciclo', 'agregar los ciclos')} ${explicacion.ciclos.join(', ')} para terminar la carrera.`;

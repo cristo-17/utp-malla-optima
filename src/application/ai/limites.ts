@@ -8,6 +8,9 @@ import { montoDelMensaje } from './presupuesto';
 export interface LimitesDelMensaje {
   maxHorasPorPeriodo: number | null;
   maxCreditosPorPeriodo: number | null;
+  /** "Menos de N": ningún periodo llega a N (D-053). "Máximo / hasta / no más de N" permite N. */
+  horasEstricto: boolean;
+  creditosEstricto: boolean;
   /** Monto mensual (el mismo parser que aplicarMontoDelAlumno), solo si el mensaje pide armar o reordenar el plan. */
   maxCuotaMensual: number | null;
   /** "agregar / añadir otro ciclo". */
@@ -22,7 +25,7 @@ export interface LimitesDelMensaje {
 
 const sinTildes = (texto: string) => texto.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
 
-/** "menos de", "máximo", "no más de", "hasta", "tope de"…: el número que sigue es un tope (se toma como máximo). */
+/** "menos de", "máximo", "no más de", "hasta", "tope de"…: el número que sigue es un tope ("menos de" es estricto). */
 const TOPE = String.raw`(?:menos\s+de|no\s+(?:tenga|tengan|pase|pasen|supere|superen|sea|sean)?\s*mas\s+de|no\s+mas\s+de|maximo(?:\s+de)?|como\s+maximo|como\s+mucho|hasta|tope\s+de|limite\s+de|max\.?)`;
 const NUMERO = String.raw`(\d{1,2}(?:[.,]\d)?)`;
 const HORAS = new RegExp(String.raw`${TOPE}\s+${NUMERO}\s*(?:h\b|hrs?\b|horas?\b)|${NUMERO}\s*(?:h\b|hrs?\b|horas?\b)(?:\s+semanales)?\s+(?:como\s+maximo|como\s+mucho|maximo|max\b)`);
@@ -58,6 +61,8 @@ export const detectarLimites = (mensaje: string): LimitesDelMensaje | null => {
   const limites: LimitesDelMensaje = {
     maxHorasPorPeriodo: horas ? aNumero(horas[1] ?? horas[2]) : null,
     maxCreditosPorPeriodo: creditos ? aNumero(creditos[1] ?? creditos[2]) : null,
+    horasEstricto: Boolean(horas && /^menos\s+de/.test(horas[0])),
+    creditosEstricto: Boolean(creditos && /^menos\s+de/.test(creditos[0])),
     maxCuotaMensual,
     agregarCiclo,
     usarVeranos,
@@ -80,5 +85,7 @@ export const opcionesDePropuesta = ({ limites }: AIPropuestaConLimites) => ({
   maxCuotaMensual: limites.maxCuotaMensual,
   usarVeranos: limites.usarVeranos,
   conservarUbicados: false,
+  horasEstricto: limites.horasEstricto,
+  creditosEstricto: limites.creditosEstricto,
 });
 export type OpcionesPropuesta = ReturnType<typeof opcionesDePropuesta>;

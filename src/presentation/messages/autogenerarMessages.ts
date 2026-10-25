@@ -33,7 +33,9 @@ export const avisosPropuesta = (
     const verano = periodo.tipo === 'VERANO';
     const tope = verano ? limites.horasVerano : limites.horas;
     const topeCreditos = verano ? limites.creditosVerano : limites.creditos;
-    const pasa = horas > tope ? `${horas} h` : topeCreditos !== null && creditos > topeCreditos ? `${creditos} cr` : null;
+    const sobreHoras = limites.horasEstricto ? horas >= tope : horas > tope;
+    const sobreCreditos = topeCreditos !== null && (limites.creditosEstricto && !verano ? creditos >= topeCreditos : creditos > topeCreditos);
+    const pasa = sobreHoras ? `${horas} h` : sobreCreditos ? `${creditos} cr` : null;
     if (pasa && cursos.some((curso) => curso.conservado && !curso.jalado)) {
       avisos.push(`El ${nombrePeriodoCorto(periodo)} que ya ubicaste pasa tu límite (${pasa}): desmarca «Conservar lo que ya ubiqué» para reordenarlo.`);
     }

@@ -39,15 +39,16 @@ describe('CONTEXTO.propuestaConLimites (buildAIContext con detectarLimites)', ()
     expect(contextoCon(store, '¿Me alcanza mi presupuesto?').propuestaConLimites).toBeNull();
   });
 
-  it('"menos de 20h": reordena hasta egresar con 20 h, cada periodo bajo el tope, y no se aplica a la malla', () => {
+  it('"menos de 20h": reordena hasta egresar, ningún periodo llega a 20 h (estricto), y no se aplica a la malla', () => {
     const contexto = contextoCon(store, 'Quiero armar un plan que tenga menos de 20h semanales');
     expect(AIContextSchema.parse(contexto)).toEqual(contexto);
     const propuesta = contexto.propuestaConLimites!;
-    expect(propuesta.limites).toMatchObject({ maxHorasPorPeriodo: 20, horasAplicadas: 20, alcance: 'hastaEgresar' });
+    expect(propuesta.limites).toMatchObject({ maxHorasPorPeriodo: 20, horasAplicadas: 20, horasEstricto: true, alcance: 'hastaEgresar' });
     expect(propuesta.aplicadaEnMalla).toBe(false);
     // El 8vo que ubicó el alumno tenía 25 h: la propuesta lo reordena.
     expect(propuesta.periodos.map((item) => [item.periodoId, item.numeroCursos, item.horas]))
-      .toEqual([['ciclo-8', 5, 19], ['ciclo-9', 7, 20], ['ciclo-10', 5, 20], ['ciclo-11', 3, 9]]);
+      .toEqual([['ciclo-8', 5, 19], ['ciclo-9', 7, 19], ['ciclo-10', 5, 19], ['ciclo-11', 3, 11]]);
+    expect(propuesta.periodos.every((periodo) => periodo.horas < 20)).toBe(true);
     expect(propuesta.ciclosAgregados).toEqual([11]);
     expect(propuesta.periodos[0].cuotaMensual).toBe(815);
     // La malla del alumno no cambió.
@@ -87,7 +88,7 @@ describe('CONTEXTO.propuestaConLimites (buildAIContext con detectarLimites)', ()
     const propuesta = contextoCon(store, 'Quiero armar un plan que tenga menos de 20h semanales').propuestaConLimites!;
     expect(opcionesDePropuesta(propuesta)).toEqual({
       alcance: 'hastaEgresar', maxHorasPorPeriodo: 20, maxCreditosPorPeriodo: null, maxCuotaMensual: null,
-      usarVeranos: false, conservarUbicados: false,
+      usarVeranos: false, conservarUbicados: false, horasEstricto: true, creditosEstricto: false,
     });
   });
 

@@ -22,6 +22,9 @@ export interface GenerateOptimalPlanInput {
   /** Límites del alumno (todos opcionales). Sin ninguno: el tope fijo de 22 h, sin veranos. */
   maxHorasPorPeriodo?: number | null;
   maxCreditosPorPeriodo?: number | null;
+  /** "Menos de N" (estricto): ningún periodo llega a N horas o créditos. */
+  horasEstricto?: boolean;
+  creditosEstricto?: boolean;
   /** Cuota mensual máxima: se convierte en horas con el tarifario y el método de pago (horasMaximasParaCuota). */
   maxCuotaMensual?: number | null;
   usarVeranos?: boolean;
@@ -143,6 +146,8 @@ export const generateOptimalPlanUseCase = (input: GenerateOptimalPlanInput): Pro
     maxHorasPorPeriodo: minimo(techo, horasPorCuota),
     maxHorasVerano: horasPorCuotaVerano !== null ? minimo(techo, horasPorCuotaVerano) : null,
     maxCreditosPorPeriodo: numero(input.maxCreditosPorPeriodo),
+    horasEstricto: input.horasEstricto && maxHoras !== null,
+    creditosEstricto: input.creditosEstricto,
     usarVeranos: input.usarVeranos,
     alcance: input.alcance,
     conservarUbicados: input.conservarUbicados,
@@ -198,8 +203,11 @@ const alternativasDe = (principal: Omit<PropuestaPlan, 'alternativas'>, input: G
   const creditosExtra = principal.periodos.filter(({ periodo }) => periodo.tipo === 'REGULAR' && principal.ciclosAgregados.includes(periodo.cicloReferencia))
     .reduce((suma, periodo) => suma + periodo.creditos, 0);
   if (principal.ciclosAgregados.length && creditosExtra <= CREDITOS_CICLO_EXTRA_POCOS && !conCuota) {
-    for (let horas = Math.floor(principal.limites.horas) + 1; horas <= HORAS_MAXIMAS_ALTERNATIVA; horas += 1) {
-      const propuesta = generateOptimalPlanUseCase({ ...input, maxHorasPorPeriodo: horas, conAlternativas: false, servicioFinanciero: servicio });
+    const desde = principal.limites.horasEstricto ? Math.ceil(principal.limites.horas) : Math.floor(principal.limites.horas) + 1;
+    for (let horas = desde; horas <= HORAS_MAXIMAS_ALTERNATIVA; horas += 1) {
+      const propuesta = generateOptimalPlanUseCase({
+        ...input, maxHorasPorPeriodo: horas, horasEstricto: false, conAlternativas: false, servicioFinanciero: servicio,
+      });
       if (!propuesta.ciclosAgregados.length && !propuesta.noPlanificados.length) {
         resultados.push({ tipo: 'topeSinCicloExtra', opciones: { maxHorasPorPeriodo: horas }, propuesta });
         break;

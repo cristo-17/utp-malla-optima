@@ -408,6 +408,7 @@ const propuestaConLimitesDe = (
     cicloActual: estado.cicloActual, periodoIngreso: estado.periodoIngreso,
     tarifario: estado.tarifario, disciplina: estado.disciplinaActiva, metodoPago: estado.metodoPago, servicioFinanciero: servicio,
     maxHorasPorPeriodo: limites.maxHorasPorPeriodo, maxCreditosPorPeriodo: limites.maxCreditosPorPeriodo,
+    horasEstricto: limites.horasEstricto, creditosEstricto: limites.creditosEstricto,
     maxCuotaMensual: limites.maxCuotaMensual, usarVeranos: limites.usarVeranos ?? false, alcance, conservarUbicados: false,
   };
   const base = generateOptimalPlanUseCase(entrada);
@@ -418,6 +419,8 @@ const propuestaConLimitesDe = (
     limites: {
       maxHorasPorPeriodo: limites.maxHorasPorPeriodo,
       maxCreditosPorPeriodo: limites.maxCreditosPorPeriodo,
+      horasEstricto: propuesta.limites.horasEstricto,
+      creditosEstricto: propuesta.limites.creditosEstricto,
       maxCuotaMensual: propuesta.limitesPedidos.maxCuotaMensual,
       metodoPago: propuesta.limitesPedidos.metodoPago,
       horasPorCuota: propuesta.limitesPedidos.horasPorCuota,

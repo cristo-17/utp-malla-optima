@@ -412,13 +412,15 @@ describe('evaluación - plan con límites, ruta sugerida, guía y descuentos', (
   const de = (texto: string, contexto = limite20, esperado: Esperado = {}) => fallosDe(texto, esperado, ['Quiero armar un plan que tenga menos de 20h semanales'], contexto);
 
   it('CRÍTICO plan-inventado: cursos o cifras de un plan que no salen de la propuesta ni de la ruta sugerida', () => {
-    expect(de('Así queda: Ciclo 8: 5 cursos (19 h); Ciclo 9: 7 cursos (20 h). Necesitas 1 ciclo más. Aplícalo con «Aplicar a mi malla».')).toEqual([]);
+    expect(de('Así queda: Ciclo 8: 5 cursos (19 h); Ciclo 9: 7 cursos (19 h). Necesitas 1 ciclo más. Aplícalo con «Aplicar a mi malla».')).toEqual([]);
     expect(de('Ciclo 8: 6 cursos (19 h).')).toContain('CRITICO:plan-inventado');
     expect(de('En el Ciclo 8 llevas CURSO INTEGRADOR II: SISTEMAS (100000S09I).')).toContain('CRITICO:plan-inventado');
   });
 
   it('MAYOR supera-limite: un periodo citado que pasa el límite pedido; la malla de hoy sí se puede describir', () => {
     expect(de('El Ciclo 9 te queda en 22 h.')).toContain('MAYOR:supera-limite');
+    // "Menos de 20 h" es estricto: 20 h también pasa el límite.
+    expect(de('El Ciclo 9 te queda en 20 h.')).toContain('MAYOR:supera-limite');
     expect(de('Hoy tu Ciclo 8 tiene 25 h; con tu límite baja a 19 h.')).not.toContain('MAYOR:supera-limite');
     const de900 = leerFixture('contexto-limite-900');
     expect(fallosDe('El Ciclo 8 lleva 7 cursos con una cuota de S/ 892.62.', {}, ['arma un plan con 800 soles'], { ...de900,

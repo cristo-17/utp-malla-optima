@@ -47,6 +47,9 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
   const [alcance, setAlcance] = useState(inicial.alcance ?? 'hastaEgresar');
   const [horas, setHoras] = useState(aTexto(inicial.maxHorasPorPeriodo));
   const [creditos, setCreditos] = useState(aTexto(inicial.maxCreditosPorPeriodo));
+  // "Menos de N" viene del chat; los campos del modal son "Máximo" (≤): al editarlos deja de ser estricto.
+  const [horasEstricto, setHorasEstricto] = useState(Boolean(inicial.horasEstricto));
+  const [creditosEstricto, setCreditosEstricto] = useState(Boolean(inicial.creditosEstricto));
   // Sin un monto propio (el de una propuesta del chat), parte del presupuesto que el alumno ya escribió.
   const [cuota, setCuota] = useState(inicial.maxCuotaMensual === undefined ? store.presupuestoMensual : aTexto(inicial.maxCuotaMensual));
   const [usarVeranos, setUsarVeranos] = useState(inicial.usarVeranos ?? false);
@@ -73,8 +76,8 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
 
   const opciones: OpcionesAutogenerar = useMemo(() => ({
     alcance, maxHorasPorPeriodo: aNumero(horas), maxCreditosPorPeriodo: aNumero(creditos),
-    maxCuotaMensual: aNumero(cuota), usarVeranos, conservarUbicados: conservar, metodoPago,
-  }), [alcance, horas, creditos, cuota, usarVeranos, conservar, metodoPago]);
+    maxCuotaMensual: aNumero(cuota), usarVeranos, conservarUbicados: conservar, metodoPago, horasEstricto, creditosEstricto,
+  }), [alcance, horas, creditos, cuota, usarVeranos, conservar, metodoPago, horasEstricto, creditosEstricto]);
   const propuesta = useMemo((): PropuestaPlan | null => {
     try {
       return previsualizar(opciones);
@@ -93,7 +96,10 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
   const usarAlternativa = ({ opciones: cambios }: AlternativaPlan) => {
     if (cambios.metodoPago) setMetodoElegido(cambios.metodoPago);
     if (cambios.usarVeranos !== undefined) setUsarVeranos(cambios.usarVeranos);
-    if (cambios.maxHorasPorPeriodo !== undefined) setHoras(String(cambios.maxHorasPorPeriodo));
+    if (cambios.maxHorasPorPeriodo !== undefined) {
+      setHoras(String(cambios.maxHorasPorPeriodo));
+      setHorasEstricto(false);
+    }
   };
   const proximo = `Ciclo ${(cicloActual ?? 0) + 1}`;
 
@@ -141,13 +147,16 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
         </fieldset>
         <div className="autogen-campos">
           <label htmlFor="autogen-horas">Máximo de horas por ciclo
-            <input id="autogen-horas" type="number" inputMode="numeric" min="0" step="1" placeholder="22 (opcional)" value={horas} onChange={(event) => setHoras(event.target.value)} /></label>
+            <input id="autogen-horas" type="number" inputMode="numeric" min="0" step="1" placeholder="22 (opcional)" value={horas} onChange={(event) => { setHoras(event.target.value); setHorasEstricto(false); }} /></label>
           <label htmlFor="autogen-creditos">Máximo de créditos
-            <input id="autogen-creditos" type="number" inputMode="numeric" min="0" step="1" placeholder="Opcional" value={creditos} onChange={(event) => setCreditos(event.target.value)} /></label>
+            <input id="autogen-creditos" type="number" inputMode="numeric" min="0" step="1" placeholder="Opcional" value={creditos} onChange={(event) => { setCreditos(event.target.value); setCreditosEstricto(false); }} /></label>
           <label htmlFor="autogen-cuota">Presupuesto mensual (S/)
             <input id="autogen-cuota" type="number" inputMode="decimal" min="0" step="10" placeholder="Opcional" value={cuota}
               onChange={(event) => { setCuota(event.target.value); store.setPresupuestoMensual(event.target.value); }} /></label>
         </div>
+        {(horasEstricto || creditosEstricto) && <p className="autogen-nota" role="note">
+          Pediste menos de {[horasEstricto && `${horas} h`, creditosEstricto && `${creditos} créditos`].filter(Boolean).join(' y ')}:
+          ningún ciclo llega a ese número. Si cambias el campo, vale como máximo.</p>}
         <div className="autogen-checks">
           <label><input type="checkbox" checked={usarVeranos} onChange={(event) => setUsarVeranos(event.target.checked)} /> Usar veranos</label>
           <label><input type="checkbox" checked={conservar} onChange={(event) => setConservar(event.target.checked)} /> Conservar lo que ya ubiqué</label>

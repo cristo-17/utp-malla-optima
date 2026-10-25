@@ -424,8 +424,9 @@ const respuestaPropuesta = (contexto: AIContext): AIChatResponse | null => {
   const { limites } = propuesta;
   const pedido = limites.agregarCiclo ? `con un ciclo más, hasta ${horas(limites.horasAplicadas)} por ciclo`
     : limites.maxCuotaMensual !== null ? `con ${soles(limites.maxCuotaMensual)} al mes, hasta ${horas(limites.horasAplicadas)} por ciclo`
-      : limites.maxCreditosPorPeriodo !== null ? `con hasta ${limites.maxCreditosPorPeriodo} créditos por ciclo`
-        : `con hasta ${horas(limites.horasAplicadas)} por ciclo`;
+      : limites.maxCreditosPorPeriodo !== null
+        ? `con ${limites.creditosEstricto ? 'menos de' : 'hasta'} ${limites.maxCreditosPorPeriodo} créditos por ciclo`
+        : `con ${limites.horasEstricto ? 'menos de' : 'hasta'} ${horas(limites.horasAplicadas)} por ciclo`;
   const periodos = propuesta.periodos.map((item) => `${item.etiqueta}: ${item.numeroCursos} cursos (${horas(item.horas)})`);
   const extra = [
     ...(propuesta.ciclosAgregados.length ? [`Necesitas ${propuesta.ciclosAgregados.length === 1 ? '1 ciclo más' : `${propuesta.ciclosAgregados.length} ciclos más`}.`] : []),

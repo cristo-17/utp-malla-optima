@@ -63,8 +63,8 @@ describe('filtro de salida - un plan citado sale de propuestaConLimites o rutaSu
   const deLimite = (texto: string) => chequeos(texto, limite20);
 
   it('la propuesta tal cual pasa: cursos por periodo, horas, "1 ciclo más" y el límite', () => {
-    expect(deLimite('Con hasta 20 h por ciclo: Ciclo 8: 5 cursos (19 h); Ciclo 9: 7 cursos (20 h); Ciclo 10: 5 cursos (20 h); Ciclo 11: 3 cursos (9 h). Necesitas 1 ciclo más.')).toEqual([]);
-    expect(deLimite('En el Ciclo 11 van FORMACIÓN PARA LA EMPLEABILIDAD (100000N11I) e INGENIERÍA ECONÓMICA (100000NI24).')).toEqual([]);
+    expect(deLimite('Con menos de 20 h por ciclo: Ciclo 8: 5 cursos (19 h); Ciclo 9: 7 cursos (19 h); Ciclo 10: 5 cursos (19 h); Ciclo 11: 3 cursos (11 h). Necesitas 1 ciclo más.')).toEqual([]);
+    expect(deLimite('En el Ciclo 11 van SERVICIOS CLOUD (100000SI97) y TALLER DE INVESTIGACIÓN - SISTEMAS (100000SI95).')).toEqual([]);
     // La malla del alumno (su Ciclo 8 de 25 h) también es un dato válido.
     expect(deLimite('Hoy tu Ciclo 8 tiene 7 cursos y 25 h.')).toEqual([]);
   });

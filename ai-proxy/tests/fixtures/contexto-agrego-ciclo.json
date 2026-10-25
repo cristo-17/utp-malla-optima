@@ -1228,6 +1228,8 @@
     "limites": {
       "maxHorasPorPeriodo": null,
       "maxCreditosPorPeriodo": null,
+      "horasEstricto": false,
+      "creditosEstricto": false,
       "maxCuotaMensual": null,
       "metodoPago": null,
       "horasPorCuota": null,
