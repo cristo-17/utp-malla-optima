@@ -51,7 +51,9 @@
 .tap-move-floating-bar button { display: inline-flex; align-items: center; gap: 3px; border: none; background: transparent; color: white; cursor: pointer; }
 .integration-error { position: fixed; right: 12px; bottom: 12px; z-index: 3000; padding: 12px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 7px; }
 .backup-controls { display: inline-flex; align-items: center; gap: 5px; }
-.backup-error { position: absolute; top: 100%; right: 0; padding: 8px; background: #fff1f2; }
+.backup-error { position: absolute; top: 100%; right: 0; display: flex; align-items: center; gap: 6px; padding: 8px; background: #fff1f2; }
+.backup-error-cerrar { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
+.backup-error-cerrar:hover { background: rgba(190, 18, 60, .1); }
 .save-as-popover {
   position: fixed;
   z-index: 3500;
