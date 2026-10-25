@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { useShallow } from 'zustand/react/shallow';
 import { useAcademicStore } from '../../store/useAcademicStore';
 import { buildAIContext } from '../../application/ai/buildAIContext';
+import { detectarLimites } from '../../application/ai/limites';
 import { conexionActual, crearAIClient, escucharConexion } from '../../infrastructure/ai/HttpAIClient';
 import { AsistenteFab } from './AsistenteFab';
 import { AsistentePanel } from './AsistentePanel';
@@ -45,7 +46,8 @@ export function Asistente() {
     return Object.assign(crearControladorAsistente({
       cliente,
       // El contexto se recalcula en cada envío con el estado actual del store.
-      obtenerContexto: (opciones) => buildAIContext(useAcademicStore.getState(), opciones),
+      obtenerContexto: ({ mensaje, ...opciones }) =>
+        buildAIContext(useAcademicStore.getState(), { ...opciones, limites: mensaje ? detectarLimites(mensaje) : null }),
       privacidadAceptada: almacen.leer(CLAVES_ASISTENTE.privacidad),
       alAceptarPrivacidad: () => almacen.guardar(CLAVES_ASISTENTE.privacidad),
     }), { esMock: cliente.esMock });
@@ -176,6 +178,7 @@ export function Asistente() {
       <AsistentePanel
         estado={estado} enLinea={enLinea} nombres={nombres} opciones={opciones} esMock={controlador.esMock} cicloVacio={cicloVacio}
         onAutogenerar={(alcance) => abrirAutogenerar({ alcance })}
+        onAplicarPropuesta={abrirAutogenerar}
         mostrarTooltipRapidas={mostrarTooltip} panelRef={panelRef} inputRef={inputRef} mensajesRef={mensajesRef} onKeyDown={alTeclear}
         onCerrar={cerrar}
         onNuevaConversacion={controlador.nuevaConversacion}

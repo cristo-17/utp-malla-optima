@@ -849,5 +849,6 @@
     "cursosProximoPeriodo": [],
     "proximoPeriodoConJalados": null,
     "planificadosBloqueadosPorJalado": []
-  }
+  },
+  "propuestaConLimites": null
 }

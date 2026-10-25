@@ -64,5 +64,6 @@ export const crearContextoMinimo = (cambios: Partial<AIContext> = {}): AIContext
     proximoPeriodoConJalados: null,
     planificadosBloqueadosPorJalado: [],
   },
+  propuestaConLimites: null,
   ...cambios,
 });

@@ -1,3 +1,4 @@
+import type { AIPropuestaConLimites } from './contracts';
 import { montoDelMensaje } from './presupuesto';
 
 /**
@@ -67,3 +68,17 @@ export const detectarLimites = (mensaje: string): LimitesDelMensaje | null => {
     limites.maxCuotaMensual !== null || agregarCiclo || (usarVeranos !== null && pidePlan);
   return pideAlgo ? limites : null;
 };
+
+/**
+ * Opciones de Autogenerar con las que se armó la propuesta del contexto: el botón "Aplicar a mi malla" del chat abre
+ * la vista previa ya cargada con ellas (el alumno la aplica; la IA nunca cambia la malla).
+ */
+export const opcionesDePropuesta = ({ limites }: AIPropuestaConLimites) => ({
+  alcance: limites.alcance,
+  maxHorasPorPeriodo: limites.agregarCiclo ? limites.horasAplicadas : limites.maxHorasPorPeriodo,
+  maxCreditosPorPeriodo: limites.maxCreditosPorPeriodo,
+  maxCuotaMensual: limites.maxCuotaMensual,
+  usarVeranos: limites.usarVeranos,
+  conservarUbicados: false,
+});
+export type OpcionesPropuesta = ReturnType<typeof opcionesDePropuesta>;

@@ -4,6 +4,7 @@ import { AsistenteEntrada } from './AsistenteEntrada';
 import { AsistenteMensajes } from './AsistenteMensajes';
 import { preguntasPorFoco, type FocoUI, type OpcionesAdjuntar } from './asistenteLogica';
 import type { EstadoAsistente, PanelEntrada } from './controladorAsistente';
+import type { OpcionesPropuesta } from '../../application/ai/limites';
 
 export const TEXTO_PRIVACIDAD = 'Enviaremos tu plan de forma anónima a un servicio de IA externo (DeepSeek) para analizarlo. No enviamos tu nombre ni tu código.';
 
@@ -22,6 +23,8 @@ export interface AccionesPanel {
   onQuitarFoco: () => void;
   /** Abre Autogenerar; con el próximo ciclo vacío, con alcance "Próximo ciclo". */
   onAutogenerar?: (alcance: 'proximoPeriodo' | 'hastaEgresar') => void;
+  /** "Aplicar a mi malla" debajo de una respuesta con propuesta: abre Autogenerar con esos límites. */
+  onAplicarPropuesta?: (opciones: OpcionesPropuesta) => void;
 }
 
 interface PanelProps extends AccionesPanel {
@@ -120,7 +123,8 @@ export function AsistentePanel({ panelRef, inputRef, mensajesRef, onKeyDown, ...
           <Bienvenida presupuesto={estado.presupuesto} deshabilitado={!enLinea || estado.enviando}
             onPresupuesto={props.onPresupuesto} onAnalizar={props.onAnalizar} />
           <AsistenteMensajes mensajes={estado.mensajes} nombres={nombres} enviando={estado.enviando}
-            deshabilitado={!enLinea || estado.enviando} excluirPreguntas={sugerenciasFoco} onPreguntar={props.onPreguntar} onReintentar={props.onReintentar} />
+            deshabilitado={!enLinea || estado.enviando} excluirPreguntas={sugerenciasFoco} onPreguntar={props.onPreguntar} onReintentar={props.onReintentar}
+            onAplicarPropuesta={props.onAplicarPropuesta} />
         </div>
         <AsistenteEntrada panel={estado.panel} foco={estado.foco} sugerenciasFoco={sugerenciasFoco} enLinea={enLinea} enviando={estado.enviando} bloqueado={pidePrivacidad}
           opciones={opciones} mostrarTooltipRapidas={props.mostrarTooltipRapidas} inputRef={inputRef}

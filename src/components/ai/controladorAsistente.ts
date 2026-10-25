@@ -3,6 +3,7 @@ import {
   type AIAnalisisResponse, type AIContext, type AIErrorCodigo, type AIFoco, type AIMensaje, type AIRequest,
 } from '../../application/ai/contracts';
 import type { AIClient } from '../../infrastructure/ai/HttpAIClient';
+import { opcionesDePropuesta, type OpcionesPropuesta } from '../../application/ai/limites';
 import { focoParaEnviar, mismoFoco, type FocoUI } from './asistenteLogica';
 
 export interface Solicitud {
@@ -13,7 +14,11 @@ export interface Solicitud {
 
 export type MensajeChat =
   | { id: number; rol: 'user'; texto: string; foco: FocoUI | null }
-  | { id: number; rol: 'assistant'; tipo: 'texto'; texto: string; cursos: string[]; preguntas: string[] }
+  | {
+    id: number; rol: 'assistant'; tipo: 'texto'; texto: string; cursos: string[]; preguntas: string[];
+    /** La respuesta explica una propuesta con límites: el botón "Aplicar a mi malla" abre su vista previa. */
+    propuesta?: OpcionesPropuesta;
+  }
   | { id: number; rol: 'assistant'; tipo: 'analisis'; analisis: AIAnalisisResponse }
   | { id: number; rol: 'assistant'; tipo: 'error'; error: AIErrorCodigo; mensaje: string; reintento: Solicitud };
 
@@ -33,7 +38,7 @@ export interface EstadoAsistente {
 export interface DependenciasAsistente {
   cliente: AIClient;
   /** Recalcula el contexto en cada envío (buildAIContext con el estado actual del store). */
-  obtenerContexto: (opciones: { foco?: AIFoco; presupuestoMensual?: number | null }) => AIContext;
+  obtenerContexto: (opciones: { foco?: AIFoco; presupuestoMensual?: number | null; mensaje?: string }) => AIContext;
   privacidadAceptada?: boolean;
   alAceptarPrivacidad?: () => void;
 }
@@ -91,9 +96,13 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
     actualizar({ mensajes, enviando: true, panel: null, focoEnviado: estado.focoEnviado || Boolean(solicitud.foco && mismoFoco(solicitud.foco, estado.foco)) });
 
     const foco = focoParaEnviar(solicitud.foco);
+    // En el chat, el mensaje puede pedir límites (detectarLimites): el contexto trae la propuesta del planificador.
+    const contexto = dependencias.obtenerContexto({
+      foco, presupuestoMensual: presupuestoNumerico(estado.presupuesto), ...(solicitud.modo === 'chat' ? { mensaje: texto } : {}),
+    });
     const peticion: AIRequest = {
       modo: solicitud.modo,
-      contexto: dependencias.obtenerContexto({ foco, presupuestoMensual: presupuestoNumerico(estado.presupuesto) }),
+      contexto,
       ...(foco ? { foco } : {}),
       mensajes: historialParaEnviar(mensajes),
     };
@@ -107,7 +116,11 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
       ? { id, rol: 'assistant', tipo: 'error', error: resultado.error, mensaje: resultado.mensaje, reintento: { ...solicitud, texto } }
       : 'secciones' in resultado.respuesta
         ? { id, rol: 'assistant', tipo: 'analisis', analisis: resultado.respuesta }
-        : { id, rol: 'assistant', tipo: 'texto', texto: resultado.respuesta.texto, cursos: resultado.respuesta.cursos, preguntas: resultado.respuesta.preguntasSugeridas };
+        : {
+          id, rol: 'assistant', tipo: 'texto', texto: resultado.respuesta.texto, cursos: resultado.respuesta.cursos,
+          preguntas: resultado.respuesta.preguntasSugeridas,
+          ...(contexto.propuestaConLimites ? { propuesta: opcionesDePropuesta(contexto.propuestaConLimites) } : {}),
+        };
     actualizar({ mensajes: [...estado.mensajes, respuesta], enviando: false });
   };
 

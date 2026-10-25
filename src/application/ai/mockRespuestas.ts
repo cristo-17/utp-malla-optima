@@ -413,10 +413,36 @@ const metodoMencionado = (pregunta: string) => {
   return null;
 };
 
+/** Regla de la propuesta con límites: cuántos cursos van en cada periodo, ciclos o veranos extra y el botón. */
+const respuestaPropuesta = (contexto: AIContext): AIChatResponse | null => {
+  const propuesta = contexto.propuestaConLimites;
+  if (!propuesta) return null;
+  const { limites } = propuesta;
+  const pedido = limites.agregarCiclo ? `con un ciclo más, hasta ${horas(limites.horasAplicadas)} por ciclo`
+    : limites.maxCuotaMensual !== null ? `con ${soles(limites.maxCuotaMensual)} al mes, hasta ${horas(limites.horasAplicadas)} por ciclo`
+      : limites.maxCreditosPorPeriodo !== null ? `con hasta ${limites.maxCreditosPorPeriodo} créditos por ciclo`
+        : `con hasta ${horas(limites.horasAplicadas)} por ciclo`;
+  const periodos = propuesta.periodos.map((item) => `${item.etiqueta}: ${item.numeroCursos} cursos (${horas(item.horas)})`);
+  const extra = [
+    ...(propuesta.ciclosAgregados.length ? [`Necesitas ${propuesta.ciclosAgregados.length === 1 ? '1 ciclo más' : `${propuesta.ciclosAgregados.length} ciclos más`}.`] : []),
+    ...propuesta.veranosUsados.map((id) => `Se usa el ${periodo(id)}.`),
+  ];
+  return {
+    texto: periodos.length
+      ? `Así queda tu plan ${pedido}: ${periodos.join('; ')}.${extra.length ? ` ${extra.join(' ')}` : ''}
+` +
+        'Es una propuesta: si te convence, aplícala con el botón «Aplicar a mi malla».'
+      : 'Con esos límites no queda ningún curso por ubicar. Puedes probar otros en Autogenerar.',
+    cursos: [], preguntasSugeridas: ['¿Me alcanza mi presupuesto?', '¿Estoy sobrecargado?'],
+  };
+};
+
 export const mockChat = (contexto: AIContext, pregunta: string): AIChatResponse => {
   const tema = detectarTema(pregunta);
   if (tema === 'bienestar') return respuestaBienestar();
   if (tema === 'identidad') return respuestaIdentidad();
+  const conPropuesta = respuestaPropuesta(contexto);
+  if (conPropuesta) return conPropuesta;
   if (tema === 'sinDatos') return respuestaSinDatos(contexto, pregunta);
   if (tema === 'intentos') return respuestaIntentos(contexto, pregunta);
   if (tema === 'cachimbo') {

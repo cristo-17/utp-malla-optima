@@ -1,7 +1,8 @@
 import { Fragment, type ReactNode } from 'react';
 import {
-  AlertTriangle, Bot, CircleCheck, GitBranch, Gauge, OctagonAlert, RefreshCw, Route, Target, Wallet,
+  AlertTriangle, Bot, Check, CircleCheck, GitBranch, Gauge, OctagonAlert, RefreshCw, Route, Target, Wallet,
 } from 'lucide-react';
+import type { OpcionesPropuesta } from '../../application/ai/limites';
 import type { AISeccion, Nivel } from '../../application/ai/contracts';
 import { partirPorCodigos, sinRepetidas } from './asistenteLogica';
 import type { MensajeChat } from './controladorAsistente';
@@ -80,9 +81,12 @@ interface MensajesProps {
   excluirPreguntas?: string[];
   onPreguntar: (texto: string) => void;
   onReintentar: (id: number) => void;
+  onAplicarPropuesta?: (opciones: OpcionesPropuesta) => void;
 }
 
-export function AsistenteMensajes({ mensajes, nombres, enviando, deshabilitado, excluirPreguntas = [], onPreguntar, onReintentar }: MensajesProps) {
+export function AsistenteMensajes({
+  mensajes, nombres, enviando, deshabilitado, excluirPreguntas = [], onPreguntar, onReintentar, onAplicarPropuesta,
+}: MensajesProps) {
   const ultimo = mensajes.at(-1);
   return <>
     {mensajes.map((mensaje) => {
@@ -120,6 +124,8 @@ export function AsistenteMensajes({ mensajes, nombres, enviando, deshabilitado, 
           <div className="ia-burbuja ia-burbuja-bot">
             <p><TextoPlano texto={mensaje.texto} codigos={mensaje.cursos} /></p>
             <CursosResaltados codigos={mensaje.cursos} nombres={nombres} />
+            {mensaje.propuesta && onAplicarPropuesta && <button type="button" className="ia-btn-primario ia-accion-plan"
+              onClick={() => onAplicarPropuesta(mensaje.propuesta!)}><Check size={16} aria-hidden="true" /> Aplicar a mi malla</button>}
           </div>
           {esUltimo && <Chips preguntas={mensaje.preguntas} excluir={excluirPreguntas} onElegir={onPreguntar} deshabilitado={deshabilitado} />}
         </div>

@@ -203,6 +203,51 @@ const DerivadosSchema = z.object({
   })),
 });
 
+/**
+ * Propuesta del planificador con los límites que el alumno pidió en su mensaje (horas, créditos, presupuesto,
+ * un ciclo más o veranos). La arma el código (D-001); la IA solo la explica y el alumno la aplica con
+ * "Aplicar a mi malla". null si el mensaje no pide límites.
+ */
+const PropuestaConLimitesSchema = z.object({
+  limites: z.object({
+    maxHorasPorPeriodo: z.number().nullable(),
+    maxCreditosPorPeriodo: z.number().nullable(),
+    /** Presupuesto mensual que pidió el alumno; se traduce en horas con la escala del tarifario. */
+    maxCuotaMensual: monto.nullable(),
+    metodoPago: z.string().nullable(),
+    /** Horas por ciclo cuya cuota mensual no pasa maxCuotaMensual (null sin presupuesto). */
+    horasPorCuota: z.number().nullable(),
+    /** Horas máximas por ciclo con las que se armó (el menor de los límites; 22 si no pidió horas). */
+    horasAplicadas: z.number(),
+    creditosAplicados: z.number().nullable(),
+    usarVeranos: z.boolean(),
+    /** Pidió un ciclo más: la propuesta reparte la carga en un ciclo más que sin límites, con las horas mínimas. */
+    agregarCiclo: z.boolean(),
+    alcance: z.enum(['proximoPeriodo', 'hastaEgresar']),
+  }),
+  periodos: z.array(z.object({
+    periodoId: PeriodoIdSchema,
+    etiqueta: z.string(),
+    cursos: z.array(z.string()),
+    numeroCursos: z.number().int(),
+    horas: z.number(),
+    creditos: z.number(),
+    /** Cuota mensual con el método de pago elegido (en verano, sin descuento); null sin tarifario. */
+    cuotaMensual: monto.nullable(),
+    /** Pago único: la pensión del ciclo, toda al inicio; null en verano o sin tarifario. */
+    pagoUnicoAlInicio: monto.nullable(),
+  })),
+  /** Ciclos que hay que agregar después del último de la malla (11, 12…). */
+  ciclosAgregados: z.array(z.number().int()),
+  veranosUsados: z.array(PeriodoIdSchema),
+  cicloEgreso: z.number().int().nullable(),
+  /** Ciclos más que la ruta sin límites (22 h, sin veranos); null si solo se arma el próximo periodo. */
+  ciclosExtraVsSinLimites: z.number().int().nullable(),
+  noEntraron: z.array(z.object({ codigo: z.string(), motivo: z.string() })),
+  /** Nunca está en la malla: el alumno la aplica con el botón "Aplicar a mi malla". */
+  aplicadaEnMalla: z.literal(false),
+});
+
 const WhatIfSchema = z.object({
   codigo: z.string(),
   origen: z.enum(['EN_CURSO', 'PROXIMO_PERIODO']),
@@ -309,8 +354,10 @@ export const AIContextSchema = z.object({
   }),
   foco: z.discriminatedUnion('tipo', [z.object({ tipo: z.literal('plan') }), FocoCicloSchema, FocoCursoSchema]).nullable(),
   derivados: DerivadosSchema,
+  propuestaConLimites: PropuestaConLimitesSchema.nullable(),
 });
 export type AIContext = z.infer<typeof AIContextSchema>;
+export type AIPropuestaConLimites = z.infer<typeof PropuestaConLimitesSchema>;
 export type AIDerivados = z.infer<typeof DerivadosSchema>;
 export type AICursoPlanificado = z.infer<typeof CursoPlanificadoSchema>;
 export type AIEscenarioPeriodo = z.infer<typeof EscenarioPeriodoSchema>;

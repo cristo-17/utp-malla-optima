@@ -979,6 +979,7 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > con S6
       "id": "ciclo-8",
     },
   ],
+  "propuestaConLimites": null,
   "proximoPeriodo": {
     "cursos": [
       {
@@ -2206,6 +2207,7 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > cumple
       "id": "ciclo-8",
     },
   ],
+  "propuestaConLimites": null,
   "proximoPeriodo": {
     "cursos": [
       {

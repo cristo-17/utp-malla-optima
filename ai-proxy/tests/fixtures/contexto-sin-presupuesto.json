@@ -1185,5 +1185,6 @@
     ],
     "proximoPeriodoConJalados": null,
     "planificadosBloqueadosPorJalado": []
-  }
+  },
+  "propuestaConLimites": null
 }

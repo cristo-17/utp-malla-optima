@@ -13,10 +13,12 @@ import { calcularPrioridadesPendientes } from '../../domain/services/recommendat
 import { simularJalado } from '../../domain/services/whatIfService';
 import { FinancialPlanningService } from '../../financial/services/FinancialPlanningService';
 import { UniversityFinancialRulesProvider } from '../../financial/rules/UniversityFinancialRulesProvider';
-import { generateOptimalPlanUseCase } from '../usecases/generateOptimalPlanUseCase';
+import type { MotivoNoPlanificado } from '../../domain/services/automaticPlanningService';
+import { generateOptimalPlanUseCase, type GenerateOptimalPlanInput, type PropuestaPlan } from '../usecases/generateOptimalPlanUseCase';
 import type {
-  AICarga, AIContext, AICursoPlanificado, AIDerivados, AIEscenarioPeriodo, AIFoco, AIFocoContexto, AIWhatIf,
+  AICarga, AIContext, AICursoPlanificado, AIDerivados, AIEscenarioPeriodo, AIFoco, AIFocoContexto, AIPropuestaConLimites, AIWhatIf,
 } from './contracts';
+import type { LimitesDelMensaje } from './limites';
 import { pagoUnicoDe, positivo, presupuestoPorEscenario, r2 } from './presupuesto';
 
 /**
@@ -33,6 +35,8 @@ export interface OpcionesContextoIA {
   foco?: AIFoco;
   presupuestoMensual?: number | null;
   servicioFinanciero?: FinancialPlanningService;
+  /** Límites que pidió el alumno en su mensaje (detectarLimites): agregan propuestaConLimites. */
+  limites?: LimitesDelMensaje | null;
 }
 
 /** Cursos con longitudCadena desde este valor cuentan como cadena larga en la carga. */
@@ -362,6 +366,89 @@ const proximoPeriodoConJalados = (
   };
 };
 
+const MOTIVO_NO_ENTRA: Record<MotivoNoPlanificado['tipo'], string> = {
+  HORAS_INVALIDAS: 'no tiene horas válidas en el Excel',
+  SIN_CICLOS_FUTUROS: 'no quedan ciclos para ubicarlo',
+  DEPENDENCIA_CIRCULAR: 'sus prerrequisitos forman un ciclo',
+  REQUISITO_SIN_ESPACIO: 'su prerrequisito queda en el último ciclo disponible',
+  REQUISITO_NO_PROGRAMADO: 'su prerrequisito no está programado antes',
+  SIN_ESPACIO: 'no entra con esos límites',
+  NO_CABE_EN_PERIODO: 'pasaría el límite del periodo',
+  ELECTIVO_ESPERA_OBLIGATORIOS: 'el electivo va después de los obligatorios',
+};
+
+/** Con "un ciclo más": las horas mínimas por ciclo con las que se egresa a lo más un ciclo después (búsqueda binaria). */
+const repartirEnUnCicloMas = (entrada: GenerateOptimalPlanInput, base: PropuestaPlan): PropuestaPlan => {
+  if (base.cicloEgreso === null || base.alcance !== 'hastaEgresar') return base;
+  const objetivo = base.cicloEgreso + 1;
+  let [desde, hasta, mejor] = [1, base.limites.horas, base];
+  while (desde < hasta) {
+    const medio = Math.floor((desde + hasta) / 2);
+    const intento = generateOptimalPlanUseCase({ ...entrada, maxHorasPorPeriodo: medio });
+    if (!intento.noPlanificados.length && intento.cicloEgreso !== null && intento.cicloEgreso <= objetivo) {
+      [hasta, mejor] = [medio, intento];
+    } else desde = medio + 1;
+  }
+  return mejor;
+};
+
+/**
+ * CONTEXTO.propuestaConLimites: el planificador (el mismo de Autogenerar) con los límites del mensaje. Un solo ciclo
+ * nombrado, si es el próximo, arma solo ese periodo; si no, hasta egresar. Reordena lo ubicado: el alumno pidió
+ * armar el plan con sus límites. Nunca se aplica sola (aplicadaEnMalla: false).
+ */
+const propuestaConLimitesDe = (
+  estado: EstadoContextoIA, limites: LimitesDelMensaje | null | undefined, servicio?: FinancialPlanningService,
+): AIPropuestaConLimites | null => {
+  if (!limites) return null;
+  const proximo = (estado.cicloActual ?? 0) + 1;
+  const alcance = limites.unSoloCiclo && (!limites.ciclos.length || limites.ciclos[0] === proximo) ? 'proximoPeriodo' : 'hastaEgresar';
+  const entrada: GenerateOptimalPlanInput = {
+    cursos: estado.cursos, totalCiclos: estado.totalCiclos, ciclosExcluidos: estado.ciclosExcluidos,
+    cicloActual: estado.cicloActual, periodoIngreso: estado.periodoIngreso,
+    tarifario: estado.tarifario, disciplina: estado.disciplinaActiva, metodoPago: estado.metodoPago, servicioFinanciero: servicio,
+    maxHorasPorPeriodo: limites.maxHorasPorPeriodo, maxCreditosPorPeriodo: limites.maxCreditosPorPeriodo,
+    maxCuotaMensual: limites.maxCuotaMensual, usarVeranos: limites.usarVeranos ?? false, alcance, conservarUbicados: false,
+  };
+  const base = generateOptimalPlanUseCase(entrada);
+  const propuesta = limites.agregarCiclo ? repartirEnUnCicloMas(entrada, base) : base;
+  const periodos = alcance === 'proximoPeriodo'
+    ? propuesta.periodos.filter((item) => item.periodo.id === propuesta.periodoInicio.id) : propuesta.periodos;
+  return {
+    limites: {
+      maxHorasPorPeriodo: limites.maxHorasPorPeriodo,
+      maxCreditosPorPeriodo: limites.maxCreditosPorPeriodo,
+      maxCuotaMensual: propuesta.limitesPedidos.maxCuotaMensual,
+      metodoPago: propuesta.limitesPedidos.metodoPago,
+      horasPorCuota: propuesta.limitesPedidos.horasPorCuota,
+      horasAplicadas: propuesta.limites.horas,
+      creditosAplicados: propuesta.limites.creditos,
+      usarVeranos: limites.usarVeranos ?? false,
+      agregarCiclo: limites.agregarCiclo,
+      alcance,
+    },
+    periodos: periodos.map(({ periodo, cursos, horas, creditos, costos }) => {
+      const cuotas = costos?.cuotas ?? [];
+      return {
+        periodoId: periodo.id,
+        etiqueta: nombrePeriodoCorto(periodo),
+        cursos: cursos.map((curso) => curso.codigo),
+        numeroCursos: cursos.length,
+        horas: r2(horas),
+        creditos: r2(creditos),
+        cuotaMensual: (cuotas.find((cuota) => cuota.metodo === estado.metodoPago) ?? cuotas[0])?.cuotaMensual ?? null,
+        pagoUnicoAlInicio: costos?.pagoUnico?.pensionAlInicio ?? null,
+      };
+    }),
+    ciclosAgregados: propuesta.ciclosAgregados,
+    veranosUsados: propuesta.veranosUsados,
+    cicloEgreso: propuesta.cicloEgreso,
+    ciclosExtraVsSinLimites: propuesta.comparacionSinLimites?.ciclosExtra ?? null,
+    noEntraron: propuesta.noPlanificados.map((curso) => ({ codigo: curso.codigo, motivo: MOTIVO_NO_ENTRA[curso.motivos[0]?.tipo ?? 'SIN_ESPACIO'] })),
+    aplicadaEnMalla: false,
+  };
+};
+
 export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesContextoIA = {}): AIContext => {
   const { cursos, tarifario, disciplinaActiva, cicloActual, periodoIngreso } = estado;
   const contextoJalados = { cicloActual, periodoIngreso };
@@ -481,5 +568,6 @@ export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesConte
         ? planificadosSinJalado(cursos, contextoJalados).filter((curso) => siguiente.cursos.some((item) => item.codigo === curso.codigo))
         : [],
     },
+    propuestaConLimites: propuestaConLimitesDe(estado, opciones.limites, entorno?.servicio),
   };
 };
