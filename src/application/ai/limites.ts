@@ -32,6 +32,8 @@ const HORAS = new RegExp(String.raw`${TOPE}\s+${NUMERO}\s*(?:h\b|hrs?\b|horas?\b
 const CREDITOS = new RegExp(String.raw`${TOPE}\s+${NUMERO}\s*(?:creditos?\b|cr\b|crs\b)|${NUMERO}\s*(?:creditos?\b|cr\b)\s+(?:como\s+maximo|como\s+mucho|maximo|max\b)`);
 const AGREGAR_CICLO = /\b(agrego|agregar|agregue|agregas|agrega|anado|anadir|anada|anades|anade|sumo|sumar|uso|usar|llevo|llevar)\s+(otro|un|1|un\s+ciclo\s+mas|mas)\s*(ciclo|semestre)?\b|\b(otro|un)\s+ciclo\s+mas\b|\bciclo\s+(adicional|extra)\b/;
 const VERANO = /\bveranos?\b/;
+/** "¿y si llevo verano?", "usando el verano": también es un pedido de plan (regla 17). */
+const LLEVA_VERANO = /\b(llevo|llevar|lleve|llevas|uso|usar|usando|meto|meter|tomo|tomar|agrego|agregar|aprovecho|aprovechar)\s+(el\s+|un\s+|los\s+)?veranos?\b/;
 const SIN_VERANO = /\b(sin|no\s+(?:quiero|usar|uses|llevar|lleves|tomar)?\s*(?:el|los|un)?)\s*veranos?\b/;
 /** Pide armar, ordenar o reorganizar el plan (para que un monto cuente como límite y no solo como presupuesto). */
 const PIDE_PLAN = /\b(arma|armar|armame|armes|arme|ordena|ordenar|ordenes|reordena|reordenar|reordenes|organiza|organizar|organices|distribuye|distribuir|planifica|planificar|propuesta|plan)\b/;
@@ -70,7 +72,7 @@ export const detectarLimites = (mensaje: string): LimitesDelMensaje | null => {
     unSoloCiclo,
   };
   const pideAlgo = limites.maxHorasPorPeriodo !== null || limites.maxCreditosPorPeriodo !== null ||
-    limites.maxCuotaMensual !== null || agregarCiclo || (usarVeranos !== null && pidePlan);
+    limites.maxCuotaMensual !== null || agregarCiclo || (usarVeranos !== null && pidePlan) || (usarVeranos === true && LLEVA_VERANO.test(t));
   return pideAlgo ? limites : null;
 };
 

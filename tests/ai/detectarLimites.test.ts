@@ -26,6 +26,11 @@ describe('detectarLimites con las frases reales del feedback', () => {
     expect(detectarLimites('y qué pasa si agrego otro ciclo?')).toEqual({ ...sinNada, agregarCiclo: true });
   });
 
+  it('"¿y si llevo verano?" también es un pedido de plan (usar veranos)', () => {
+    expect(detectarLimites('¿y si llevo verano?')).toEqual({ ...sinNada, usarVeranos: true });
+    expect(detectarLimites('¿el verano es obligatorio?')).toBeNull();
+  });
+
   it('"arma un plan con 900 soles de presupuesto mensual"', () => {
     expect(detectarLimites('arma un plan con 900 soles de presupuesto mensual')).toEqual({ ...sinNada, maxCuotaMensual: 900 });
   });

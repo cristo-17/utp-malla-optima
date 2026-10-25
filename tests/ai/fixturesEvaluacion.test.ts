@@ -92,6 +92,7 @@ describe('fixtures de la evaluación (buildAIContext)', () => {
     ['contexto-limite-800.json', 'arma un plan con 800 soles de presupuesto mensual'],
     ['contexto-limite-900.json', 'arma un plan con 900 soles de presupuesto mensual'],
     ['contexto-agrego-ciclo.json', 'y qué pasa si agrego otro ciclo?'],
+    ['contexto-llevo-verano.json', '¿y si llevo verano?'],
   ])('%s: el mismo plan con "%s"', async (archivo, mensaje) => {
     const contexto = buildAIContext((await crearPlan1ConOctavo()).getState(), { presupuestoMensual: 900, limites: detectarLimites(mensaje) });
     expect(contexto.propuestaConLimites).not.toBeNull();

@@ -4,7 +4,7 @@ import type { Esperado } from './chequeos.js';
 export type Fixture =
   | 'contexto-plan1' | 'contexto-plan1-jalado' | 'contexto-desaprobado' | 'contexto-sin-presupuesto'
   | 'contexto-plan1-foco-I62N' | 'contexto-plan1-foco-ciclo8'
-  | 'contexto-limite-20h' | 'contexto-limite-18cr' | 'contexto-limite-800' | 'contexto-limite-900' | 'contexto-agrego-ciclo'
+  | 'contexto-limite-20h' | 'contexto-limite-18cr' | 'contexto-limite-800' | 'contexto-limite-900' | 'contexto-agrego-ciclo' | 'contexto-llevo-verano'
   | 'contexto-ciclo-vacio';
 
 export interface Caso {
@@ -211,14 +211,39 @@ export const CASOS: Caso[] = [
     id: 'limite-18cr', grupo: 'Plan con límites', fixture: 'contexto-limite-18cr', modo: 'chat', mensajes: ['Quiero que ordenes mis ciclos restantes con menos de 18 créditos'],
     esperado: { menciona: [APLICAR, { patron: /ciclo 11|(un|1) ciclo mas/, severidad: 'MAYOR', detalle: 'No dice que hace falta el Ciclo 11.' }] },
   },
-  // Con S/ 800 caben 15 h por ciclo: hacen falta los ciclos 11 y 12 (o veranos, si el alumno los acepta).
+  // Con S/ 800 caben 15 h por ciclo: hacen falta los ciclos 11 y 12. La alternativa con pronto pago y el Verano 8
+  // egresa en el Ciclo 10 y cuesta menos en total (regla 17): debe mencionarla.
   {
     id: 'limite-800', grupo: 'Plan con límites', fixture: 'contexto-limite-800', modo: 'chat', mensajes: ['arma un plan con 800 soles de presupuesto mensual'],
-    esperado: { menciona: [APLICAR, { patron: /ciclos? (11|12)|(2|dos) ciclos mas|ciclos? (mas|extra|adicional)|verano/, severidad: 'MAYOR', detalle: 'No dice que hacen falta ciclos (11 y 12) o veranos extra.' }] },
+    esperado: {
+      menciona: [
+        APLICAR,
+        { patron: /ciclos? (11|12)|(2|dos) ciclos mas|ciclos? (mas|extra|adicional)|verano/, severidad: 'MAYOR', detalle: 'No dice que hacen falta ciclos (11 y 12) o veranos extra.' },
+        { patron: /pronto pago|interbank|scotiabank/, severidad: 'MAYOR', detalle: 'No menciona la alternativa con pronto pago, que egresa antes y cuesta menos.' },
+      ],
+    },
   },
   {
     id: 'limite-900', grupo: 'Plan con límites', fixture: 'contexto-limite-900', modo: 'chat', mensajes: ['arma un plan con 900 soles de presupuesto mensual'],
     esperado: { menciona: [APLICAR, { patron: /\b(7|siete) cursos\b/, severidad: 'MAYOR', detalle: 'No dice que en el Ciclo 8 van 7 cursos.' }] },
+  },
+  // "Menos de 18": ningún periodo llega a 18 créditos, y la respuesta lo aclara (regla 17).
+  {
+    id: 'menos-de-18', grupo: 'Plan con límites', fixture: 'contexto-limite-18cr', modo: 'chat', mensajes: ['Arma mi plan con menos de 18 créditos por ciclo'],
+    esperado: {
+      menciona: [APLICAR, { patron: /ningun\w* (\w+ ){0,3}(llega|alcanza|tiene|pasa)\w*( a)? (los )?18|menos de 18|hasta 17|maximo 17|17 creditos( o menos)?/, severidad: 'MAYOR', detalle: 'No aclara que ningún periodo llega a 18 créditos.' }],
+    },
+  },
+  // "¿Y si llevo verano?" es un pedido de plan: con el Verano 8, egresa en el Ciclo 10.
+  {
+    id: 'llevo-verano', grupo: 'Plan con límites', fixture: 'contexto-llevo-verano', modo: 'chat', mensajes: ['¿y si llevo verano?'],
+    esperado: {
+      menciona: [
+        APLICAR,
+        { patron: /verano 8/, severidad: 'MAYOR', detalle: 'No dice qué verano usa (Verano 8).' },
+        { patron: /ciclo 10/, severidad: 'MAYOR', detalle: 'No dice que egresa en el Ciclo 10.' },
+      ],
+    },
   },
   // Un ciclo más: el planificador reparte la carga hasta el Ciclo 12, con hasta 14 h por ciclo.
   {

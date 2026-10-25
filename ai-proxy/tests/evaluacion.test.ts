@@ -34,13 +34,14 @@ describe('evaluación - casos', () => {
       // Frases reales del feedback del primer test con alumnos.
       'Quiero armar un plan que tenga menos de 20h semanales', 'Quiero que ordenes mis ciclos restantes con menos de 18 créditos',
       'arma un plan con 900 soles de presupuesto mensual', 'y qué pasa si agrego otro ciclo?', '¿cómo uso la plataforma?',
-      '¿Cómo funcionan los descuentos de la UTP?', '¿dónde veo los descuentos?']) {
+      '¿Cómo funcionan los descuentos de la UTP?', '¿dónde veo los descuentos?', 'Arma mi plan con menos de 18 créditos por ciclo',
+      '¿y si llevo verano?']) {
       expect(preguntas).toContain(pregunta);
     }
     expect(CASOS.filter((caso) => caso.esperado.formal)).toHaveLength(3);
     // Los 38 casos de la primera evaluación se mantienen; se agregaron 4, luego 1 (pago único), 1 (trika con jalado), 1 (1000 tras 800)
-    // y 9 del feedback del primer test con alumnos (plan con límites, ruta sugerida, guía y descuentos).
-    expect(CASOS).toHaveLength(54);
+    // y 9 del feedback del primer test con alumnos (plan con límites, ruta sugerida, guía y descuentos), y luego 2 (menos de 18 y verano).
+    expect(CASOS).toHaveLength(56);
     expect(CASOS.find((caso) => caso.id === 'bika-inteligencia')).toMatchObject({ fixture: 'contexto-plan1-jalado' });
     expect(CASOS.filter((caso) => caso.esperado.montosFalsos)).toHaveLength(2);
   });
