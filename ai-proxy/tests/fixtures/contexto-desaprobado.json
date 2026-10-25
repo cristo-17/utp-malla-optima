@@ -735,7 +735,9 @@
           "100000I62N",
           "100000S71T",
           "100000SI82"
-        ]
+        ],
+        "horas": 21,
+        "creditos": 20
       },
       {
         "periodoId": "ciclo-9",
@@ -747,7 +749,9 @@
           "100000SI86",
           "100000N25I",
           "100000N11I"
-        ]
+        ],
+        "horas": 22,
+        "creditos": 19
       },
       {
         "periodoId": "ciclo-10",
@@ -758,14 +762,18 @@
           "10000096SI",
           "100000NI24",
           "100000SI95"
-        ]
+        ],
+        "horas": 22,
+        "creditos": 19
       },
       {
         "periodoId": "ciclo-11",
         "cursos": [
           "100000CN47",
           "100000SI97"
-        ]
+        ],
+        "horas": 7,
+        "creditos": 6
       }
     ],
     "ciclosRestantes": 4,

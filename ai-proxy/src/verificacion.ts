@@ -185,10 +185,132 @@ export const atributosIncorrectos = (texto: string, contexto: AIContext): Atribu
 };
 
 // ==========================================
+// Planes citados (propuestaConLimites y rutaSugerida)
+// ==========================================
+
+interface FuentePeriodo { cursos: Set<string>; numeroCursos: Set<number>; horas: Set<number>; creditos: Set<number> }
+
+/**
+ * Lo que CONTEXTO dice de cada periodo: la propuesta con límites, la ruta sugerida y la malla del alumno (periodos
+ * planificados, el próximo periodo con sus jalados y el foco). Un plan citado solo puede usar estos datos.
+ */
+const fuentesPorPeriodo = (contexto: AIContext) => {
+  const fuentes = new Map<string, FuentePeriodo>();
+  const agregar = (id: string, datos: { cursos?: string[]; horas?: number; creditos?: number }) => {
+    const fuente = fuentes.get(id) ?? { cursos: new Set(), numeroCursos: new Set(), horas: new Set(), creditos: new Set() };
+    datos.cursos?.forEach((codigo) => fuente.cursos.add(codigo));
+    if (datos.cursos) fuente.numeroCursos.add(datos.cursos.length);
+    if (datos.horas !== undefined) fuente.horas.add(datos.horas);
+    if (datos.creditos !== undefined) fuente.creditos.add(datos.creditos);
+    fuentes.set(id, fuente);
+  };
+  contexto.propuestaConLimites?.periodos.forEach((periodo) => agregar(periodo.periodoId, periodo));
+  contexto.rutaSugerida.propuesta.forEach((periodo) => agregar(periodo.periodoId, periodo));
+  contexto.periodosPlanificados.forEach((periodo) => agregar(periodo.id, periodo));
+  // Del próximo periodo, además: sus restas ya calculadas (sobre el tope, sin cada curso) y la carga.
+  const { derivados, carga, proximoPeriodo } = contexto;
+  const conJalados = derivados.proximoPeriodoConJalados;
+  if (proximoPeriodo) {
+    const fuente = fuentes.get(proximoPeriodo.id) ?? { cursos: new Set(), numeroCursos: new Set(), horas: new Set(), creditos: new Set() };
+    [...numerosDe(derivados.horas), carga.horas, conJalados?.horasSobreTopeEscala ?? 0, conJalados?.horasSobreRecomendadas ?? 0,
+      ...derivados.horasSinCadaCurso.map((item) => item.horasSinElCurso)].forEach((valor) => fuente.horas.add(valor));
+    fuentes.set(proximoPeriodo.id, fuente);
+  }
+  if (conJalados) agregar(conJalados.periodoId, { cursos: [...(contexto.proximoPeriodo?.cursos.map((curso) => curso.codigo) ?? []), ...conJalados.jalados], horas: conJalados.horas, creditos: conJalados.creditos });
+  if (contexto.foco?.tipo === 'ciclo') agregar(contexto.foco.periodo.id, contexto.foco.periodo);
+  return fuentes;
+};
+
+/** Periodos donde CONTEXTO ubica cada curso: su lugar en la malla, en las propuestas y en una ventana de recuperación. */
+const periodosDeCursos = (contexto: AIContext, fuentes: Map<string, FuentePeriodo>) => {
+  const periodos = new Map<string, Set<string>>();
+  const agregar = (codigo: string, id: string) => periodos.set(codigo, (periodos.get(codigo) ?? new Set()).add(id));
+  contexto.catalogo.forEach((curso) => agregar(curso.codigo, curso.ubicacion));
+  fuentes.forEach((fuente, id) => fuente.cursos.forEach((codigo) => agregar(codigo, id)));
+  contexto.jalados.forEach((jalado) => jalado.ventana.forEach((id) => agregar(jalado.codigo, id)));
+  contexto.whatIf.forEach((item) => {
+    item.ventanaSiJala.forEach((id) => agregar(item.codigo, id));
+    item.planificadosInvalidos.forEach((invalido) => agregar(invalido.codigo, invalido.periodoId));
+  });
+  const foco = contexto.foco;
+  if (foco?.tipo === 'curso') [...foco.whatIf.ventanaSiJala, ...foco.ventanaRecuperacion].forEach((id) => agregar(foco.codigo, id));
+  return periodos;
+};
+
+/** Topes y totales que se pueden citar junto a cualquier periodo ("el tope de 22 h", "tu límite de 20 h"). */
+const numerosGenerales = (contexto: AIContext) => {
+  const { limites, carga, derivados, propuestaConLimites, descuentos, perfil } = contexto;
+  const horas = [limites.horasMaximasPlanificacion, limites.horasRecomendadasPeriodo, limites.topeEscalaPension, carga.topeEscala,
+    carga.limiteRecomendado, derivados.horas.topeEscala, derivados.horas.recomendadas, descuentos?.horasSinRecargo,
+    propuestaConLimites?.limites.maxHorasPorPeriodo, propuestaConLimites?.limites.horasAplicadas, propuestaConLimites?.limites.horasPorCuota];
+  const creditos = [limites.creditosMaximosVerano, limites.creditosMinimosElectivos, propuestaConLimites?.limites.maxCreditosPorPeriodo,
+    propuestaConLimites?.limites.creditosAplicados, ...numerosDe(derivados.creditos), derivados.creditosElectivosFaltantes,
+    ...numerosDe(perfil.creditos), ...numerosDe(perfil.electivos)];
+  const definidos = (valores: (number | null | undefined)[]) => valores.filter((valor): valor is number => typeof valor === 'number');
+  return { horas: definidos(horas), creditos: definidos(creditos) };
+};
+
+/** Relaciones entre cursos: ahí un curso se nombra junto a un periodo que no es el suyo. */
+const HABLA_DE_RELACION = /prerrequisito|requisito|habilita|desbloquea|bloquea|depende|abre/;
+const PERIODO_EN_TEXTO = /\b(ciclo|verano)\s+(\d{1,2})\b/g;
+
+export interface PlanNoVerificado { periodo: string; detalle: string }
+
+/**
+ * Cursos y cifras de un plan citado que no salen de CONTEXTO. Se revisa cada frase que nombra UN solo periodo
+ * ("Ciclo 9: 6 cursos, 20 h", "en el Ciclo 9 llevas X y Y"): sus cursos deben estar en ese periodo en alguna fuente
+ * (propuesta con límites, ruta sugerida, la malla o una ventana de recuperación) y sus "N cursos", "N h" y
+ * "N créditos", ser los de ese periodo, un tope o los de un curso de la frase. También "N ciclos más".
+ */
+export const planNoVerificado = (texto: string, contexto: AIContext): PlanNoVerificado[] => {
+  const fuentes = fuentesPorPeriodo(contexto);
+  const periodosDe = periodosDeCursos(contexto, fuentes);
+  const generales = numerosGenerales(contexto);
+  const cursos = atributosDeCursos(contexto);
+  const problemas: PlanNoVerificado[] = [];
+  const agregar = (periodo: string, detalle: string) => {
+    if (!problemas.some((problema) => problema.detalle === detalle)) problemas.push({ periodo, detalle });
+  };
+  const propuesta = contexto.propuestaConLimites;
+  for (const frase of normalizar(texto).split(/(?<=[.;!?])\s+|\n|;\s*/)) {
+    const mencionados = [...new Set([...frase.matchAll(PERIODO_EN_TEXTO)].map((m) => `${m[1]}-${Number(m[2])}`))];
+    if (propuesta) {
+      for (const m of frase.matchAll(/\b(\d+)\s+ciclos?\s+(mas|extra|adicional(?:es)?)\b/g)) {
+        const permitidos = [propuesta.ciclosAgregados.length, propuesta.ciclosExtraVsSinLimites, propuesta.limites.agregarCiclo ? 1 : null];
+        if (!permitidos.includes(Number(m[1]))) agregar('', `Dijiste ${m[1]} ciclos más; en la propuesta: ${propuesta.ciclosAgregados.length}.`);
+      }
+    }
+    if (mencionados.length !== 1) continue;
+    const [id] = mencionados;
+    const fuente = fuentes.get(id);
+    if (!fuente) continue;
+    const etiqueta = id.replace('ciclo-', 'Ciclo ').replace('verano-', 'Verano ');
+    const enFrase = mencionesDe(frase, cursos);
+    if (!HABLA_DE_RELACION.test(frase)) {
+      for (const { curso } of enFrase) {
+        if (!periodosDe.get(curso.codigo)?.has(id)) agregar(id, `Pusiste ${curso.nombre} (${curso.codigo}) en el ${etiqueta}, pero CONTEXTO no lo ubica ahí.`);
+      }
+    }
+    const deCursos = enFrase.map(({ curso }) => curso);
+    const revisar = (patron: RegExp, permitidos: number[], unidad: string) => {
+      for (const m of frase.matchAll(patron)) {
+        const valor = Number(m[1].replace(',', '.'));
+        if (!permitidos.some((numero) => cerca(numero, valor))) agregar(id, `Dijiste ${m[1]} ${unidad} para el ${etiqueta}, que no sale de la propuesta ni de la ruta sugerida.`);
+      }
+    };
+    revisar(/(\d+)\s*(?:cursos|materias)\b/g, [...fuente.numeroCursos], 'cursos');
+    revisar(/(\d+(?:[.,]\d+)?)\s*(?:h\b|horas?\b)/g,
+      [...fuente.horas, ...generales.horas, ...deCursos.flatMap((curso) => curso.horas === null ? [] : [curso.horas])], 'h');
+    revisar(/(\d+(?:[.,]\d+)?)\s*(?:creditos?\b|cr\b)/g, [...fuente.creditos, ...generales.creditos, ...deCursos.map((curso) => curso.creditos)], 'créditos');
+  }
+  return problemas;
+};
+
+// ==========================================
 // Filtro de salida
 // ==========================================
 
-export type ChequeoSalida = 'monto' | 'codigo' | 'atributo-curso' | 'delimitador' | 'prompt' | 'secciones' | 'nombre-interno';
+export type ChequeoSalida = 'monto' | 'codigo' | 'atributo-curso' | 'delimitador' | 'prompt' | 'secciones' | 'nombre-interno' | 'plan';
 
 export interface ProblemaSalida {
   chequeo: ChequeoSalida;
@@ -259,6 +381,7 @@ export const verificarSalida = (respuesta: AIRespuesta, contexto: AIContext, men
       detalle: `Dijiste ${item.dicho} para ${item.nombre} (${item.codigo}); en CONTEXTO: ${item.enContexto}.`,
     });
   }
+  for (const item of planNoVerificado(texto, contexto)) problemas.push({ chequeo: 'plan', detalle: item.detalle });
   const internos = nombresInternos(texto, contexto);
   if (internos.length) {
     problemas.push({ chequeo: 'nombre-interno', detalle: `Tu respuesta menciona nombres internos (${internos.join(', ')}); el alumno no los conoce.` });

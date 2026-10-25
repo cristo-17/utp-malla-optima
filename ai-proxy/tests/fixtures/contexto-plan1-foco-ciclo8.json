@@ -957,7 +957,9 @@
           "100000TD09",
           "100000I62N",
           "100000S71T"
-        ]
+        ],
+        "horas": 25,
+        "creditos": 21
       },
       {
         "periodoId": "ciclo-9",
@@ -968,7 +970,9 @@
           "100000S07I",
           "100000SI86",
           "100000SI97"
-        ]
+        ],
+        "horas": 22,
+        "creditos": 19
       },
       {
         "periodoId": "ciclo-10",
@@ -980,7 +984,9 @@
           "10000096SI",
           "100000NI24",
           "100000SI95"
-        ]
+        ],
+        "horas": 21,
+        "creditos": 20
       }
     ],
     "ciclosRestantes": 3,

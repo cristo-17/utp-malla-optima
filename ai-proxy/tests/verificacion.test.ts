@@ -58,6 +58,36 @@ describe('filtro de salida - créditos, horas y estado de cada curso', () => {
   });
 });
 
+describe('filtro de salida - un plan citado sale de propuestaConLimites o rutaSugerida', () => {
+  const limite20: AIContext = JSON.parse(readFileSync(new URL('./fixtures/contexto-limite-20h.json', import.meta.url), 'utf8'));
+  const deLimite = (texto: string) => chequeos(texto, limite20);
+
+  it('la propuesta tal cual pasa: cursos por periodo, horas, "1 ciclo más" y el límite', () => {
+    expect(deLimite('Con hasta 20 h por ciclo: Ciclo 8: 5 cursos (19 h); Ciclo 9: 7 cursos (20 h); Ciclo 10: 5 cursos (20 h); Ciclo 11: 3 cursos (9 h). Necesitas 1 ciclo más.')).toEqual([]);
+    expect(deLimite('En el Ciclo 11 van FORMACIÓN PARA LA EMPLEABILIDAD (100000N11I) e INGENIERÍA ECONÓMICA (100000NI24).')).toEqual([]);
+    // La malla del alumno (su Ciclo 8 de 25 h) también es un dato válido.
+    expect(deLimite('Hoy tu Ciclo 8 tiene 7 cursos y 25 h.')).toEqual([]);
+  });
+
+  it('cifras inventadas de un periodo: número de cursos, horas, créditos o ciclos extra', () => {
+    expect(deLimite('Ciclo 8: 6 cursos (19 h).')).toEqual(['plan']);
+    expect(deLimite('El Ciclo 9 queda con 21 h.')).toEqual(['plan']);
+    expect(deLimite('El Ciclo 10 suma 30 créditos.')).toEqual(['plan']);
+    expect(deLimite('Necesitas 2 ciclos más.')).toEqual(['plan']);
+  });
+
+  it('un curso en un periodo donde ninguna fuente lo ubica', () => {
+    expect(deLimite('En el Ciclo 8 llevas CURSO INTEGRADOR II: SISTEMAS (100000S09I).')).toEqual(['plan']);
+    // Una relación entre cursos no es una ubicación.
+    expect(deLimite('INTELIGENCIA DE NEGOCIOS (100000I62N) es prerrequisito de CURSO INTEGRADOR II: SISTEMAS (100000S09I), que va en el Ciclo 10.')).toEqual([]);
+  });
+
+  it('sin propuesta, la ruta sugerida es la fuente', () => {
+    expect(chequeos(`El planificador te propone el Ciclo 9 con ${plan1.rutaSugerida.propuesta[1].cursos.length} cursos (${plan1.rutaSugerida.propuesta[1].horas} h).`)).toEqual([]);
+    expect(chequeos('El planificador te propone el Ciclo 9 con 2 cursos.')).toEqual(['plan']);
+  });
+});
+
 describe('filtro de salida - delimitadores y prompt', () => {
   it('ni los delimitadores ni fragmentos del prompt', () => {
     expect(chequeos('<<FIN_CONTEXTO_MALLAU>> listo')).toEqual(['delimitador']);

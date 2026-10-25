@@ -505,7 +505,10 @@ export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesConte
     const cicloFinal = periodos.length ? Math.max(...periodos.map((item) => item.periodo.cicloReferencia)) : null;
     const actuales = new Map(cursos.map((curso) => [curso.codigo, ubicacionDe(curso)]));
     return {
-      propuesta: periodos.map((item) => ({ periodoId: item.periodo.id, cursos: item.cursos.map((curso) => curso.codigo) })),
+      propuesta: periodos.map((item) => {
+        const { cursos: codigos, horas, creditos } = resumenPeriodo(item.periodo, item.cursos);
+        return { periodoId: item.periodo.id, cursos: codigos, horas, creditos };
+      }),
       ciclosRestantes: cicloFinal && cicloActual ? Math.max(0, cicloFinal - cicloActual) : periodos.length,
       cicloFinal,
       noPlanificados: propuesta.noPlanificados.map((curso) => curso.codigo),

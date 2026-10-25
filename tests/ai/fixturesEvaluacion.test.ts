@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { parseUTPExcel } from '../../src/adapters/utpExcelAdapter';
 import { AIContextSchema, type AIContext } from '../../src/application/ai/contracts';
 import { buildAIContext } from '../../src/application/ai/buildAIContext';
+import { detectarLimites } from '../../src/application/ai/limites';
 import { crearPeriodoRegular } from '../../src/domain/rules/academicPeriodRules';
 import { FinancialConfigurationProvider } from '../../src/infrastructure/configuration/FinancialConfigurationProvider';
 import { createAcademicStore } from '../../src/store/createAcademicStore';
@@ -76,5 +77,12 @@ describe('fixtures de la evaluación (buildAIContext)', () => {
     const contexto = buildAIContext((await crearPlan1ConOctavo()).getState());
     expect(contexto.financiero?.presupuestoMensual).toBeNull();
     await expect(comoJson(contexto)).toMatchFileSnapshot(destino('contexto-sin-presupuesto.json'));
+  });
+
+  it('contexto-limite-20h.json: el mismo plan con "Quiero armar un plan que tenga menos de 20h semanales"', async () => {
+    const limites = detectarLimites('Quiero armar un plan que tenga menos de 20h semanales');
+    const contexto = buildAIContext((await crearPlan1ConOctavo()).getState(), { presupuestoMensual: 900, limites });
+    expect(contexto.propuestaConLimites?.periodos.every((periodo) => periodo.horas <= 20)).toBe(true);
+    await expect(comoJson(contexto)).toMatchFileSnapshot(destino('contexto-limite-20h.json'));
   });
 });

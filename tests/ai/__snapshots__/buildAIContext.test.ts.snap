@@ -1105,6 +1105,7 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > con S6
     "noPlanificados": [],
     "propuesta": [
       {
+        "creditos": 20,
         "cursos": [
           "100000S61T",
           "100000S06I",
@@ -1114,9 +1115,11 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > con S6
           "100000TD09",
           "100000S71T",
         ],
+        "horas": 25,
         "periodoId": "ciclo-8",
       },
       {
+        "creditos": 21,
         "cursos": [
           "100000I62N",
           "100000SI82",
@@ -1125,9 +1128,11 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > con S6
           "100000SI86",
           "100000SI97",
         ],
+        "horas": 22,
         "periodoId": "ciclo-9",
       },
       {
+        "creditos": 19,
         "cursos": [
           "100000S09I",
           "100000S02I",
@@ -1137,12 +1142,15 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > con S6
           "100000NI24",
           "100000SI95",
         ],
+        "horas": 22,
         "periodoId": "ciclo-10",
       },
       {
+        "creditos": 3,
         "cursos": [
           "100000CN47",
         ],
+        "horas": 3,
         "periodoId": "ciclo-11",
       },
     ],
@@ -2366,6 +2374,7 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > cumple
     "noPlanificados": [],
     "propuesta": [
       {
+        "creditos": 21,
         "cursos": [
           "100000S06I",
           "100000S72T",
@@ -2375,9 +2384,11 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > cumple
           "100000I62N",
           "100000S71T",
         ],
+        "horas": 25,
         "periodoId": "ciclo-8",
       },
       {
+        "creditos": 19,
         "cursos": [
           "100000S09I",
           "100000SI82",
@@ -2386,9 +2397,11 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > cumple
           "100000SI86",
           "100000SI97",
         ],
+        "horas": 22,
         "periodoId": "ciclo-9",
       },
       {
+        "creditos": 20,
         "cursos": [
           "100000SI87",
           "100000N25I",
@@ -2398,6 +2411,7 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > cumple
           "100000NI24",
           "100000SI95",
         ],
+        "horas": 21,
         "periodoId": "ciclo-10",
       },
     ],

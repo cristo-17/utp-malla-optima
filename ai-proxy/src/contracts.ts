@@ -332,7 +332,8 @@ export const AIContextSchema = z.object({
    * aplicadaEnMalla sea true: si es false, es una propuesta que puede aplicar con Autogenerar.
    */
   rutaSugerida: z.object({
-    propuesta: z.array(z.object({ periodoId: PeriodoIdSchema, cursos: z.array(z.string()) })),
+    /** Cada periodo de la ruta: sus cursos, horas efectivas y créditos. */
+    propuesta: z.array(z.object({ periodoId: PeriodoIdSchema, cursos: z.array(z.string()), horas: z.number(), creditos: z.number() })),
     ciclosRestantes: z.number().int(),
     cicloFinal: z.number().int().nullable(),
     noPlanificados: z.array(z.string()),
