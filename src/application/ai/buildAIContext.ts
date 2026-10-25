@@ -449,6 +449,33 @@ const propuestaConLimitesDe = (
   };
 };
 
+/** Dónde están los descuentos en la app (textos reales de PlanificadorPanel y PeriodFinancialCard). */
+export const UBICACION_DESCUENTOS = 'Estrategia → Simulación de cuotas: el método de pago se elige en Configuración y el pago único con "Aplicar pago único" en cada ciclo.';
+
+/**
+ * CONTEXTO.descuentos: lo que hace hoy el código (budgetCalculator). El pronto pago y el pago único solo aplican a
+ * ciclos regulares, y el porcentaje se calcula sobre la cuota con el recargo por horas adicionales (F-021).
+ */
+const descuentosDe = (tarifario: Tarifario | null, disciplina: string, topeEscala: number | null): AIContext['descuentos'] => {
+  if (!tarifario) return null;
+  const tarifas = tarifario.disciplinas[disciplina] ?? Object.values(tarifario.disciplinas)[0];
+  return {
+    metodosPago: Object.entries(tarifario.metodosPago ?? {}).map(([id, metodo]) => ({
+      id, nombre: metodo.nombre, descuentoPorcentaje: metodo.descuentoPorcentaje, requiereProntoPago: Boolean(metodo.requiereProntoPago),
+    })),
+    pagoUnico: {
+      descuentoPorcentaje: tarifario.descuentoPagoUnicoRegular ?? 7.5,
+      seCobra: 'todo junto al inicio del ciclo',
+      soloCiclosRegulares: true,
+    },
+    costoHoraAdicional: tarifas?.costoHoraAdicional ?? null,
+    horasSinRecargo: topeEscala,
+    descuentoSobreRecargo: true,
+    veranoConDescuento: false,
+    ubicacionEnApp: UBICACION_DESCUENTOS,
+  };
+};
+
 export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesContextoIA = {}): AIContext => {
   const { cursos, tarifario, disciplinaActiva, cicloActual, periodoIngreso } = estado;
   const contextoJalados = { cicloActual, periodoIngreso };
@@ -572,5 +599,6 @@ export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesConte
         : [],
     },
     propuestaConLimites: propuestaConLimitesDe(estado, opciones.limites, entorno?.servicio),
+    descuentos: descuentosDe(tarifario, disciplinaActiva, topeEscala),
   };
 };

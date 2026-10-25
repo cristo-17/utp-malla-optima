@@ -815,6 +815,38 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > con S6
       "superaTopeEscala": true,
     },
   },
+  "descuentos": {
+    "costoHoraAdicional": 38.81,
+    "descuentoSobreRecargo": true,
+    "horasSinRecargo": 22,
+    "metodosPago": [
+      {
+        "descuentoPorcentaje": 0,
+        "id": "sin_descuento",
+        "nombre": "Sin descuento",
+        "requiereProntoPago": false,
+      },
+      {
+        "descuentoPorcentaje": 5,
+        "id": "interbank_scotiabank",
+        "nombre": "Interbank / Scotiabank — pronto pago",
+        "requiereProntoPago": true,
+      },
+      {
+        "descuentoPorcentaje": 2.5,
+        "id": "bcp_bbva",
+        "nombre": "BCP / BBVA — pronto pago",
+        "requiereProntoPago": true,
+      },
+    ],
+    "pagoUnico": {
+      "descuentoPorcentaje": 7.5,
+      "seCobra": "todo junto al inicio del ciclo",
+      "soloCiclosRegulares": true,
+    },
+    "ubicacionEnApp": "Estrategia → Simulación de cuotas: el método de pago se elige en Configuración y el pago único con "Aplicar pago único" en cada ciclo.",
+    "veranoConDescuento": false,
+  },
   "electivos": [
     {
       "area": "Ingeniería de software",
@@ -2053,6 +2085,38 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > cumple
     "planificadosBloqueadosPorJalado": [],
     "presupuesto": null,
     "proximoPeriodoConJalados": null,
+  },
+  "descuentos": {
+    "costoHoraAdicional": 38.81,
+    "descuentoSobreRecargo": true,
+    "horasSinRecargo": 22,
+    "metodosPago": [
+      {
+        "descuentoPorcentaje": 0,
+        "id": "sin_descuento",
+        "nombre": "Sin descuento",
+        "requiereProntoPago": false,
+      },
+      {
+        "descuentoPorcentaje": 5,
+        "id": "interbank_scotiabank",
+        "nombre": "Interbank / Scotiabank — pronto pago",
+        "requiereProntoPago": true,
+      },
+      {
+        "descuentoPorcentaje": 2.5,
+        "id": "bcp_bbva",
+        "nombre": "BCP / BBVA — pronto pago",
+        "requiereProntoPago": true,
+      },
+    ],
+    "pagoUnico": {
+      "descuentoPorcentaje": 7.5,
+      "seCobra": "todo junto al inicio del ciclo",
+      "soloCiclosRegulares": true,
+    },
+    "ubicacionEnApp": "Estrategia → Simulación de cuotas: el método de pago se elige en Configuración y el pago único con "Aplicar pago único" en cada ciclo.",
+    "veranoConDescuento": false,
   },
   "electivos": [
     {

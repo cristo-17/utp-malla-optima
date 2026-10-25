@@ -132,3 +132,36 @@ describe('Chat: "Aplicar a mi malla" debajo de una respuesta con propuesta', () 
     expect(html.indexOf('Aplicar a mi malla')).toBeLessThan(html.indexOf('Sin propuesta.'));
   });
 });
+
+describe('CONTEXTO.descuentos (desde el tarifario)', () => {
+  it('métodos con su %, pago único al inicio, hora adicional, descuento sobre el recargo y dónde se ve', async () => {
+    const store = await crearStore();
+    const { descuentos } = buildAIContext(store.getState());
+    expect(descuentos).toEqual({
+      metodosPago: [
+        { id: 'sin_descuento', nombre: 'Sin descuento', descuentoPorcentaje: 0, requiereProntoPago: false },
+        { id: 'interbank_scotiabank', nombre: 'Interbank / Scotiabank — pronto pago', descuentoPorcentaje: 5, requiereProntoPago: true },
+        { id: 'bcp_bbva', nombre: 'BCP / BBVA — pronto pago', descuentoPorcentaje: 2.5, requiereProntoPago: true },
+      ],
+      pagoUnico: { descuentoPorcentaje: 7.5, seCobra: 'todo junto al inicio del ciclo', soloCiclosRegulares: true },
+      costoHoraAdicional: 38.81,
+      horasSinRecargo: 22,
+      descuentoSobreRecargo: true,
+      veranoConDescuento: false,
+      ubicacionEnApp: 'Estrategia → Simulación de cuotas: el método de pago se elige en Configuración y el pago único con "Aplicar pago único" en cada ciclo.',
+    });
+  });
+
+  it('sin tarifario es null', async () => {
+    const store = await crearStore();
+    expect(buildAIContext({ ...store.getState(), tarifario: null }).descuentos).toBeNull();
+  });
+
+  it('el mock responde los descuentos con sus porcentajes y "Estrategia"', async () => {
+    const store = await crearStore();
+    const contexto = buildAIContext(store.getState());
+    const respuesta = generarRespuestaMock({ modo: 'chat', contexto, mensajes: [{ rol: 'user', texto: '¿Cómo funcionan los descuentos de la UTP?' }] });
+    const texto = 'texto' in respuesta ? respuesta.texto : '';
+    for (const parte of ['5 %', '2.5 %', '7.5 %', 'al inicio del ciclo', 'Estrategia → Simulación de cuotas']) expect(texto).toContain(parte);
+  });
+});

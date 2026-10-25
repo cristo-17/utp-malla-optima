@@ -361,6 +361,31 @@ export const AIContextSchema = z.object({
   foco: z.discriminatedUnion('tipo', [z.object({ tipo: z.literal('plan') }), FocoCicloSchema, FocoCursoSchema]).nullable(),
   derivados: DerivadosSchema,
   propuestaConLimites: PropuestaConLimitesSchema.nullable(),
+  /** Descuentos y formas de pago del tarifario, para explicarlos sin inventar porcentajes; null sin tarifario. */
+  descuentos: z.object({
+    /** Pronto pago por banco: porcentaje sobre cada cuota mensual de un ciclo regular. */
+    metodosPago: z.array(z.object({
+      id: z.string(),
+      nombre: z.string(),
+      descuentoPorcentaje: z.number(),
+      requiereProntoPago: z.boolean(),
+    })),
+    /** Pago único: todas las pensiones del ciclo juntas, al inicio, con este descuento. Solo en ciclos regulares. */
+    pagoUnico: z.object({
+      descuentoPorcentaje: z.number(),
+      seCobra: z.literal('todo junto al inicio del ciclo'),
+      soloCiclosRegulares: z.literal(true),
+    }),
+    /** Costo de cada hora sobre el tope de la escala (horasSinRecargo), por cuota. */
+    costoHoraAdicional: monto.nullable(),
+    horasSinRecargo: z.number().nullable(),
+    /** Cómo calcula hoy MallaU: el descuento se aplica sobre la cuota con el recargo incluido (por confirmar con la UTP). */
+    descuentoSobreRecargo: z.boolean(),
+    /** En verano no hay pronto pago ni pago único. */
+    veranoConDescuento: z.literal(false),
+    /** Dónde lo ve el alumno en la app. */
+    ubicacionEnApp: z.string(),
+  }).nullable(),
 });
 export type AIContext = z.infer<typeof AIContextSchema>;
 export type AIPropuestaConLimites = z.infer<typeof PropuestaConLimitesSchema>;

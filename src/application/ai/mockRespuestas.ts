@@ -440,12 +440,30 @@ const respuestaPropuesta = (contexto: AIContext): AIChatResponse | null => {
   };
 };
 
+/** Regla de descuentos: porcentajes de CONTEXTO.descuentos y dónde se ven (Estrategia → Simulación de cuotas). */
+const respuestaDescuentos = (contexto: AIContext): AIChatResponse | null => {
+  const descuentos = contexto.descuentos;
+  if (!descuentos) return null;
+  const pronto = descuentos.metodosPago.filter((metodo) => metodo.descuentoPorcentaje > 0)
+    .map((metodo) => `${metodo.nombre}: ${metodo.descuentoPorcentaje} % en cada cuota`);
+  return {
+    texto: `Hay dos formas de ahorrar en un ciclo regular: pronto pago (${listar(pronto)}) o pago único, con ${descuentos.pagoUnico.descuentoPorcentaje} % ` +
+      `pagando todo junto al inicio del ciclo. En verano no hay descuento.
+Lo ves en Estrategia → Simulación de cuotas. Son montos referenciales.`,
+    cursos: [], preguntasSugeridas: ['¿Me alcanza mi presupuesto?', '¿Cómo funciona el pago único?'],
+  };
+};
+
 export const mockChat = (contexto: AIContext, pregunta: string): AIChatResponse => {
   const tema = detectarTema(pregunta);
   if (tema === 'bienestar') return respuestaBienestar();
   if (tema === 'identidad') return respuestaIdentidad();
   const conPropuesta = respuestaPropuesta(contexto);
   if (conPropuesta) return conPropuesta;
+  if (/descuento/.test(normalizar(pregunta)) && !/\d/.test(pregunta)) {
+    const descuentos = respuestaDescuentos(contexto);
+    if (descuentos) return descuentos;
+  }
   if (tema === 'sinDatos') return respuestaSinDatos(contexto, pregunta);
   if (tema === 'intentos') return respuestaIntentos(contexto, pregunta);
   if (tema === 'cachimbo') {

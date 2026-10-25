@@ -67,5 +67,14 @@ export const crearContextoMinimo = (cambios: Partial<AIContext> = {}): AIContext
     planificadosBloqueadosPorJalado: [],
   },
   propuestaConLimites: null,
+  descuentos: {
+    metodosPago: [
+      { id: 'sin_descuento', nombre: 'Sin descuento', descuentoPorcentaje: 0, requiereProntoPago: false },
+      { id: 'interbank_scotiabank', nombre: 'Interbank / Scotiabank — pronto pago', descuentoPorcentaje: 5, requiereProntoPago: true },
+    ],
+    pagoUnico: { descuentoPorcentaje: 7.5, seCobra: 'todo junto al inicio del ciclo', soloCiclosRegulares: true },
+    costoHoraAdicional: 38.81, horasSinRecargo: 22, descuentoSobreRecargo: true, veranoConDescuento: false,
+    ubicacionEnApp: 'Estrategia → Simulación de cuotas',
+  },
   ...cambios,
 });
