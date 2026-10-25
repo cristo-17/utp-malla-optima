@@ -281,6 +281,9 @@ body.ia-con-asistente #panel-planificador {
 @keyframes ia-punto { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
 
 .ia-bienvenida { display: flex; flex-direction: column; gap: 10px; }
+.ia-ciclo-vacio { display: flex; flex-direction: column; gap: 8px; }
+.ia-ciclo-vacio > p:first-child { display: flex; align-items: center; gap: 6px; }
+.ia-accion-plan { align-self: flex-start; margin-top: 6px; }
 .ia-presupuesto { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; font-weight: 600; color: var(--ia-muted); }
 .ia-presupuesto input {
   min-height: 44px;

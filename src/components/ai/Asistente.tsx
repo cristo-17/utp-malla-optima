@@ -7,6 +7,7 @@ import { AsistenteFab } from './AsistenteFab';
 import { AsistentePanel } from './AsistentePanel';
 import { almacen, CLAVES_ASISTENTE, debeOcultarFab, opcionesAdjuntar } from './asistenteLogica';
 import { crearControladorAsistente } from './controladorAsistente';
+import { cicloVacioProximo } from '../../presentation/messages/autogenerarMessages';
 import './asistente.css';
 
 const DURACION_TOOLTIP_MS = 6000;
@@ -34,9 +35,10 @@ const useArrastrando = () => {
 };
 
 export function Asistente() {
-  const { cursos, cicloActual, cursoAMover, estrategiaAbierta } = useAcademicStore(useShallow((state) => ({
+  const { cursos, cicloActual, cursoAMover, estrategiaAbierta, abrirAutogenerar } = useAcademicStore(useShallow((state) => ({
     cursos: state.cursos, cicloActual: state.cicloActual,
     cursoAMover: state.cursoAMover, estrategiaAbierta: state.panelPlanificadorAbierto,
+    abrirAutogenerar: state.abrirAutogenerar,
   })));
   const [controlador] = useState(() => {
     const cliente = crearAIClient();
@@ -65,6 +67,7 @@ export function Asistente() {
   const mostrarSaludo = saludoPendiente && !fabOculto;
   const nombres = useMemo(() => new Map(cursos.map((curso) => [curso.codigo, curso.nombre])), [cursos]);
   const opciones = useMemo(() => opcionesAdjuntar(cursos, cicloActual), [cursos, cicloActual]);
+  const cicloVacio = useMemo(() => cicloVacioProximo(cursos, cicloActual), [cursos, cicloActual]);
 
   // Padding inferior del contenido para que el botón nunca tape tarjetas.
   useEffect(() => {
@@ -171,7 +174,8 @@ export function Asistente() {
     {abierto && <>
       <div className="ia-fondo" aria-hidden="true" onClick={cerrar} />
       <AsistentePanel
-        estado={estado} enLinea={enLinea} nombres={nombres} opciones={opciones} esMock={controlador.esMock}
+        estado={estado} enLinea={enLinea} nombres={nombres} opciones={opciones} esMock={controlador.esMock} cicloVacio={cicloVacio}
+        onAutogenerar={(alcance) => abrirAutogenerar({ alcance })}
         mostrarTooltipRapidas={mostrarTooltip} panelRef={panelRef} inputRef={inputRef} mensajesRef={mensajesRef} onKeyDown={alTeclear}
         onCerrar={cerrar}
         onNuevaConversacion={controlador.nuevaConversacion}

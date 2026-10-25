@@ -1,5 +1,5 @@
 import type { KeyboardEvent, Ref } from 'react';
-import { Bot, RotateCcw, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { Bot, CalendarPlus, RotateCcw, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { AsistenteEntrada } from './AsistenteEntrada';
 import { AsistenteMensajes } from './AsistenteMensajes';
 import { preguntasPorFoco, type FocoUI, type OpcionesAdjuntar } from './asistenteLogica';
@@ -20,6 +20,8 @@ export interface AccionesPanel {
   onCerrarPanel: () => void;
   onElegirFoco: (foco: FocoUI) => void;
   onQuitarFoco: () => void;
+  /** Abre Autogenerar; con el próximo ciclo vacío, con alcance "Próximo ciclo". */
+  onAutogenerar?: (alcance: 'proximoPeriodo' | 'hastaEgresar') => void;
 }
 
 interface PanelProps extends AccionesPanel {
@@ -29,6 +31,8 @@ interface PanelProps extends AccionesPanel {
   opciones: OpcionesAdjuntar;
   mostrarTooltipRapidas: boolean;
   esMock?: boolean;
+  /** Número del próximo ciclo si no tiene cursos (tarjeta "¿Lo armo?"); null si ya tiene. */
+  cicloVacio?: number | null;
   panelRef?: Ref<HTMLDivElement>;
   inputRef?: Ref<HTMLInputElement>;
   mensajesRef?: Ref<HTMLDivElement>;
@@ -43,6 +47,19 @@ function AvisoPrivacidad({ onAceptar, onCancelar }: { onAceptar: () => void; onC
     <div className="ia-privacidad-acciones">
       <button type="button" className="ia-btn-secundario" onClick={onCancelar}>Cancelar</button>
       <button type="button" className="ia-btn-primario" onClick={onAceptar} data-autofocus>Aceptar</button>
+    </div>
+  </div>;
+}
+
+/** Con el próximo ciclo vacío, esta tarjeta va antes que "Analizar mi plan". */
+export function TarjetaCicloVacio({ ciclo, deshabilitado, onAutogenerar }: { ciclo: number; deshabilitado?: boolean; onAutogenerar: () => void }) {
+  return <div className="ia-fila">
+    <div className="ia-burbuja ia-burbuja-bot ia-ciclo-vacio" role="group" aria-labelledby="ia-ciclo-vacio-titulo">
+      <p id="ia-ciclo-vacio-titulo"><CalendarPlus size={16} aria-hidden="true" /> <b>Tu Ciclo {ciclo} está vacío. ¿Lo armo?</b></p>
+      <p className="ia-ayuda">Te muestro una propuesta con tus límites y tú decides si la aplicas a tu malla.</p>
+      <button type="button" className="ia-btn-primario" onClick={onAutogenerar} disabled={deshabilitado}>
+        <Sparkles size={16} aria-hidden="true" /> Autogenerar
+      </button>
     </div>
   </div>;
 }
@@ -98,6 +115,8 @@ export function AsistentePanel({ panelRef, inputRef, mensajesRef, onKeyDown, ...
       ? <div className="ia-cuerpo"><AvisoPrivacidad onAceptar={props.onAceptarPrivacidad} onCancelar={props.onCancelarPrivacidad} /></div>
       : <>
         <div className="ia-cuerpo" ref={mensajesRef} aria-live="polite">
+          {props.cicloVacio && props.onAutogenerar && <TarjetaCicloVacio ciclo={props.cicloVacio}
+            onAutogenerar={() => props.onAutogenerar?.('proximoPeriodo')} />}
           <Bienvenida presupuesto={estado.presupuesto} deshabilitado={!enLinea || estado.enviando}
             onPresupuesto={props.onPresupuesto} onAnalizar={props.onAnalizar} />
           <AsistenteMensajes mensajes={estado.mensajes} nombres={nombres} enviando={estado.enviando}
