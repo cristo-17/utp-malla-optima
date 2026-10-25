@@ -83,16 +83,15 @@ export const filtrarCursos = (cursos: OpcionesAdjuntar['cursos'], busqueda: stri
 };
 
 export interface EstadoFab {
-  sinMalla: boolean;
   arrastrando: boolean;
   cursoAMover: string | null;
   panelAbierto: boolean;
   estrategiaAbierta: boolean;
 }
 
-/** El botón flotante no debe tapar el arrastre, la barra "Moviendo curso" ni los paneles. */
+/** El botón flotante no debe tapar el arrastre, la barra "Moviendo curso" ni los paneles. Sin malla sí se muestra: invita a subir el Excel. */
 export const debeOcultarFab = (estado: EstadoFab): boolean =>
-  estado.sinMalla || estado.arrastrando || Boolean(estado.cursoAMover) || estado.panelAbierto || estado.estrategiaAbierta;
+  estado.arrastrando || Boolean(estado.cursoAMover) || estado.panelAbierto || estado.estrategiaAbierta;
 
 /** Parte un texto para resaltar los códigos de curso que aparezcan en él. */
 export const partirPorCodigos = (texto: string, codigos: string[]): { texto: string; codigo: boolean }[] => {

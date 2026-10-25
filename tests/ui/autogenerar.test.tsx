@@ -134,7 +134,7 @@ describe('Autogenerar - modal y vista previa', () => {
   });
 });
 
-describe('Asistente - tarjeta del periodo vacío', () => {
+describe('Asistente - una sola acción según el estado de la malla', () => {
   const sinAccion = () => undefined;
   const acciones: AccionesPanel = {
     onCerrar: sinAccion, onNuevaConversacion: sinAccion, onAceptarPrivacidad: sinAccion, onCancelarPrivacidad: sinAccion,
@@ -142,21 +142,33 @@ describe('Asistente - tarjeta del periodo vacío', () => {
     onAlternarPanel: sinAccion, onCerrarPanel: sinAccion, onElegirFoco: sinAccion, onQuitarFoco: sinAccion,
   };
   const estado = { mensajes: [], enviando: false, privacidadAceptada: true, foco: null, focoEnviado: false, panel: null, presupuesto: '' };
-  const render = (cicloVacio: number | null) => renderToStaticMarkup(<AsistentePanel {...acciones} estado={estado} enLinea
-    nombres={new Map()} opciones={opcionesAdjuntar([], 7)} mostrarTooltipRapidas={false} cicloVacio={cicloVacio}
-    onAutogenerar={sinAccion} />);
+  const render = (cicloVacio: number | null, sinMalla = false) => renderToStaticMarkup(<AsistentePanel {...acciones} estado={estado} enLinea
+    nombres={new Map()} opciones={opcionesAdjuntar([], 7)} mostrarTooltipRapidas={false} cicloVacio={cicloVacio} sinMalla={sinMalla}
+    onAutogenerar={sinAccion} onSubirExcel={sinAccion} onArmarAMano={sinAccion} />);
 
-  it('con el Ciclo 8 vacío la tarjeta "¿Lo armo?" con Autogenerar va antes de "Analizar mi plan"', () => {
-    const html = render(8);
-    expect(html).toContain('Tu Ciclo 8 está vacío. ¿Lo armo?');
-    expect(html).toContain('Autogenerar');
-    expect(html.indexOf('Tu Ciclo 8 está vacío')).toBeLessThan(html.indexOf('Analizar mi plan'));
+  it('sin malla: saludo y "Sube tu Excel", nada más', () => {
+    const html = render(null, true);
+    expect(html).toContain('Sube tu Excel');
+    for (const texto of ['Analizar mi plan', 'Presupuesto mensual', 'está vacío', 'Autogenerar']) expect(html, texto).not.toContain(texto);
   });
 
-  it('con el próximo ciclo armado no aparece y "Analizar mi plan" sigue disponible', () => {
+  it('próximo ciclo vacío: UNA tarjeta con saludo corto, Autogenerar y el enlace al banco; sin presupuesto ni "Analizar mi plan"', () => {
+    const html = render(8);
+    expect(html).toContain('¡Hola! Soy tu asistente académico.');
+    expect(html).toContain('Tu Ciclo 8 está vacío.');
+    expect(html).toContain('Autogenerar');
+    expect(html).toContain('o ármalo a mano desde el banco de pendientes');
+    expect(html).not.toContain('Analizar mi plan');
+    expect(html).not.toContain('Presupuesto mensual');
+    expect(html.match(/ia-burbuja-bot/g)).toHaveLength(1);
+  });
+
+  it('próximo ciclo con cursos: saludo, presupuesto y "Analizar mi plan", sin la tarjeta de Autogenerar', () => {
     const html = render(null);
-    expect(html).not.toContain('está vacío');
+    expect(html).toContain('Presupuesto mensual (S/)');
     expect(html).toContain('Analizar mi plan');
+    expect(html).not.toContain('está vacío');
+    expect(html).not.toContain('Sube tu Excel');
   });
 
   it('cicloVacioProximo: el Excel recién importado tiene el Ciclo 8 vacío; al ubicar un curso deja de estarlo', async () => {

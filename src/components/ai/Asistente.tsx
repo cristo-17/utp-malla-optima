@@ -35,7 +35,14 @@ const useArrastrando = () => {
   return arrastrando;
 };
 
-export function Asistente() {
+/** Lleva al banco de pendientes para armar el ciclo a mano. */
+const irAlBanco = () => {
+  const buscador = document.querySelector<HTMLInputElement>('input[aria-label="Buscar cursos pendientes"]');
+  buscador?.scrollIntoView({ block: 'center' });
+  buscador?.focus({ preventScroll: true });
+};
+
+export function Asistente({ onSubirExcel }: { onSubirExcel?: () => void } = {}) {
   const { cursos, cicloActual, cursoAMover, estrategiaAbierta, abrirAutogenerar } = useAcademicStore(useShallow((state) => ({
     cursos: state.cursos, cicloActual: state.cicloActual,
     cursoAMover: state.cursoAMover, estrategiaAbierta: state.panelPlanificadorAbierto,
@@ -65,7 +72,7 @@ export function Asistente() {
   const estabaAbierto = useRef(false);
 
   const sinMalla = cursos.length === 0;
-  const fabOculto = debeOcultarFab({ sinMalla, arrastrando, cursoAMover, panelAbierto: abierto, estrategiaAbierta });
+  const fabOculto = debeOcultarFab({ arrastrando, cursoAMover, panelAbierto: abierto, estrategiaAbierta });
   const mostrarSaludo = saludoPendiente && !fabOculto;
   const nombres = useMemo(() => new Map(cursos.map((curso) => [curso.codigo, curso.nombre])), [cursos]);
   const opciones = useMemo(() => opcionesAdjuntar(cursos, cicloActual), [cursos, cicloActual]);
@@ -177,6 +184,9 @@ export function Asistente() {
       <div className="ia-fondo" aria-hidden="true" onClick={cerrar} />
       <AsistentePanel
         estado={estado} enLinea={enLinea} nombres={nombres} opciones={opciones} esMock={controlador.esMock} cicloVacio={cicloVacio}
+        sinMalla={sinMalla}
+        onSubirExcel={onSubirExcel ? () => { cerrar(); onSubirExcel(); } : undefined}
+        onArmarAMano={() => { cerrar(); window.setTimeout(irAlBanco, 0); }}
         onAutogenerar={(alcance) => abrirAutogenerar({ alcance })}
         onAplicarPropuesta={abrirAutogenerar}
         mostrarTooltipRapidas={mostrarTooltip} panelRef={panelRef} inputRef={inputRef} mensajesRef={mensajesRef} onKeyDown={alTeclear}

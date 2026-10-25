@@ -285,6 +285,10 @@ body.ia-con-asistente #panel-planificador {
 .ia-ciclo-vacio > p:first-child { display: flex; align-items: center; gap: 6px; }
 .ia-accion-plan { align-self: flex-start; margin-top: 6px; }
 .ia-chip-accion { border-style: dashed; }
+.ia-enlace {
+  align-self: flex-start; min-height: 44px; padding: 0; border: 0; background: none;
+  color: var(--ia-muted); font-size: 0.82rem; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
 .ia-presupuesto { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; font-weight: 600; color: var(--ia-muted); }
 .ia-presupuesto input {
   min-height: 44px;

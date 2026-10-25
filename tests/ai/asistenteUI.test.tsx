@@ -375,14 +375,13 @@ describe('Asistente - descarte de códigos inexistentes', () => {
 });
 
 describe('Asistente - ocultamiento del botón', () => {
-  const visible = { sinMalla: false, arrastrando: false, cursoAMover: null, panelAbierto: false, estrategiaAbierta: false };
+  const visible = { arrastrando: false, cursoAMover: null, panelAbierto: false, estrategiaAbierta: false };
 
   it.each([
     ['mientras se arrastra un curso', { arrastrando: true }],
     ['con la barra "Moviendo curso"', { cursoAMover: '100000I62N' }],
     ['con el panel abierto', { panelAbierto: true }],
     ['con el drawer Estrategia abierto', { estrategiaAbierta: true }],
-    ['sin malla cargada', { sinMalla: true }],
   ])('se oculta %s', (_caso, cambios) => {
     expect(debeOcultarFab(visible)).toBe(false);
     expect(debeOcultarFab({ ...visible, ...cambios })).toBe(true);

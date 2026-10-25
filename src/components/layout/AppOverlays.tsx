@@ -10,7 +10,7 @@ import { PrerequisitoToast } from '../PrerequisitoToast';
 
 export function AppOverlays({ app }: { app: AppController }) {
   return <>
-    <PlanificadorPanel /><PrerequisitoToast /><Asistente /><AutogenerarModal />
+    <PlanificadorPanel /><PrerequisitoToast /><Asistente onSubirExcel={() => app.setModalCarga(true)} /><AutogenerarModal />
     {app.cursoAMover && <div className="tap-move-floating-bar" role="status"><span>Moviendo {app.cursos.find((curso) => curso.codigo === app.cursoAMover)?.nombre}</span><button type="button" onClick={() => app.setCursoAMover(null)}><X size={14} /> Cancelar</button></div>}
     {app.errorExportar && <div className="integration-error" role="alert">{app.errorExportar}</div>}
     {app.mostrarConfiguracion && <BienvenidaModal onClose={() => app.setModalContexto(false)} />}

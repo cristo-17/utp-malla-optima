@@ -1,5 +1,5 @@
 import type { KeyboardEvent, Ref } from 'react';
-import { Bot, CalendarPlus, RotateCcw, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { Bot, CalendarPlus, RotateCcw, ShieldCheck, Sparkles, Upload, X } from 'lucide-react';
 import { AsistenteEntrada } from './AsistenteEntrada';
 import { AsistenteMensajes } from './AsistenteMensajes';
 import { preguntasPorFoco, type FocoUI, type OpcionesAdjuntar } from './asistenteLogica';
@@ -25,6 +25,9 @@ export interface AccionesPanel {
   onAutogenerar?: (alcance: 'proximoPeriodo' | 'hastaEgresar') => void;
   /** "Aplicar a mi malla" debajo de una respuesta con propuesta: abre Autogenerar con esos límites. */
   onAplicarPropuesta?: (opciones: OpcionesPropuesta) => void;
+  onSubirExcel?: () => void;
+  /** "o ármalo a mano desde el banco de pendientes": cierra el chat y lleva al banco. */
+  onArmarAMano?: () => void;
 }
 
 interface PanelProps extends AccionesPanel {
@@ -34,8 +37,10 @@ interface PanelProps extends AccionesPanel {
   opciones: OpcionesAdjuntar;
   mostrarTooltipRapidas: boolean;
   esMock?: boolean;
-  /** Número del próximo ciclo si no tiene cursos (tarjeta "¿Lo armo?"); null si ya tiene. */
+  /** Número del próximo ciclo si no tiene cursos (tarjeta de Autogenerar); null si ya tiene. */
   cicloVacio?: number | null;
+  /** Sin malla cargada: la bienvenida solo ofrece subir el Excel. */
+  sinMalla?: boolean;
   panelRef?: Ref<HTMLDivElement>;
   inputRef?: Ref<HTMLInputElement>;
   mensajesRef?: Ref<HTMLDivElement>;
@@ -54,15 +59,31 @@ function AvisoPrivacidad({ onAceptar, onCancelar }: { onAceptar: () => void; onC
   </div>;
 }
 
-/** Con el próximo ciclo vacío, esta tarjeta va antes que "Analizar mi plan". */
-export function TarjetaCicloVacio({ ciclo, deshabilitado, onAutogenerar }: { ciclo: number; deshabilitado?: boolean; onAutogenerar: () => void }) {
+/** Sin malla: una sola acción, subir el Excel. */
+export function TarjetaSinMalla({ onSubirExcel }: { onSubirExcel?: () => void }) {
+  return <div className="ia-fila">
+    <div className="ia-burbuja ia-burbuja-bot ia-bienvenida" role="group" aria-label="Bienvenida">
+      <p>¡Hola! Soy tu asistente académico. Para ayudarte con tu plan y sus costos, primero sube tu plan de estudios.</p>
+      {onSubirExcel && <button type="button" className="ia-btn-primario" onClick={onSubirExcel} data-autofocus>
+        <Upload size={16} aria-hidden="true" /> Sube tu Excel
+      </button>}
+    </div>
+  </div>;
+}
+
+/** Próximo ciclo vacío: una sola tarjeta (saludo corto y Autogenerar), sin presupuesto ni "Analizar mi plan". */
+export function TarjetaCicloVacio({ ciclo, deshabilitado, onAutogenerar, onArmarAMano }: {
+  ciclo: number; deshabilitado?: boolean; onAutogenerar: () => void; onArmarAMano?: () => void;
+}) {
   return <div className="ia-fila">
     <div className="ia-burbuja ia-burbuja-bot ia-ciclo-vacio" role="group" aria-labelledby="ia-ciclo-vacio-titulo">
-      <p id="ia-ciclo-vacio-titulo"><CalendarPlus size={16} aria-hidden="true" /> <b>Tu Ciclo {ciclo} está vacío. ¿Lo armo?</b></p>
+      <p>¡Hola! Soy tu asistente académico.</p>
+      <p id="ia-ciclo-vacio-titulo"><CalendarPlus size={16} aria-hidden="true" /> <b>Tu Ciclo {ciclo} está vacío.</b></p>
       <p className="ia-ayuda">Te muestro una propuesta con tus límites y tú decides si la aplicas a tu malla.</p>
-      <button type="button" className="ia-btn-primario" onClick={onAutogenerar} disabled={deshabilitado}>
+      <button type="button" className="ia-btn-primario" onClick={onAutogenerar} disabled={deshabilitado} data-autofocus>
         <Sparkles size={16} aria-hidden="true" /> Autogenerar
       </button>
+      {onArmarAMano && <button type="button" className="ia-enlace" onClick={onArmarAMano}>o ármalo a mano desde el banco de pendientes</button>}
     </div>
   </div>;
 }
@@ -118,10 +139,12 @@ export function AsistentePanel({ panelRef, inputRef, mensajesRef, onKeyDown, ...
       ? <div className="ia-cuerpo"><AvisoPrivacidad onAceptar={props.onAceptarPrivacidad} onCancelar={props.onCancelarPrivacidad} /></div>
       : <>
         <div className="ia-cuerpo" ref={mensajesRef} aria-live="polite">
-          {props.cicloVacio && props.onAutogenerar && <TarjetaCicloVacio ciclo={props.cicloVacio}
-            onAutogenerar={() => props.onAutogenerar?.('proximoPeriodo')} />}
-          <Bienvenida presupuesto={estado.presupuesto} deshabilitado={!enLinea || estado.enviando}
-            onPresupuesto={props.onPresupuesto} onAnalizar={props.onAnalizar} />
+          {/* Una sola acción según el estado de la malla (se recalcula al aplicar, deshacer, arrastrar o limpiar). */}
+          {props.sinMalla ? <TarjetaSinMalla onSubirExcel={props.onSubirExcel} />
+            : props.cicloVacio && props.onAutogenerar ? <TarjetaCicloVacio ciclo={props.cicloVacio} deshabilitado={estado.enviando}
+              onAutogenerar={() => props.onAutogenerar?.('proximoPeriodo')} onArmarAMano={props.onArmarAMano} />
+              : <Bienvenida presupuesto={estado.presupuesto} deshabilitado={!enLinea || estado.enviando}
+                onPresupuesto={props.onPresupuesto} onAnalizar={props.onAnalizar} />}
           <AsistenteMensajes mensajes={estado.mensajes} nombres={nombres} enviando={estado.enviando}
             deshabilitado={!enLinea || estado.enviando} excluirPreguntas={sugerenciasFoco} onPreguntar={props.onPreguntar} onReintentar={props.onReintentar}
             onAplicarPropuesta={props.onAplicarPropuesta} />
