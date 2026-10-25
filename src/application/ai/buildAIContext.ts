@@ -384,7 +384,7 @@ const repartirEnUnCicloMas = (entrada: GenerateOptimalPlanInput, base: Propuesta
   let [desde, hasta, mejor] = [1, base.limites.horas, base];
   while (desde < hasta) {
     const medio = Math.floor((desde + hasta) / 2);
-    const intento = generateOptimalPlanUseCase({ ...entrada, maxHorasPorPeriodo: medio });
+    const intento = generateOptimalPlanUseCase({ ...entrada, maxHorasPorPeriodo: medio, conAlternativas: false });
     if (!intento.noPlanificados.length && intento.cicloEgreso !== null && intento.cicloEgreso <= objetivo) {
       [hasta, mejor] = [medio, intento];
     } else desde = medio + 1;
@@ -499,7 +499,7 @@ export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesConte
 
   const rutaSugerida = (() => {
     const propuesta = generateOptimalPlanUseCase({
-      cursos, totalCiclos: estado.totalCiclos, ciclosExcluidos: estado.ciclosExcluidos, cicloActual, periodoIngreso,
+      cursos, totalCiclos: estado.totalCiclos, ciclosExcluidos: estado.ciclosExcluidos, cicloActual, periodoIngreso, conAlternativas: false,
     });
     const periodos = agruparPorPeriodo(propuesta.cursos, cicloActual);
     const cicloFinal = periodos.length ? Math.max(...periodos.map((item) => item.periodo.cicloReferencia)) : null;
