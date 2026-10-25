@@ -91,7 +91,7 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
   const nombreMetodo = tarifario?.metodosPago?.[metodoPago]?.nombre;
   const avisos = propuesta ? avisosPropuesta(propuesta, { usarVeranos, tieneIngreso: Boolean(periodoIngreso), nombreMetodo }) : [];
   const periodos = propuesta ? periodosVistaPrevia(propuesta) : [];
-  const alternativas = propuesta ? propuesta.alternativas.map((alternativa) => ({ alternativa, ...textoAlternativa(alternativa, propuesta) })) : [];
+  const alternativas = propuesta ? propuesta.alternativas.map((alternativa) => ({ alternativa, ...textoAlternativa(alternativa) })) : [];
   /** "Usar esta": la vista previa pasa a la alternativa (otro método, veranos o más horas). */
   const usarAlternativa = ({ opciones: cambios }: AlternativaPlan) => {
     if (cambios.metodoPago) setMetodoElegido(cambios.metodoPago);
@@ -147,7 +147,7 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
         </fieldset>
         <div className="autogen-campos">
           <label htmlFor="autogen-horas">Máximo de horas por ciclo
-            <input id="autogen-horas" type="number" inputMode="numeric" min="0" step="1" placeholder="Sin límite" value={horas} onChange={(event) => { setHoras(event.target.value); setHorasEstricto(false); }} /></label>
+            <input id="autogen-horas" type="number" inputMode="numeric" min="0" step="1" placeholder="Por defecto: 22 h" value={horas} onChange={(event) => { setHoras(event.target.value); setHorasEstricto(false); }} /></label>
           <label htmlFor="autogen-creditos">Máximo de créditos
             <input id="autogen-creditos" type="number" inputMode="numeric" min="0" step="1" placeholder="Opcional" value={creditos} onChange={(event) => { setCreditos(event.target.value); setCreditosEstricto(false); }} /></label>
           <label htmlFor="autogen-cuota">Presupuesto mensual (S/)

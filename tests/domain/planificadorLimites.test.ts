@@ -269,6 +269,8 @@ describe('alternativas y límites estrictos (Plan_de_Estudio_1.xlsx, escala real
         ['metodoPago', { metodoPago: 'interbank_scotiabank' }, 11, 15141.35],
       ]);
     const conProntoPago = propuesta.alternativas[0];
+    // El ahorro frente a la principal lo calcula el código.
+    expect(propuesta.alternativas.map((alternativa) => alternativa.ahorroVsPropuesta)).toEqual([4893.05, 4208.15]);
     expect(conProntoPago.veranosUsados).toEqual(['verano-8']);
     expect(conProntoPago.costoTotalHastaEgresar!).toBeLessThan(propuesta.costoTotalHastaEgresar!);
     // Con pronto pago, la cuota de 22 h entra en S/ 800 (774.25); la de 23 h ya no (811.12).

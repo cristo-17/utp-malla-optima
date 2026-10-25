@@ -70,6 +70,8 @@ export interface AlternativaPlan {
   ciclosAgregados: number[];
   veranosUsados: PeriodoPropuesto['periodo']['id'][];
   costoTotalHastaEgresar: number | null;
+  /** Total de la propuesta − total de la alternativa (positivo = ahorra); null sin costos. */
+  ahorroVsPropuesta: number | null;
   /** Algún periodo pasa las horas sin recargo de la escala de pensión. */
   conRecargo: boolean;
 }
@@ -241,6 +243,8 @@ const alternativasDe = (principal: Omit<PropuestaPlan, 'alternativas'>, input: G
       ciclosAgregados: propuesta.ciclosAgregados,
       veranosUsados: propuesta.veranosUsados,
       costoTotalHastaEgresar: propuesta.costoTotalHastaEgresar,
+      ahorroVsPropuesta: propuesta.costoTotalHastaEgresar !== null && principal.costoTotalHastaEgresar !== null
+        ? redondear(principal.costoTotalHastaEgresar - propuesta.costoTotalHastaEgresar) : null,
       conRecargo: tope !== null && propuesta.periodos.some(({ periodo, horas }) => periodo.tipo === 'REGULAR' && horas > tope),
     }));
 };

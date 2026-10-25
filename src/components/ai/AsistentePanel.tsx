@@ -95,9 +95,11 @@ interface BienvenidaProps {
   deshabilitado: boolean;
   onPresupuesto: (valor: string) => void;
   onAnalizar: () => void;
+  /** false si un mensaje de la app ("Listo, armé tu Ciclo N…") ya ofrece Analizar mi plan: aquí queda solo el presupuesto. */
+  conAnalizar?: boolean;
 }
 
-function Bienvenida({ presupuesto, deshabilitado, onPresupuesto, onAnalizar }: BienvenidaProps) {
+function Bienvenida({ presupuesto, deshabilitado, onPresupuesto, onAnalizar, conAnalizar = true }: BienvenidaProps) {
   return <div className="ia-fila">
     <div className="ia-burbuja ia-burbuja-bot ia-bienvenida">
       <p>¡Hola! Soy tu asistente académico. Reviso tu carga, el costo de tu matrícula, tu ruta hasta egresar y qué pasa si jalas un curso.</p>
@@ -106,9 +108,9 @@ function Bienvenida({ presupuesto, deshabilitado, onPresupuesto, onAnalizar }: B
         <input type="number" inputMode="decimal" min="0" step="10" value={presupuesto} placeholder="Opcional"
           onChange={(event) => onPresupuesto(event.target.value)} disabled={deshabilitado} />
       </label>
-      <button type="button" className="ia-btn-primario ia-analizar" onClick={onAnalizar} disabled={deshabilitado}>
+      {conAnalizar && <button type="button" className="ia-btn-primario ia-analizar" onClick={onAnalizar} disabled={deshabilitado}>
         <Sparkles size={16} aria-hidden="true" /> Analizar mi plan
-      </button>
+      </button>}
       <p className="ia-ayuda">Toca 😊 para ver preguntas rápidas o 📎 para preguntar por un ciclo o curso.</p>
     </div>
   </div>;
@@ -146,7 +148,8 @@ export function AsistentePanel({ panelRef, inputRef, mensajesRef, onKeyDown, ...
             : props.cicloVacio && props.onAutogenerar ? <TarjetaCicloVacio ciclo={props.cicloVacio} deshabilitado={estado.enviando}
               onAutogenerar={() => props.onAutogenerar?.('proximoPeriodo')} onArmarAMano={props.onArmarAMano} />
               : <Bienvenida presupuesto={estado.presupuesto} deshabilitado={!enLinea || estado.enviando}
-                onPresupuesto={props.onPresupuesto} onAnalizar={props.onAnalizar} />}
+                onPresupuesto={props.onPresupuesto} onAnalizar={props.onAnalizar}
+                conAnalizar={!estado.mensajes.some((mensaje) => mensaje.rol === 'assistant' && mensaje.tipo === 'app')} />}
           <AsistenteMensajes mensajes={estado.mensajes} nombres={nombres} enviando={estado.enviando}
             deshabilitado={!enLinea || estado.enviando} excluirPreguntas={sugerenciasFoco} onPreguntar={props.onPreguntar} onReintentar={props.onReintentar}
             onAplicarPropuesta={props.onAplicarPropuesta} onAnalizar={props.onAnalizar} prioridadCursos={props.prioridadCursos} />

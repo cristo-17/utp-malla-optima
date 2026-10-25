@@ -126,7 +126,10 @@ describe('Autogenerar - modal y vista previa', () => {
     expect(html).toContain('Egresas en el Ciclo 12 · S/ 19,349.50 en total');
     expect(html).toContain('Otras opciones que te convienen');
     expect(html).toContain('Con Interbank / Scotiabank — pronto pago y el Verano 8');
-    expect(html).toContain('Egresas en el Ciclo 10 · S/ 14,456.45 en total (S/ 4,893.05 menos)');
+    // "Ahorras S/ X" frente a la principal, con la cifra del caso de uso (ahorroVsPropuesta).
+    expect(html).toContain('Egresas en el Ciclo 10 · S/ 14,456.45 en total · Ahorras S/ 4,893.05');
+    expect(html).toContain('Egresas en el Ciclo 11 · S/ 15,141.35 en total · Ahorras S/ 4,208.15');
+    expect(html).toContain('placeholder="Por defecto: 22 h"');
     expect(html.match(/Usar esta/g)).toHaveLength(2);
     // Las alternativas van debajo del aviso de ciclos extra.
     expect(html.indexOf('Necesitas 2 ciclos más')).toBeLessThan(html.indexOf('Otras opciones'));

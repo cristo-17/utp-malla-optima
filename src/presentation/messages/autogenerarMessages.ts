@@ -86,17 +86,17 @@ export const resumenEgreso = (propuesta: Pick<PropuestaPlan, 'periodoEgreso' | '
   (propuesta.costoTotalHastaEgresar !== null ? ` · ${soles2(propuesta.costoTotalHastaEgresar)} en total` : '');
 
 /** Título y detalle de una alternativa frente a la propuesta: qué cambia, cuándo egresa, cuánto cuesta y la diferencia. */
-export const textoAlternativa = (alternativa: AlternativaPlan, propuesta: PropuestaPlan): { titulo: string; detalle: string } => {
+export const textoAlternativa = (alternativa: AlternativaPlan): { titulo: string; detalle: string } => {
   const veranos = alternativa.veranosUsados.map((id) => id.replace('verano-', 'Verano ')).join(' y ');
   const { opciones, nombreMetodo } = alternativa;
   const titulo = alternativa.tipo === 'metodoPago' ? `Con ${nombreMetodo}`
     : alternativa.tipo === 'veranos' ? `Usando el ${veranos}`
       : alternativa.tipo === 'metodoPagoYVeranos' ? `Con ${nombreMetodo} y el ${veranos}`
         : `Con hasta ${opciones.maxHorasPorPeriodo} h por ciclo${alternativa.conRecargo ? ' (con recargo por horas adicionales)' : ''}`;
-  const ahorro = alternativa.costoTotalHastaEgresar !== null && propuesta.costoTotalHastaEgresar !== null
-    ? propuesta.costoTotalHastaEgresar - alternativa.costoTotalHastaEgresar : 0;
+  // "Ahorras S/ X" frente a la principal: la cifra la calcula el caso de uso (ahorroVsPropuesta).
+  const ahorro = alternativa.ahorroVsPropuesta ?? 0;
   return {
     titulo,
-    detalle: `${resumenEgreso(alternativa)}${ahorro > 0.005 ? ` (${soles2(Math.round(ahorro * 100) / 100)} menos)` : ''}`,
+    detalle: `${resumenEgreso(alternativa)}${ahorro > 0 ? ` · Ahorras ${soles2(ahorro)}` : ''}`,
   };
 };

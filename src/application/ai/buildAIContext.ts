@@ -470,8 +470,7 @@ const propuestaConLimitesDe = (
       ciclosAgregados: alternativa.ciclosAgregados,
       veranosUsados: alternativa.veranosUsados,
       costoTotalHastaEgresar: alternativa.costoTotalHastaEgresar,
-      ahorroVsPropuesta: alternativa.costoTotalHastaEgresar !== null && propuesta.costoTotalHastaEgresar !== null
-        ? r2(propuesta.costoTotalHastaEgresar - alternativa.costoTotalHastaEgresar) : null,
+      ahorroVsPropuesta: alternativa.ahorroVsPropuesta,
       ciclosAntes: Math.max(0, (propuesta.cicloEgreso ?? 0) - (alternativa.cicloEgreso ?? 0)),
       conRecargo: alternativa.conRecargo,
     })),

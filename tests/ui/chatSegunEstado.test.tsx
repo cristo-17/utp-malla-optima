@@ -102,6 +102,19 @@ describe('chat: el mensaje de la app al aplicar desde el chat', () => {
     expect(controlador.obtener().mensajes).toEqual([]);
   });
 
+  it('con el mensaje de la app, "Analizar mi plan" sale una sola vez (en el mensaje); el saludo deja solo el presupuesto', () => {
+    const conMensaje = (mensajes: Parameters<typeof AsistentePanel>[0]['estado']['mensajes']) => renderToStaticMarkup(
+      <AsistentePanel {...acciones} enLinea nombres={new Map()} opciones={opcionesAdjuntar([], 7)} mostrarTooltipRapidas={false}
+        estado={{ mensajes, enviando: false, privacidadAceptada: true, foco: null, focoEnviado: false, panel: null, presupuesto: '800' }}
+        cicloVacio={null} onAutogenerar={sinAccion} />);
+    const despues = conMensaje([{ id: 1, rol: 'assistant', tipo: 'app', texto: 'Listo, armé tu Ciclo 8: 6 cursos, 22 h. ¿Lo analizo?' }]);
+    expect(despues.match(/Analizar mi plan/g)).toHaveLength(1);
+    expect(despues.indexOf('Analizar mi plan')).toBeGreaterThan(despues.indexOf('Listo, armé'));
+    expect(despues).toContain('Presupuesto mensual (S/)');
+    expect(despues).toContain('value="800"');
+    expect(conMensaje([]).match(/Analizar mi plan/g)).toHaveLength(1);
+  });
+
   it('abrir Autogenerar desde el chat marca el origen; desde la barra, no', () => {
     const store = createAcademicStore(crearRepositoriosEnMemoria().repos);
     store.getState().abrirAutogenerar({ alcance: 'proximoPeriodo' }, 'chat');
