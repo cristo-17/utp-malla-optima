@@ -107,6 +107,18 @@ describe('fixtures de la evaluación (buildAIContext)', () => {
     await expect(comoJson(contexto)).toMatchFileSnapshot(destino('contexto-ciclo-vacio.json'));
   });
 
+  /** Los contextos de los tests del proxy (handler, gasto, consumo, límites, tono del mock), generados igual que los demás. */
+  it('contexto.json: el plan con el 8vo, presupuesto 900 y foco en INTELIGENCIA DE NEGOCIOS', async () => {
+    const contexto = buildAIContext((await crearPlan1ConOctavo()).getState(), { presupuestoMensual: 900, foco: { tipo: 'curso', id: '100000I62N' } });
+    await expect(comoJson(contexto)).toMatchFileSnapshot(destino('contexto.json'));
+  });
+
+  it('contextoJalado.json: el plan con el 8vo y S61T jalado, sin presupuesto', async () => {
+    const store = await crearPlan1ConOctavo();
+    expect(await store.getState().marcarComoJalado('100000S61T')).not.toBeNull();
+    await expect(comoJson(buildAIContext(store.getState()))).toMatchFileSnapshot(destino('contextoJalado.json'));
+  });
+
   /**
    * Las dos rutas son ciertas: dependen de lo que el alumno ya ubicó (la ruta sugerida conserva lo ubicado).
    * Con su Ciclo 8 de 7 cursos (25 h), lo que falta entra en 22 + 21 h y la ruta cierra en el Ciclo 10. Con el Ciclo 8
