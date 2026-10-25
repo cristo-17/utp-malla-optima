@@ -479,3 +479,33 @@ describe('evaluación - falsos positivos de la corrida 8 (F-044)', () => {
       .toContain('MAYOR:numero-sin-fuente');
   });
 });
+
+describe('evaluación - MAYOR limite-mal-dicho', () => {
+  const con = (fixture: Parameters<typeof leerFixture>[0], texto: string) =>
+    fallosDe(texto, {}, ['arma mi plan'], leerFixture(fixture)).includes('MAYOR:limite-mal-dicho');
+
+  it('frases reales de la corrida 8 que fallan', () => {
+    // limite-900: no es estricto y además la cuota del Ciclo 10 (S/ 815) sí baja de 900.
+    expect(con('contexto-limite-900', 'Ojo: ningún periodo baja de 900, la cuota más baja es S/ 815.')).toBe(true);
+    // limite-800: el presupuesto no es un límite estricto ("menos de").
+    expect(con('contexto-limite-800', 'Ojo: ningún periodo llega a S/ 800.')).toBe(true);
+    // menos-de-18: el Ciclo 11 tiene 9 créditos.
+    expect(con('contexto-limite-18cr', 'Ojo: ningún periodo baja de 17 créditos, así que no llega a menos de 18 con holgura.')).toBe(true);
+    // limite-20h: todos están bajo 20 h.
+    expect(con('contexto-limite-20h', 'Ojo: ningún periodo llega a menos de 20 h; el más bajo es el Ciclo 11 con 11 h.')).toBe(true);
+  });
+
+  it('lo correcto pasa: con "menos de N" (estricto) se puede decir que ningún periodo llega a N', () => {
+    expect(con('contexto-limite-20h', 'Con tu límite de 20 h, ningún periodo llega a 20: quedan en 19 h.')).toBe(false);
+    expect(con('contexto-limite-20h', 'Ojo: ningún periodo llega a 20 h, el máximo es 19 h.')).toBe(false);
+    expect(con('contexto-limite-18cr', 'Con tu límite de 18 créditos, ningún periodo llega a 18: quedan en 17, 17, 17 y 9.')).toBe(false);
+    expect(con('contexto-limite-900', 'Con S/ 900 al mes egresas en el Ciclo 10.')).toBe(false);
+  });
+
+  it('un periodo que pasa (o no llega a) un monto en contra de sus cifras', () => {
+    // Ciclo 8 de limite-900: cuota S/ 892.62.
+    expect(con('contexto-limite-900', 'El Ciclo 8 pasa S/ 900 al mes.')).toBe(true);
+    expect(con('contexto-limite-900', 'El Ciclo 8 no llega a S/ 900 al mes.')).toBe(false);
+    expect(con('contexto-limite-900', 'El Ciclo 10 no llega a S/ 800.')).toBe(true);
+  });
+});

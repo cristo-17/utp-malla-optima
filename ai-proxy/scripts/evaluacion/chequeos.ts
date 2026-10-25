@@ -188,6 +188,57 @@ export const superaLimite = (texto: string, contexto: AIContext): string | null 
   return null;
 };
 
+/** "1,000" → 1000; "892,62" → 892.62. */
+const aNumeroTexto = (texto: string) => Number(/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(texto) ? texto.replace(/,/g, '') : texto.replace(',', '.'));
+
+/** "ningún periodo llega a / baja de / pasa N": el alumno no pidió nada estricto o las cifras dicen otra cosa. */
+const NINGUNO = /\bningun\w*(?:\s+\w+){0,2}?\s+(llega(?:\s+a)?(?:\s+menos\s+de)?|baja(?:\s+de)?|pasa(?:\s+de)?|supera)\s+(?:los\s+|las\s+|a\s+)?(s\/\.?\s*)?(\d[\d.,]*\d|\d)\s*(h\b|horas?\b|creditos?\b|cr\b)?/g;
+/** "el Ciclo 9 pasa S/ 800", "el Ciclo 10 no llega a S/ 800". */
+const PERIODO_Y_MONTO = /\b(ciclo|verano) (\d{1,2})\b[^.;]{0,40}?\b(pasa(?:\s+de)?|supera|no llega a)\s+(?:los\s+)?s\/\.?\s*(\d[\d.,]*\d|\d)/g;
+
+/**
+ * MAYOR limite-mal-dicho: "ningún periodo llega a N" solo vale si propuestaConLimites dice que ese límite es estricto
+ * (el alumno escribió "menos de"); y lo que se afirma de los periodos (llega, baja de, pasa un monto) debe cuadrar
+ * con sus cifras en CONTEXTO (corrida 2026-10-25-1530: "ningún periodo baja de 900, la cuota más baja es S/ 815").
+ */
+export const limiteMalDicho = (texto: string, contexto: AIContext): string | null => {
+  const propuesta = contexto.propuestaConLimites;
+  if (!propuesta) return null;
+  const { limites, periodos } = propuesta;
+  const valores = {
+    monto: periodos.flatMap((periodo) => periodo.cuotaMensual === null ? [] : [periodo.cuotaMensual]),
+    horas: periodos.map((periodo) => periodo.horas),
+    creditos: periodos.map((periodo) => periodo.creditos),
+  };
+  const t = normalizar(texto);
+  for (const m of t.matchAll(NINGUNO)) {
+    const [dicho, verbo, soles, numero, unidad] = m;
+    const valor = aNumeroTexto(numero);
+    const tipo: keyof typeof valores | null = soles ? 'monto'
+      : unidad ? (/^h/.test(unidad) ? 'horas' : 'creditos')
+        : valor === limites.maxHorasPorPeriodo ? 'horas' : valor === limites.maxCreditosPorPeriodo ? 'creditos'
+          : valor >= 100 ? 'monto' : null;
+    if (!tipo) continue;
+    const estricto = tipo === 'horas' ? limites.horasEstricto : tipo === 'creditos' ? limites.creditosEstricto : false;
+    const lista = valores[tipo];
+    // Qué afirma de TODOS los periodos.
+    const cierto = /menos\s+de/.test(verbo) || /^baja/.test(verbo) ? lista.every((cifra) => cifra >= valor)
+      : /^llega/.test(verbo) ? lista.every((cifra) => cifra < valor)
+        : lista.every((cifra) => cifra <= valor);
+    if (!cierto) return dicho.trim();
+    // "Llega a N" sin "menos de" pedido: no corresponde decirlo (regla 17).
+    if (/^llega|^baja/.test(verbo) && !estricto) return dicho.trim();
+  }
+  for (const m of t.matchAll(PERIODO_Y_MONTO)) {
+    const [dicho, tipoPeriodo, ciclo, verbo, numero] = m;
+    const cuota = periodos.find((periodo) => periodo.periodoId === `${tipoPeriodo}-${Number(ciclo)}`)?.cuotaMensual;
+    if (cuota === null || cuota === undefined) continue;
+    const valor = aNumeroTexto(numero);
+    if (/^no llega/.test(verbo) ? cuota >= valor : cuota <= valor) return dicho.trim();
+  }
+  return null;
+};
+
 export const palabras = (texto: string) => texto.split(/\s+/).filter((palabra) => /[\p{L}\d]/u.test(palabra)).length;
 
 const DICHO_OK = /carga (es |esta )?(bien|equilibrada|tranquila|ligera|ok|adecuada|razonable|manejable|normal)|no estas sobrecargad|no es (mucha|demasiada)|estas dentro de lo recomendado/;
@@ -295,6 +346,8 @@ export const chequear = ({ modo, contexto, mensajes, esperado, respuesta, codigo
   if (comoMalla) fallar('MAYOR', 'ruta-como-malla', `Presenta la ruta sugerida (no aplicada) como el plan del alumno: "${comoMalla}".`);
   const sobreLimite = superaLimite(texto, contexto);
   if (sobreLimite) fallar('MAYOR', 'supera-limite', `Un periodo citado pasa el límite pedido: "${sobreLimite}".`);
+  const malDicho = limiteMalDicho(texto, contexto);
+  if (malDicho) fallar('MAYOR', 'limite-mal-dicho', `Dice algo del límite que no corresponde o no cuadra con CONTEXTO: "${malDicho}".`);
   const internos = nombresInternos(texto, contexto);
   if (internos.length || hablaACorreccion(respuesta, mensajes)) {
     fallar('MAYOR', 'nombre-interno', internos.length ? `Nombres internos: ${internos.join(', ')}.` : 'Le habla a una corrección que el alumno no hizo.');
