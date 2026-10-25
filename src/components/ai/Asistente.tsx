@@ -6,7 +6,7 @@ import { detectarLimites } from '../../application/ai/limites';
 import { conexionActual, crearAIClient, escucharConexion } from '../../infrastructure/ai/HttpAIClient';
 import { AsistenteFab } from './AsistenteFab';
 import { AsistentePanel } from './AsistentePanel';
-import { almacen, CLAVES_ASISTENTE, debeOcultarFab, opcionesAdjuntar } from './asistenteLogica';
+import { almacen, CLAVES_ASISTENTE, codigosProximoPeriodo, debeOcultarFab, opcionesAdjuntar } from './asistenteLogica';
 import { crearControladorAsistente } from './controladorAsistente';
 import { cicloVacioProximo, textoPlanAplicado } from '../../presentation/messages/autogenerarMessages';
 import './asistente.css';
@@ -83,6 +83,7 @@ export function Asistente({ onSubirExcel }: { onSubirExcel?: () => void } = {}) 
   const nombres = useMemo(() => new Map(cursos.map((curso) => [curso.codigo, curso.nombre])), [cursos]);
   const opciones = useMemo(() => opcionesAdjuntar(cursos, cicloActual), [cursos, cicloActual]);
   const cicloVacio = useMemo(() => cicloVacioProximo(cursos, cicloActual), [cursos, cicloActual]);
+  const prioridadCursos = useMemo(() => codigosProximoPeriodo(cursos, cicloActual), [cursos, cicloActual]);
 
   // Después de aplicar desde el chat, la app (no la IA) cuenta el ciclo armado y ofrece analizarlo.
   useEffect(() => {
@@ -205,7 +206,7 @@ export function Asistente({ onSubirExcel }: { onSubirExcel?: () => void } = {}) 
       <div className="ia-fondo" aria-hidden="true" onClick={cerrar} />
       <AsistentePanel
         estado={estado} enLinea={enLinea} nombres={nombres} opciones={opciones} esMock={controlador.esMock} cicloVacio={cicloVacio}
-        sinMalla={sinMalla}
+        sinMalla={sinMalla} prioridadCursos={prioridadCursos}
         onSubirExcel={onSubirExcel ? () => { cerrar(); onSubirExcel(); } : undefined}
         onArmarAMano={() => { cerrar(); window.setTimeout(irAlBanco, 0); }}
         onAutogenerar={(alcance) => abrirAutogenerar({ alcance }, 'chat')}

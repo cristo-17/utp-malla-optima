@@ -124,3 +124,18 @@ export const CLAVES_ASISTENTE = {
   privacidad: 'mallau.asistente.privacidadAceptada',
   tooltipRapidas: 'mallau.asistente.tooltipRapidasVisto',
 } as const;
+
+/** Máximo de chips de cursos debajo de una respuesta. */
+export const MAX_CHIPS_CURSOS = 5;
+
+/** Los cursos que se muestran como chips: hasta 5, primero los del próximo periodo y después en el orden de la IA. */
+export const cursosParaMostrar = (codigos: string[], prioridad: readonly string[] = []): string[] => {
+  const unicos = [...new Set(codigos)];
+  return [...unicos.filter((codigo) => prioridad.includes(codigo)), ...unicos.filter((codigo) => !prioridad.includes(codigo))]
+    .slice(0, MAX_CHIPS_CURSOS);
+};
+
+/** Códigos del próximo ciclo regular (ciclo actual + 1) planificado. */
+export const codigosProximoPeriodo = (cursos: Curso[], cicloActual: number | null): string[] =>
+  cicloActual ? cursos.filter((curso) => curso.estado === 'PENDIENTE' && curso.ubicacion === 'periodo' &&
+    curso.tipoPeriodo === 'REGULAR' && curso.ciclo === cicloActual + 1).map((curso) => curso.codigo) : [];

@@ -41,6 +41,8 @@ interface PanelProps extends AccionesPanel {
   cicloVacio?: number | null;
   /** Sin malla cargada: la bienvenida solo ofrece subir el Excel. */
   sinMalla?: boolean;
+  /** Códigos del próximo periodo: sus chips van primero. */
+  prioridadCursos?: readonly string[];
   panelRef?: Ref<HTMLDivElement>;
   inputRef?: Ref<HTMLInputElement>;
   mensajesRef?: Ref<HTMLDivElement>;
@@ -147,7 +149,7 @@ export function AsistentePanel({ panelRef, inputRef, mensajesRef, onKeyDown, ...
                 onPresupuesto={props.onPresupuesto} onAnalizar={props.onAnalizar} />}
           <AsistenteMensajes mensajes={estado.mensajes} nombres={nombres} enviando={estado.enviando}
             deshabilitado={!enLinea || estado.enviando} excluirPreguntas={sugerenciasFoco} onPreguntar={props.onPreguntar} onReintentar={props.onReintentar}
-            onAplicarPropuesta={props.onAplicarPropuesta} onAnalizar={props.onAnalizar} />
+            onAplicarPropuesta={props.onAplicarPropuesta} onAnalizar={props.onAnalizar} prioridadCursos={props.prioridadCursos} />
         </div>
         <AsistenteEntrada panel={estado.panel} foco={estado.foco} sugerenciasFoco={sugerenciasFoco} enLinea={enLinea} enviando={estado.enviando} bloqueado={pidePrivacidad}
           opciones={opciones} mostrarTooltipRapidas={props.mostrarTooltipRapidas} inputRef={inputRef}
