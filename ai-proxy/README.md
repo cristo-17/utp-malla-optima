@@ -32,13 +32,22 @@ Web en Vercel ──POST /api/asistente──▶ proxy en Vercel (este proyecto)
   está en pausa por mantenimiento…". `SIN_SALDO` muestra el mismo aviso: al alumno nunca se le dice que se
   acabó el saldo.
 - **Límites** (solo cuentan llamadas reales; el mock no gasta):
-  - por IP: `AI_LIMITE_IP_HORA` consultas por hora (por defecto 15);
-  - global: `AI_LIMITE_DIARIO` consultas por día de Lima (por defecto 200).
-  - La IP sale de `x-forwarded-for` (primer valor) o `x-real-ip` y se guarda solo como sha256 con `AI_SALT`.
+  - En este orden, y el primero que se pasa corta sin contar los siguientes (pensado para redes compartidas de
+    la universidad, donde muchos alumnos salen por la misma IP):
+    1. por dispositivo: `AI_LIMITE_DISPOSITIVO_HORA` consultas por hora (por defecto 30);
+    2. por IP: `AI_LIMITE_IP_HORA` consultas por hora (por defecto 300);
+    3. global: `AI_LIMITE_DIARIO` consultas por día de Lima (por defecto 1500).
+  - El dispositivo es la cabecera `X-MallaU-Dispositivo`: un UUID anónimo que genera el navegador
+    (`crypto.randomUUID`, guardado en `localStorage`). No es un dato personal. Sin cabecera cuentan solo la IP y el
+    global; un valor que no tiene formato UUID se rechaza con `ENTRADA_INVALIDA` (400).
+  - La IP sale de `x-forwarded-for` (primer valor) o `x-real-ip`. La IP y el ID del dispositivo se guardan solo
+    como sha256 con `AI_SALT`; nunca van al log.
   - Con `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` (o los `KV_REST_API_URL` y `KV_REST_API_TOKEN`
     que crea la integración de Upstash del Marketplace de Vercel) el contador es compartido (INCR + EXPIRE por
     la API REST). Sin ellas, cuenta en memoria por instancia (best effort). Si Upstash falla, sigue en memoria.
-  - Al superar un límite: `LIMITE` (429) con `mensaje` y `reintentarEn`; el frontend muestra la hora aproximada.
+  - Al superar un límite: `LIMITE` (429) con `mensaje` y `reintentarEn`. Por dispositivo o por IP, el frontend
+    muestra la hora aproximada en que se libera; el global responde "El asistente llegó a su límite de hoy. Vuelve
+    a intentarlo mañana."
 - **Previews:** si `VERCEL_ENV` no es `production`, el proxy usa siempre el mock, aunque exista la clave.
 - Logs: una línea JSON por petición con `modo`, `codigo`, `duracion_ms` y `mock`. En cada llamada real
   agrega `modelo`, `intentos`, `finish_reasons`, `prompt_tokens`, `prompt_cache_hit_tokens`,
@@ -62,9 +71,10 @@ un test del repo falla si difieren. Edita el original y vuelve a copiarlo.
 | `AI_MOCK` | `true` | Fuerza el modo mock. Fuera de producción (`VERCEL_ENV` distinto de `production`) el mock va siempre. |
 | `DEEPSEEK_PICO_UTC` | `HH:MM-HH:MM` | Opcional. Franja (UTC) de precio doble, solo para el costo estimado del log. |
 | `AI_PAUSADO` | `true` | Interruptor: responde `PAUSADO` sin llamar a DeepSeek. |
-| `AI_LIMITE_IP_HORA` | `15` | Consultas por IP por hora. |
-| `AI_LIMITE_DIARIO` | `200` | Consultas por día (hora de Lima), en total. |
-| `AI_SALT` | texto aleatorio largo | Secreta. Sal del hash de la IP. Sin ella se usa una sal por instancia y, con Upstash, cada instancia contaría aparte. |
+| `AI_LIMITE_DISPOSITIVO_HORA` | `30` | Consultas por dispositivo (`X-MallaU-Dispositivo`) por hora. |
+| `AI_LIMITE_IP_HORA` | `300` | Consultas por IP por hora. Alto a propósito: en la universidad muchos alumnos comparten IP. |
+| `AI_LIMITE_DIARIO` | `1500` | Consultas por día (hora de Lima), en total. |
+| `AI_SALT` | texto aleatorio largo | Secreta. Sal del hash de la IP y del ID del dispositivo. Sin ella se usa una sal por instancia y, con Upstash, cada instancia contaría aparte. |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | — | Opcionales (o `KV_REST_API_URL` / `KV_REST_API_TOKEN`). El token es secreto. |
 
 ## Modo mock
