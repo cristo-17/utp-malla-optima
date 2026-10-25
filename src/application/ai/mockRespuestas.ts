@@ -431,7 +431,9 @@ const respuestaPropuesta = (contexto: AIContext): AIChatResponse | null => {
   const cantidades = propuesta.periodos.map((item) => item.numeroCursos);
   const periodos = propuesta.periodos.length > 4
     ? [`son ${propuesta.periodos.length} periodos, con ${Math.min(...cantidades)} a ${Math.max(...cantidades)} cursos cada uno. Egresas en el ${propuesta.periodos.at(-1)!.etiqueta}`]
-    : propuesta.periodos.map((item) => `${item.etiqueta}: ${item.numeroCursos} cursos (${horas(item.horas)})`);
+    // Regla 17: las horas o, si el límite es de créditos, los créditos de cada periodo.
+    : propuesta.periodos.map((item) => `${item.etiqueta}: ${item.numeroCursos} cursos (${limites.maxCreditosPorPeriodo !== null
+      ? `${item.creditos} créditos` : horas(item.horas)})`);
   const extra = [
     ...(propuesta.ciclosAgregados.length ? [`Necesitas ${propuesta.ciclosAgregados.length === 1 ? '1 ciclo más' : `${propuesta.ciclosAgregados.length} ciclos más`}.`] : []),
     ...propuesta.veranosUsados.map((id) => `Se usa el ${periodo(id)}.`),

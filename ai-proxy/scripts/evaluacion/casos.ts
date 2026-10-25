@@ -227,11 +227,12 @@ export const CASOS: Caso[] = [
     id: 'limite-900', grupo: 'Plan con límites', fixture: 'contexto-limite-900', modo: 'chat', mensajes: ['arma un plan con 900 soles de presupuesto mensual'],
     esperado: { menciona: [APLICAR, { patron: /\b(7|siete) cursos\b/, severidad: 'MAYOR', detalle: 'No dice que en el Ciclo 8 van 7 cursos.' }] },
   },
-  // "Menos de 18": ningún periodo llega a 18 créditos, y la respuesta lo aclara (regla 17).
+  // "Menos de 18": ningún periodo llega a 18 créditos (lo verifica supera-limite, estricto). Desde L2 la regla 17 pide
+  // no comentar si llegan al límite, sino dar los créditos de cada periodo: 17 en los tres primeros.
   {
     id: 'menos-de-18', grupo: 'Plan con límites', fixture: 'contexto-limite-18cr', modo: 'chat', mensajes: ['Arma mi plan con menos de 18 créditos por ciclo'],
     esperado: {
-      menciona: [APLICAR, { patron: /ningun\w* (\w+ ){0,3}(llega|alcanza|tiene|pasa)\w*( a)? (los )?18|menos de 18|hasta 17|maximo 17|17 creditos( o menos)?/, severidad: 'MAYOR', detalle: 'No aclara que ningún periodo llega a 18 créditos.' }],
+      menciona: [APLICAR, { patron: /\b17\b/, severidad: 'MAYOR', detalle: 'No da los créditos de cada periodo (17).' }],
     },
   },
   // "¿Y si llevo verano?" es un pedido de plan: con el Verano 8, egresa en el Ciclo 10.
