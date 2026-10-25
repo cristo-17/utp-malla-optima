@@ -427,15 +427,23 @@ const respuestaPropuesta = (contexto: AIContext): AIChatResponse | null => {
       : limites.maxCreditosPorPeriodo !== null
         ? `con ${limites.creditosEstricto ? 'menos de' : 'hasta'} ${limites.maxCreditosPorPeriodo} créditos por ciclo`
         : `con ${limites.horasEstricto ? 'menos de' : 'hasta'} ${horas(limites.horasAplicadas)} por ciclo`;
-  const periodos = propuesta.periodos.map((item) => `${item.etiqueta}: ${item.numeroCursos} cursos (${horas(item.horas)})`);
+  // Con muchos periodos, un resumen (máximo 80 palabras en chat).
+  const cantidades = propuesta.periodos.map((item) => item.numeroCursos);
+  const periodos = propuesta.periodos.length > 4
+    ? [`son ${propuesta.periodos.length} periodos, con ${Math.min(...cantidades)} a ${Math.max(...cantidades)} cursos cada uno. Egresas en el ${propuesta.periodos.at(-1)!.etiqueta}`]
+    : propuesta.periodos.map((item) => `${item.etiqueta}: ${item.numeroCursos} cursos (${horas(item.horas)})`);
   const extra = [
     ...(propuesta.ciclosAgregados.length ? [`Necesitas ${propuesta.ciclosAgregados.length === 1 ? '1 ciclo más' : `${propuesta.ciclosAgregados.length} ciclos más`}.`] : []),
     ...propuesta.veranosUsados.map((id) => `Se usa el ${periodo(id)}.`),
   ];
+  // Regla 17: si hay una alternativa que egresa antes o cuesta menos, en una frase con sus cifras.
+  const [alternativa] = propuesta.alternativas;
+  const otraOpcion = alternativa && alternativa.cicloEgreso !== null && alternativa.costoTotalHastaEgresar !== null
+    ? ` ${alternativa.descripcion} egresas en el Ciclo ${alternativa.cicloEgreso} y pagas ${soles(alternativa.costoTotalHastaEgresar)} en total.`
+    : '';
   return {
     texto: periodos.length
-      ? `Así queda tu plan ${pedido}: ${periodos.join('; ')}.${extra.length ? ` ${extra.join(' ')}` : ''}
-` +
+      ? `Así queda tu plan ${pedido}: ${periodos.join('; ')}.${extra.length ? ` ${extra.join(' ')}` : ''}${otraOpcion}\n` +
         'Es una propuesta: si te convence, aplícala con el botón «Aplicar a mi malla».'
       : 'Con esos límites no queda ningún curso por ubicar. Puedes probar otros en Autogenerar.',
     cursos: [], preguntasSugeridas: ['¿Me alcanza mi presupuesto?', '¿Estoy sobrecargado?'],

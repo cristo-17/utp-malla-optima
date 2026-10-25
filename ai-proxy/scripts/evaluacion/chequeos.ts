@@ -247,7 +247,8 @@ export const chequear = ({ modo, contexto, mensajes, esperado, respuesta, codigo
   // "Necesitas 2 ciclos más": la cantidad de ciclos agregados o extra de la propuesta.
   const propuesta = contexto.propuestaConLimites;
   const ciclosDePropuesta = propuesta
-    ? [propuesta.ciclosAgregados.length, propuesta.ciclosExtraVsSinLimites ?? 0, propuesta.limites.agregarCiclo ? 1 : 0] : [];
+    ? [propuesta.ciclosAgregados.length, propuesta.ciclosExtraVsSinLimites ?? 0, propuesta.limites.agregarCiclo ? 1 : 0,
+      ...propuesta.alternativas.flatMap((alternativa) => [alternativa.ciclosAgregados.length, alternativa.ciclosAntes])] : [];
   const sinFuente = [...new Set([...t.matchAll(NUMERO_CON_UNIDAD)].filter((m) => {
     const fuente = [...numerosPorClave(contexto, CAMPOS_POR_UNIDAD(m[2])), ...delAlumno, ...(/^ciclo/.test(m[2]) ? ciclosDePropuesta : [])];
     return !fuente.some((n) => cerca(n, Number(m[1].replace(',', '.'))));

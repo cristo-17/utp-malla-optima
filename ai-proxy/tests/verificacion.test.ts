@@ -87,6 +87,13 @@ describe('filtro de salida - un plan citado sale de propuestaConLimites o rutaSu
     expect(deLimite('INTELIGENCIA DE NEGOCIOS (100000I62N) es prerrequisito de CURSO INTEGRADOR II: SISTEMAS (100000S09I), que va en el Ciclo 10.')).toEqual([]);
   });
 
+  it('las cifras de las alternativas también salen de la propuesta (S/ 800: pronto pago y el Verano 8)', () => {
+    const limite800: AIContext = JSON.parse(readFileSync(new URL('./fixtures/contexto-limite-800.json', import.meta.url), 'utf8'));
+    expect(limite800.propuestaConLimites!.alternativas[0]).toMatchObject({ cicloEgreso: 10, costoTotalHastaEgresar: 14456.45, ciclosAntes: 2 });
+    expect(chequeos('Con pronto pago de Interbank y el Verano 8 (14 h) egresas en el Ciclo 10, 2 ciclos antes, y pagas S/ 14,456.45 en total: S/ 4,893.05 menos.', limite800)).toEqual([]);
+    expect(chequeos('Con pronto pago egresas en el Ciclo 10 y pagas S/ 13,000.00 en total.', limite800)).toEqual(['monto']);
+  });
+
   it('sin propuesta, la ruta sugerida es la fuente', () => {
     expect(chequeos(`El planificador te propone el Ciclo 9 con ${plan1.rutaSugerida.propuesta[1].cursos.length} cursos (${plan1.rutaSugerida.propuesta[1].horas} h).`)).toEqual([]);
     expect(chequeos('El planificador te propone el Ciclo 9 con 2 cursos.')).toEqual(['plan']);

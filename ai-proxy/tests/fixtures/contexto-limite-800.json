@@ -1324,6 +1324,77 @@
     "cicloEgreso": 12,
     "ciclosExtraVsSinLimites": 1,
     "noEntraron": [],
+    "costoTotalHastaEgresar": 19349.5,
+    "alternativas": [
+      {
+        "tipo": "metodoPagoYVeranos",
+        "descripcion": "Con Interbank / Scotiabank — pronto pago y el Verano 8",
+        "metodoPago": "interbank_scotiabank",
+        "usarVeranos": true,
+        "maxHorasPorPeriodo": null,
+        "cicloEgreso": 10,
+        "horasPorPeriodo": [
+          {
+            "periodoId": "ciclo-8",
+            "horas": 22
+          },
+          {
+            "periodoId": "verano-8",
+            "horas": 14
+          },
+          {
+            "periodoId": "ciclo-9",
+            "horas": 22
+          },
+          {
+            "periodoId": "ciclo-10",
+            "horas": 17
+          }
+        ],
+        "ciclosAgregados": [],
+        "veranosUsados": [
+          "verano-8"
+        ],
+        "costoTotalHastaEgresar": 14456.45,
+        "ahorroVsPropuesta": 4893.05,
+        "ciclosAntes": 2,
+        "conRecargo": false
+      },
+      {
+        "tipo": "metodoPago",
+        "descripcion": "Con Interbank / Scotiabank — pronto pago",
+        "metodoPago": "interbank_scotiabank",
+        "usarVeranos": false,
+        "maxHorasPorPeriodo": null,
+        "cicloEgreso": 11,
+        "horasPorPeriodo": [
+          {
+            "periodoId": "ciclo-8",
+            "horas": 22
+          },
+          {
+            "periodoId": "ciclo-9",
+            "horas": 22
+          },
+          {
+            "periodoId": "ciclo-10",
+            "horas": 21
+          },
+          {
+            "periodoId": "ciclo-11",
+            "horas": 3
+          }
+        ],
+        "ciclosAgregados": [
+          11
+        ],
+        "veranosUsados": [],
+        "costoTotalHastaEgresar": 15141.35,
+        "ahorroVsPropuesta": 4208.15,
+        "ciclosAntes": 1,
+        "conRecargo": false
+      }
+    ],
     "aplicadaEnMalla": false
   },
   "descuentos": {

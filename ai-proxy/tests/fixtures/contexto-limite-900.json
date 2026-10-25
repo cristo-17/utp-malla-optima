@@ -1299,6 +1299,37 @@
     "cicloEgreso": 10,
     "ciclosExtraVsSinLimites": 0,
     "noEntraron": [],
+    "costoTotalHastaEgresar": 14195.2,
+    "alternativas": [
+      {
+        "tipo": "metodoPago",
+        "descripcion": "Con Interbank / Scotiabank — pronto pago",
+        "metodoPago": "interbank_scotiabank",
+        "usarVeranos": false,
+        "maxHorasPorPeriodo": null,
+        "cicloEgreso": 10,
+        "horasPorPeriodo": [
+          {
+            "periodoId": "ciclo-8",
+            "horas": 24
+          },
+          {
+            "periodoId": "ciclo-9",
+            "horas": 24
+          },
+          {
+            "periodoId": "ciclo-10",
+            "horas": 20
+          }
+        ],
+        "ciclosAgregados": [],
+        "veranosUsados": [],
+        "costoTotalHastaEgresar": 13545.15,
+        "ahorroVsPropuesta": 650.05,
+        "ciclosAntes": 0,
+        "conRecargo": true
+      }
+    ],
     "aplicadaEnMalla": false
   },
   "descuentos": {

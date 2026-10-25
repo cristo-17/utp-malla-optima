@@ -205,6 +205,9 @@ const fuentesPorPeriodo = (contexto: AIContext) => {
     fuentes.set(id, fuente);
   };
   contexto.propuestaConLimites?.periodos.forEach((periodo) => agregar(periodo.periodoId, periodo));
+  // Las horas de cada periodo de una alternativa también son de la propuesta.
+  contexto.propuestaConLimites?.alternativas.forEach((alternativa) =>
+    alternativa.horasPorPeriodo.forEach(({ periodoId, horas }) => agregar(periodoId, { horas })));
   contexto.rutaSugerida.propuesta.forEach((periodo) => agregar(periodo.periodoId, periodo));
   contexto.periodosPlanificados.forEach((periodo) => agregar(periodo.id, periodo));
   // Del próximo periodo, además: sus restas ya calculadas (sobre el tope, sin cada curso) y la carga.
@@ -276,7 +279,8 @@ export const planNoVerificado = (texto: string, contexto: AIContext): PlanNoVeri
     const mencionados = [...new Set([...frase.matchAll(PERIODO_EN_TEXTO)].map((m) => `${m[1]}-${Number(m[2])}`))];
     if (propuesta) {
       for (const m of frase.matchAll(/\b(\d+)\s+ciclos?\s+(mas|extra|adicional(?:es)?)\b/g)) {
-        const permitidos = [propuesta.ciclosAgregados.length, propuesta.ciclosExtraVsSinLimites, propuesta.limites.agregarCiclo ? 1 : null];
+        const permitidos = [propuesta.ciclosAgregados.length, propuesta.ciclosExtraVsSinLimites, propuesta.limites.agregarCiclo ? 1 : null,
+          ...propuesta.alternativas.flatMap((alternativa) => [alternativa.ciclosAgregados.length, alternativa.ciclosAntes])];
         if (!permitidos.includes(Number(m[1]))) agregar('', `Dijiste ${m[1]} ciclos más; en la propuesta: ${propuesta.ciclosAgregados.length}.`);
       }
     }

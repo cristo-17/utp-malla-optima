@@ -1324,6 +1324,8 @@
     "cicloEgreso": 12,
     "ciclosExtraVsSinLimites": 1,
     "noEntraron": [],
+    "costoTotalHastaEgresar": 20123.75,
+    "alternativas": [],
     "aplicadaEnMalla": false
   },
   "descuentos": {

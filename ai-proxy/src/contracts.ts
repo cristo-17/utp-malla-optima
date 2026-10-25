@@ -247,6 +247,30 @@ const PropuestaConLimitesSchema = z.object({
   /** Ciclos más que la ruta sin límites (22 h, sin veranos); null si solo se arma el próximo periodo. */
   ciclosExtraVsSinLimites: z.number().int().nullable(),
   noEntraron: z.array(z.object({ codigo: z.string(), motivo: z.string() })),
+  /** Total de todos los periodos de la propuesta con su método de pago (el motor financiero); null sin tarifario. */
+  costoTotalHastaEgresar: monto.nullable(),
+  /**
+   * Alternativas del mismo planificador que egresan antes o cuestan menos en total que la propuesta: otro método de
+   * pago con el mismo presupuesto, usar veranos, o las horas mínimas para no agregar un ciclo (puede tener recargo).
+   */
+  alternativas: z.array(z.object({
+    tipo: z.enum(['metodoPago', 'veranos', 'metodoPagoYVeranos', 'topeSinCicloExtra']),
+    /** Qué cambia, para decírselo al alumno ("Con Interbank / Scotiabank — pronto pago y el Verano 8"). */
+    descripcion: z.string(),
+    metodoPago: z.string().nullable(),
+    usarVeranos: z.boolean(),
+    maxHorasPorPeriodo: z.number().nullable(),
+    cicloEgreso: z.number().int().nullable(),
+    horasPorPeriodo: z.array(z.object({ periodoId: PeriodoIdSchema, horas: z.number() })),
+    ciclosAgregados: z.array(z.number().int()),
+    veranosUsados: z.array(PeriodoIdSchema),
+    costoTotalHastaEgresar: monto.nullable(),
+    /** costoTotalHastaEgresar de la propuesta − el de esta alternativa (positivo = cuesta menos); null sin costos. */
+    ahorroVsPropuesta: monto.nullable(),
+    /** Ciclos antes que egresa que la propuesta (0 si egresa en el mismo). */
+    ciclosAntes: z.number().int(),
+    conRecargo: z.boolean(),
+  })),
   /** Nunca está en la malla: el alumno la aplica con el botón "Aplicar a mi malla". */
   aplicadaEnMalla: z.literal(false),
 });

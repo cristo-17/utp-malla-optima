@@ -377,6 +377,15 @@ const MOTIVO_NO_ENTRA: Record<MotivoNoPlanificado['tipo'], string> = {
   ELECTIVO_ESPERA_OBLIGATORIOS: 'el electivo va después de los obligatorios',
 };
 
+/** "Con Interbank / Scotiabank — pronto pago y el Verano 8", "Con hasta 23 h por ciclo (con recargo…)". */
+const descripcionAlternativa = (alternativa: PropuestaPlan['alternativas'][number]): string => {
+  const veranos = alternativa.veranosUsados.map((id) => id.replace('verano-', 'Verano ')).join(' y ');
+  if (alternativa.tipo === 'metodoPago') return `Con ${alternativa.nombreMetodo}`;
+  if (alternativa.tipo === 'veranos') return `Usando el ${veranos}`;
+  if (alternativa.tipo === 'metodoPagoYVeranos') return `Con ${alternativa.nombreMetodo} y el ${veranos}`;
+  return `Con hasta ${alternativa.opciones.maxHorasPorPeriodo} h por ciclo${alternativa.conRecargo ? ' (con recargo por horas adicionales)' : ''}`;
+};
+
 /** Con "un ciclo más": las horas mínimas por ciclo con las que se egresa a lo más un ciclo después (búsqueda binaria). */
 const repartirEnUnCicloMas = (entrada: GenerateOptimalPlanInput, base: PropuestaPlan): PropuestaPlan => {
   if (base.cicloEgreso === null || base.alcance !== 'hastaEgresar') return base;
@@ -448,6 +457,24 @@ const propuestaConLimitesDe = (
     cicloEgreso: propuesta.cicloEgreso,
     ciclosExtraVsSinLimites: propuesta.comparacionSinLimites?.ciclosExtra ?? null,
     noEntraron: propuesta.noPlanificados.map((curso) => ({ codigo: curso.codigo, motivo: MOTIVO_NO_ENTRA[curso.motivos[0]?.tipo ?? 'SIN_ESPACIO'] })),
+    costoTotalHastaEgresar: propuesta.costoTotalHastaEgresar,
+    // Solo restas hechas en código (D-001): el ahorro y los ciclos que se adelanta.
+    alternativas: propuesta.alternativas.map((alternativa) => ({
+      tipo: alternativa.tipo,
+      descripcion: descripcionAlternativa(alternativa),
+      metodoPago: alternativa.opciones.metodoPago ?? null,
+      usarVeranos: Boolean(alternativa.opciones.usarVeranos),
+      maxHorasPorPeriodo: alternativa.opciones.maxHorasPorPeriodo ?? null,
+      cicloEgreso: alternativa.cicloEgreso,
+      horasPorPeriodo: alternativa.horasPorPeriodo.map(({ periodoId, horas }) => ({ periodoId, horas: r2(horas) })),
+      ciclosAgregados: alternativa.ciclosAgregados,
+      veranosUsados: alternativa.veranosUsados,
+      costoTotalHastaEgresar: alternativa.costoTotalHastaEgresar,
+      ahorroVsPropuesta: alternativa.costoTotalHastaEgresar !== null && propuesta.costoTotalHastaEgresar !== null
+        ? r2(propuesta.costoTotalHastaEgresar - alternativa.costoTotalHastaEgresar) : null,
+      ciclosAntes: Math.max(0, (propuesta.cicloEgreso ?? 0) - (alternativa.cicloEgreso ?? 0)),
+      conRecargo: alternativa.conRecargo,
+    })),
     aplicadaEnMalla: false,
   };
 };

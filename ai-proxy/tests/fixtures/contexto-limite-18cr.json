@@ -1312,6 +1312,43 @@
     "cicloEgreso": 11,
     "ciclosExtraVsSinLimites": 0,
     "noEntraron": [],
+    "costoTotalHastaEgresar": 16669.5,
+    "alternativas": [
+      {
+        "tipo": "veranos",
+        "descripcion": "Usando el Verano 8",
+        "metodoPago": null,
+        "usarVeranos": true,
+        "maxHorasPorPeriodo": null,
+        "cicloEgreso": 10,
+        "horasPorPeriodo": [
+          {
+            "periodoId": "ciclo-8",
+            "horas": 19
+          },
+          {
+            "periodoId": "verano-8",
+            "horas": 22
+          },
+          {
+            "periodoId": "ciclo-9",
+            "horas": 21
+          },
+          {
+            "periodoId": "ciclo-10",
+            "horas": 17
+          }
+        ],
+        "ciclosAgregados": [],
+        "veranosUsados": [
+          "verano-8"
+        ],
+        "costoTotalHastaEgresar": 15247,
+        "ahorroVsPropuesta": 1422.5,
+        "ciclosAntes": 1,
+        "conRecargo": false
+      }
+    ],
     "aplicadaEnMalla": false
   },
   "descuentos": {
