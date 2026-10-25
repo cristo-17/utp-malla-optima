@@ -39,6 +39,19 @@
 .autogen-avisos { display: grid; gap: 6px; margin: 12px 0 0; padding: 10px 12px; list-style: none; border: 1px solid var(--amber-border); border-radius: 8px; background: var(--amber-subtle); color: var(--amber-darker); }
 .autogen-avisos li { display: flex; align-items: flex-start; gap: 8px; }
 .autogen-avisos svg { flex: none; margin-top: 2px; }
+.autogen-total { margin-top: 10px; color: var(--t-primary); font-weight: 700; }
+.autogen-alternativas { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--blue-border); border-radius: 8px; background: var(--blue-subtle); }
+.autogen-alternativas h4 { color: var(--t-primary); font-size: .86rem; }
+.autogen-alternativas ul { display: grid; gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; }
+.autogen-alternativas li { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.autogen-alternativas li > div { display: grid; gap: 2px; min-width: 0; }
+.autogen-alternativas b { color: var(--t-primary); font-size: .84rem; }
+.autogen-alternativas span { color: var(--t-secondary); font-size: .8rem; }
+.autogen-usar {
+  flex: none; min-height: 40px; padding: 6px 12px; border: 1px solid var(--blue-primary); border-radius: 7px;
+  background: var(--bg-surface); color: var(--blue-dark); font-weight: 700; cursor: pointer;
+}
+.autogen-usar:hover { background: var(--blue-subtle); }
 .autogen-periodo { margin-top: 10px; padding: 11px 13px; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-surface-subtle); }
 .autogen-verano { border-color: var(--amber-border); background: var(--amber-tint); }
 .autogen-periodo h4 { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; font-size: .92rem; }

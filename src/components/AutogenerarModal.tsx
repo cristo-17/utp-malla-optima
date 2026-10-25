@@ -3,10 +3,12 @@ import { AlertTriangle, Check, Sparkles, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAcademicStore } from '../store/useAcademicStore';
 import type { OpcionesAutogenerar } from '../store/types';
-import type { PropuestaPlan } from '../application/usecases/generateOptimalPlanUseCase';
+import type { AlternativaPlan, PropuestaPlan } from '../application/usecases/generateOptimalPlanUseCase';
 import { nombrePeriodoCorto } from '../domain/rules/jaladoRules';
 import { explicarMotivo } from '../presentation/messages/planningMessages';
-import { avisoDePropuesta, avisosPropuesta, cuotaDelPeriodo, periodosVistaPrevia } from '../presentation/messages/autogenerarMessages';
+import {
+  avisoDePropuesta, avisosPropuesta, cuotaDelPeriodo, periodosVistaPrevia, resumenEgreso, textoAlternativa,
+} from '../presentation/messages/autogenerarMessages';
 import { formatCredits } from '../utils/formatCredits';
 import { pluralizar } from '../utils/pluralizar';
 
@@ -32,6 +34,7 @@ const useStoreModal = () => useAcademicStore(useShallow((state) => ({
   cursos: state.cursos, totalCiclos: state.totalCiclos, ciclosExcluidos: state.ciclosExcluidos,
   cicloActual: state.cicloActual, periodoIngreso: state.periodoIngreso, tarifario: state.tarifario,
   disciplinaActiva: state.disciplinaActiva, metodoPago: state.metodoPago, pagoUnico: state.pagoUnicoPorPeriodo,
+  setMetodoPago: state.setMetodoPago,
 })));
 
 export function AutogenerarModal() {
@@ -48,11 +51,14 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
   const [cuota, setCuota] = useState(inicial.maxCuotaMensual === undefined ? store.presupuestoMensual : aTexto(inicial.maxCuotaMensual));
   const [usarVeranos, setUsarVeranos] = useState(inicial.usarVeranos ?? false);
   const [conservar, setConservar] = useState(inicial.conservarUbicados ?? true);
+  // Una alternativa con otro método de pago lo cambia solo en esta vista previa; al aplicar, pasa a Estrategia.
+  const [metodoElegido, setMetodoElegido] = useState<string | null>(inicial.metodoPago ?? null);
   const [error, setError] = useState('');
   const [aplicando, setAplicando] = useState(false);
   const modalRef = useRef<HTMLElement>(null);
   const cerrarRef = useRef<HTMLButtonElement>(null);
-  const { cursos, totalCiclos, ciclosExcluidos, cicloActual, periodoIngreso, tarifario, disciplinaActiva, metodoPago, previsualizar } = store;
+  const { cursos, totalCiclos, ciclosExcluidos, cicloActual, periodoIngreso, tarifario, disciplinaActiva, previsualizar } = store;
+  const metodoPago = metodoElegido ?? store.metodoPago;
 
   useLayoutEffect(() => {
     const focoAnterior = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -67,8 +73,8 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
 
   const opciones: OpcionesAutogenerar = useMemo(() => ({
     alcance, maxHorasPorPeriodo: aNumero(horas), maxCreditosPorPeriodo: aNumero(creditos),
-    maxCuotaMensual: aNumero(cuota), usarVeranos, conservarUbicados: conservar,
-  }), [alcance, horas, creditos, cuota, usarVeranos, conservar]);
+    maxCuotaMensual: aNumero(cuota), usarVeranos, conservarUbicados: conservar, metodoPago,
+  }), [alcance, horas, creditos, cuota, usarVeranos, conservar, metodoPago]);
   const propuesta = useMemo((): PropuestaPlan | null => {
     try {
       return previsualizar(opciones);
@@ -82,6 +88,13 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
   const nombreMetodo = tarifario?.metodosPago?.[metodoPago]?.nombre;
   const avisos = propuesta ? avisosPropuesta(propuesta, { usarVeranos, tieneIngreso: Boolean(periodoIngreso), nombreMetodo }) : [];
   const periodos = propuesta ? periodosVistaPrevia(propuesta) : [];
+  const alternativas = propuesta ? propuesta.alternativas.map((alternativa) => ({ alternativa, ...textoAlternativa(alternativa, propuesta) })) : [];
+  /** "Usar esta": la vista previa pasa a la alternativa (otro método, veranos o más horas). */
+  const usarAlternativa = ({ opciones: cambios }: AlternativaPlan) => {
+    if (cambios.metodoPago) setMetodoElegido(cambios.metodoPago);
+    if (cambios.usarVeranos !== undefined) setUsarVeranos(cambios.usarVeranos);
+    if (cambios.maxHorasPorPeriodo !== undefined) setHoras(String(cambios.maxHorasPorPeriodo));
+  };
   const proximo = `Ciclo ${(cicloActual ?? 0) + 1}`;
 
   const cerrar = () => store.cerrarAutogenerar();
@@ -91,6 +104,7 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
     setError('');
     try {
       await store.aplicar(propuesta);
+      if (metodoElegido && metodoElegido !== store.metodoPago) store.setMetodoPago(metodoElegido);
       // Desde el chat, la app (no la IA) cuenta qué quedó en el próximo ciclo.
       const aviso = avisoDePropuesta(propuesta);
       if (origen === 'chat' && aviso) store.setAvisoPlanDesdeChat(aviso);
@@ -144,6 +158,15 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
           <p className="autogen-nota">Nada cambia en tu malla hasta que toques «Aplicar a mi malla».</p>
           {!propuesta && <p className="autogen-error" role="alert">No se pudo generar la propuesta.</p>}
           {avisos.length > 0 && <ul className="autogen-avisos">{avisos.map((aviso) => <li key={aviso}><AlertTriangle size={15} aria-hidden="true" /> {aviso}</li>)}</ul>}
+          {propuesta && propuesta.costoTotalHastaEgresar !== null && <p className="autogen-total">
+            {resumenEgreso(propuesta)}{metodoElegido ? ` · ${tarifario?.metodosPago?.[metodoElegido]?.nombre ?? metodoElegido}` : ''}</p>}
+          {alternativas.length > 0 && <section className="autogen-alternativas" aria-label="Alternativas">
+            <h4>Otras opciones que te convienen</h4>
+            <ul>{alternativas.map(({ alternativa, titulo, detalle }) => <li key={titulo}>
+              <div><b>{titulo}</b><span>{detalle}</span></div>
+              <button type="button" className="autogen-usar" onClick={() => usarAlternativa(alternativa)}>Usar esta</button>
+            </li>)}</ul>
+          </section>}
           {propuesta && periodos.length === 0 && <p className="autogen-nota">No hay cursos pendientes por ubicar.</p>}
           {periodos.map((periodo) => {
             const cuotaMes = cuotaDelPeriodo(periodo, metodoPago);

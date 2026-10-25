@@ -1,4 +1,4 @@
-import type { PropuestaPlan } from '../../application/usecases/generateOptimalPlanUseCase';
+import type { AlternativaPlan, PropuestaPlan } from '../../application/usecases/generateOptimalPlanUseCase';
 import type { PeriodoPropuesto } from '../../domain/services/automaticPlanningService';
 import { nombrePeriodoCorto } from '../../domain/rules/jaladoRules';
 import { pluralizar } from '../../utils/pluralizar';
@@ -74,3 +74,27 @@ export const avisoDePropuesta = (propuesta: PropuestaPlan): { ciclo: number; cur
 /** El mensaje de la app en el chat después de aplicar desde él. */
 export const textoPlanAplicado = ({ ciclo, cursos, horas }: { ciclo: number; cursos: number; horas: number }): string =>
   `Listo, armé tu Ciclo ${ciclo}: ${pluralizar(cursos, '1 curso', `${cursos} cursos`)}, ${horas} h. ¿Lo analizo?`;
+
+const soles2 = (monto: number) => `S/ ${monto.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+const nombreEgreso = (periodo: PropuestaPlan['periodoEgreso']) => periodo ? nombrePeriodoCorto(periodo) : 'sin egreso';
+
+/** "Egresas en el Ciclo 11 · S/ 15,854.50 en total". */
+export const resumenEgreso = (propuesta: Pick<PropuestaPlan, 'periodoEgreso' | 'costoTotalHastaEgresar'>): string =>
+  `Egresas en el ${nombreEgreso(propuesta.periodoEgreso)}` +
+  (propuesta.costoTotalHastaEgresar !== null ? ` · ${soles2(propuesta.costoTotalHastaEgresar)} en total` : '');
+
+/** Título y detalle de una alternativa frente a la propuesta: qué cambia, cuándo egresa, cuánto cuesta y la diferencia. */
+export const textoAlternativa = (alternativa: AlternativaPlan, propuesta: PropuestaPlan): { titulo: string; detalle: string } => {
+  const veranos = alternativa.veranosUsados.map((id) => id.replace('verano-', 'Verano ')).join(' y ');
+  const { opciones, nombreMetodo } = alternativa;
+  const titulo = alternativa.tipo === 'metodoPago' ? `Con ${nombreMetodo}`
+    : alternativa.tipo === 'veranos' ? `Usando el ${veranos}`
+      : alternativa.tipo === 'metodoPagoYVeranos' ? `Con ${nombreMetodo} y el ${veranos}`
+        : `Con hasta ${opciones.maxHorasPorPeriodo} h por ciclo${alternativa.conRecargo ? ' (con recargo por horas adicionales)' : ''}`;
+  const ahorro = alternativa.costoTotalHastaEgresar !== null && propuesta.costoTotalHastaEgresar !== null
+    ? propuesta.costoTotalHastaEgresar - alternativa.costoTotalHastaEgresar : 0;
+  return {
+    titulo,
+    detalle: `${resumenEgreso(alternativa)}${ahorro > 0.005 ? ` (${soles2(Math.round(ahorro * 100) / 100)} menos)` : ''}`,
+  };
+};
