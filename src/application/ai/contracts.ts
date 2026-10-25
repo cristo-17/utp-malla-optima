@@ -475,6 +475,15 @@ export const AIErrorCodigoSchema = z.enum(CODIGOS_ERROR);
 export type AIErrorCodigo = z.infer<typeof AIErrorCodigoSchema>;
 
 export const MENSAJE_LIMITE = 'Llegaste al límite de consultas por ahora. Intenta de nuevo en un rato.';
+/** Límite global del día (todos los alumnos): mensaje distinto del límite por dispositivo o por red. */
+export const MENSAJE_LIMITE_DIARIO = 'El asistente llegó a su límite de hoy. Vuelve a intentarlo mañana.';
+
+/**
+ * ID anónimo por dispositivo (D-050): un UUID que genera el navegador, sin datos personales. El proxy solo guarda
+ * su hash con AI_SALT y rechaza un valor que no tenga formato UUID.
+ */
+export const CABECERA_DISPOSITIVO = 'X-MallaU-Dispositivo';
+export const FORMATO_ID_DISPOSITIVO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Respuesta segura fija cuando el filtro de salida del proxy no pudo verificar los datos. */
 export const MENSAJE_NO_VERIFICADA = 'No pude verificar esos datos con seguridad. Revisa la pestaña Simulación de cuotas o pregúntame de otra forma.';
 
