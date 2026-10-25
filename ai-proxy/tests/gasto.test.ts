@@ -5,7 +5,7 @@ import { AVISO_CORTADA, construirCuerpo, MAX_TOKENS } from '../src/deepseek.js';
 import { crearHandlers, leerConfig, type ConfigProxy } from '../src/handler.js';
 import {
   comprobarLimites, crearLimitador, crearLimitadorMemoria, crearLimitadorUpstash, hashIp, ipDe, leerLimites,
-  LIMITE_DIARIO_POR_DEFECTO, LIMITE_IP_HORA_POR_DEFECTO, type RateLimiter,
+  LIMITE_DIARIO_POR_DEFECTO, LIMITE_DISPOSITIVO_HORA_POR_DEFECTO, LIMITE_IP_HORA_POR_DEFECTO, type RateLimiter,
 } from '../src/limites.js';
 
 const contexto: AIContext = JSON.parse(readFileSync(new URL('./fixtures/contexto.json', import.meta.url), 'utf8'));
@@ -73,11 +73,13 @@ describe('gasto - interruptor AI_PAUSADO', () => {
 });
 
 describe('gasto - límites', () => {
-  it('por defecto: 15 por IP por hora y 200 por día; se pueden cambiar por entorno', () => {
-    expect([LIMITE_IP_HORA_POR_DEFECTO, LIMITE_DIARIO_POR_DEFECTO]).toEqual([15, 200]);
-    expect(leerLimites({}, 'x')).toEqual({ porIpHora: 15, diario: 200, sal: 'x' });
-    expect(leerLimites({ AI_LIMITE_IP_HORA: '3', AI_LIMITE_DIARIO: '50', AI_SALT: 's' }, 'x')).toEqual({ porIpHora: 3, diario: 50, sal: 's' });
-    expect(leerLimites({ AI_LIMITE_IP_HORA: 'abc', AI_LIMITE_DIARIO: '-1' }, 'x')).toMatchObject({ porIpHora: 15, diario: 200 });
+  it('por defecto: 30 por dispositivo y 300 por IP por hora, y 1500 por día; se pueden cambiar por entorno', () => {
+    expect([LIMITE_DISPOSITIVO_HORA_POR_DEFECTO, LIMITE_IP_HORA_POR_DEFECTO, LIMITE_DIARIO_POR_DEFECTO]).toEqual([30, 300, 1500]);
+    expect(leerLimites({}, 'x')).toEqual({ porDispositivoHora: 30, porIpHora: 300, diario: 1500, sal: 'x' });
+    expect(leerLimites({ AI_LIMITE_DISPOSITIVO_HORA: '5', AI_LIMITE_IP_HORA: '3', AI_LIMITE_DIARIO: '50', AI_SALT: 's' }, 'x'))
+      .toEqual({ porDispositivoHora: 5, porIpHora: 3, diario: 50, sal: 's' });
+    expect(leerLimites({ AI_LIMITE_DISPOSITIVO_HORA: '0', AI_LIMITE_IP_HORA: 'abc', AI_LIMITE_DIARIO: '-1' }, 'x'))
+      .toMatchObject({ porDispositivoHora: 30, porIpHora: 300, diario: 1500 });
   });
 
   it('la IP sale del primer valor de x-forwarded-for o de x-real-ip', () => {
@@ -90,15 +92,15 @@ describe('gasto - límites', () => {
   it('la IP se guarda solo como sha256 con sal', async () => {
     const claves: string[] = [];
     const limitador: RateLimiter = { tipo: 'memoria', incrementar: async (clave) => { claves.push(clave); return 1; } };
-    await comprobarLimites(limitador, { porIpHora: 15, diario: 200, sal: 'sal' }, '203.0.113.7', AHORA);
+    await comprobarLimites(limitador, { porDispositivoHora: 30, porIpHora: 15, diario: 200, sal: 'sal' }, '203.0.113.7', AHORA);
     expect(claves.join(' ')).not.toContain('203.0.113.7');
     expect(claves[0]).toContain(hashIp('203.0.113.7', 'sal'));
     expect(hashIp('203.0.113.7', 'sal')).toMatch(/^[0-9a-f]{64}$/);
     expect(hashIp('203.0.113.7', 'sal')).not.toBe(hashIp('203.0.113.7', 'otra'));
   });
 
-  it('la consulta 16 de la misma IP en la hora → LIMITE (429) con el mensaje y la hora en que se libera', async () => {
-    const { POST, fetch } = crear();
+  it('con AI_LIMITE_IP_HORA=15, la consulta 16 de la misma IP en la hora → LIMITE (429) con el mensaje y la hora en que se libera', async () => {
+    const { POST, fetch } = crear({ AI_LIMITE_IP_HORA: '15' });
     for (let i = 0; i < 15; i += 1) expect((await POST(post())).status).toBe(200);
     const respuesta = await POST(post());
     expect(respuesta.status).toBe(429);
@@ -111,7 +113,7 @@ describe('gasto - límites', () => {
 
   it('el límite diario es global y se reinicia a la medianoche de Lima', async () => {
     const limitador = crearLimitadorMemoria(() => AHORA);
-    const config = { porIpHora: 100, diario: 2, sal: 's' };
+    const config = { porDispositivoHora: 100, porIpHora: 100, diario: 2, sal: 's' };
     expect(await comprobarLimites(limitador, config, 'a', AHORA)).toEqual({ ok: true });
     expect(await comprobarLimites(limitador, config, 'b', AHORA)).toEqual({ ok: true });
     // Medianoche del 24 en Lima = 05:00 UTC.
