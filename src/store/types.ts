@@ -29,6 +29,9 @@ export interface AcademicStore {
   metodoPago: string;
   /** Periodos regulares con pago único activo en la simulación. */
   pagoUnicoPorPeriodo: Record<string, boolean>;
+  /** Presupuesto mensual que el alumno escribe en Autogenerar o en "Analizar mi plan" (el mismo campo en los dos). */
+  presupuestoMensual: string;
+  setPresupuestoMensual: (valor: string) => void;
   disciplinaActiva: string;
   cursosSeleccionadosParaMatricula: string[];
   panelPlanificadorAbierto: boolean;

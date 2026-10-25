@@ -43,12 +43,16 @@ const irAlBanco = () => {
 };
 
 export function Asistente({ onSubirExcel }: { onSubirExcel?: () => void } = {}) {
-  const { cursos, cicloActual, cursoAMover, estrategiaAbierta, abrirAutogenerar, avisoPlanDesdeChat, setAvisoPlanDesdeChat } =
+  const {
+    cursos, cicloActual, cursoAMover, estrategiaAbierta, abrirAutogenerar, avisoPlanDesdeChat, setAvisoPlanDesdeChat,
+    presupuestoMensual, setPresupuestoMensual,
+  } =
     useAcademicStore(useShallow((state) => ({
       cursos: state.cursos, cicloActual: state.cicloActual,
       cursoAMover: state.cursoAMover, estrategiaAbierta: state.panelPlanificadorAbierto,
       abrirAutogenerar: state.abrirAutogenerar,
       avisoPlanDesdeChat: state.avisoPlanDesdeChat, setAvisoPlanDesdeChat: state.setAvisoPlanDesdeChat,
+      presupuestoMensual: state.presupuestoMensual, setPresupuestoMensual: state.setPresupuestoMensual,
     })));
   const [controlador] = useState(() => {
     const cliente = crearAIClient();
@@ -86,6 +90,10 @@ export function Asistente({ onSubirExcel }: { onSubirExcel?: () => void } = {}) 
     controlador.agregarMensajeApp(textoPlanAplicado(avisoPlanDesdeChat));
     setAvisoPlanDesdeChat(null);
   }, [avisoPlanDesdeChat, controlador, setAvisoPlanDesdeChat]);
+  // El presupuesto es el mismo en "Analizar mi plan" y en Autogenerar (financialSlice.presupuestoMensual).
+  useEffect(() => {
+    if (controlador.obtener().presupuesto !== presupuestoMensual) controlador.setPresupuesto(presupuestoMensual);
+  }, [presupuestoMensual, controlador]);
   // Si el ciclo vuelve a quedar vacío (Deshacer o Limpiar plan), vuelve la tarjeta de Autogenerar y el aviso sobra.
   useEffect(() => {
     if (cicloVacio !== null) controlador.quitarMensajesApp();
@@ -208,7 +216,7 @@ export function Asistente({ onSubirExcel }: { onSubirExcel?: () => void } = {}) 
         onAceptarPrivacidad={controlador.aceptarPrivacidad}
         onCancelarPrivacidad={cerrar}
         onAnalizar={() => void controlador.analizar()}
-        onPresupuesto={controlador.setPresupuesto}
+        onPresupuesto={setPresupuestoMensual}
         onPreguntar={(texto) => void controlador.preguntar(texto)}
         onReintentar={(id) => void controlador.reintentar(id)}
         onAlternarPanel={(panel) => {

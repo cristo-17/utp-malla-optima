@@ -27,6 +27,7 @@ const aTexto = (valor: number | null | undefined) => typeof valor === 'number' ?
 type StoreModal = ReturnType<typeof useStoreModal>;
 const useStoreModal = () => useAcademicStore(useShallow((state) => ({
   autogenerar: state.autogenerar, cerrarAutogenerar: state.cerrarAutogenerar, setAvisoPlanDesdeChat: state.setAvisoPlanDesdeChat,
+  presupuestoMensual: state.presupuestoMensual, setPresupuestoMensual: state.setPresupuestoMensual,
   previsualizar: state.previsualizarPlanificacionOptima, aplicar: state.aplicarPlanificacionOptima,
   cursos: state.cursos, totalCiclos: state.totalCiclos, ciclosExcluidos: state.ciclosExcluidos,
   cicloActual: state.cicloActual, periodoIngreso: state.periodoIngreso, tarifario: state.tarifario,
@@ -43,7 +44,8 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
   const [alcance, setAlcance] = useState(inicial.alcance ?? 'hastaEgresar');
   const [horas, setHoras] = useState(aTexto(inicial.maxHorasPorPeriodo));
   const [creditos, setCreditos] = useState(aTexto(inicial.maxCreditosPorPeriodo));
-  const [cuota, setCuota] = useState(aTexto(inicial.maxCuotaMensual));
+  // Sin un monto propio (el de una propuesta del chat), parte del presupuesto que el alumno ya escribió.
+  const [cuota, setCuota] = useState(inicial.maxCuotaMensual === undefined ? store.presupuestoMensual : aTexto(inicial.maxCuotaMensual));
   const [usarVeranos, setUsarVeranos] = useState(inicial.usarVeranos ?? false);
   const [conservar, setConservar] = useState(inicial.conservarUbicados ?? true);
   const [error, setError] = useState('');
@@ -131,7 +133,8 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
           <label htmlFor="autogen-creditos">Máximo de créditos
             <input id="autogen-creditos" type="number" inputMode="numeric" min="0" step="1" placeholder="Opcional" value={creditos} onChange={(event) => setCreditos(event.target.value)} /></label>
           <label htmlFor="autogen-cuota">Presupuesto mensual (S/)
-            <input id="autogen-cuota" type="number" inputMode="decimal" min="0" step="10" placeholder="Opcional" value={cuota} onChange={(event) => setCuota(event.target.value)} /></label>
+            <input id="autogen-cuota" type="number" inputMode="decimal" min="0" step="10" placeholder="Opcional" value={cuota}
+              onChange={(event) => { setCuota(event.target.value); store.setPresupuestoMensual(event.target.value); }} /></label>
         </div>
         <div className="autogen-checks">
           <label><input type="checkbox" checked={usarVeranos} onChange={(event) => setUsarVeranos(event.target.checked)} /> Usar veranos</label>

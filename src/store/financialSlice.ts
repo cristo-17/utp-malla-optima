@@ -3,12 +3,15 @@ import { migrateLegacyFinancialRulesReference } from '../financial/rules/financi
 import type { AcademicSlice, AcademicStore } from './types';
 
 type FinancialSlice = Pick<AcademicStore,
-  'tarifario' | 'setTarifario' | 'metodoPago' | 'pagoUnicoPorPeriodo' | 'setMetodoPago' | 'setPagoUnico'>;
+  'tarifario' | 'setTarifario' | 'metodoPago' | 'pagoUnicoPorPeriodo' | 'setMetodoPago' | 'setPagoUnico' |
+  'presupuestoMensual' | 'setPresupuestoMensual'>;
 
 export const createFinancialSlice = (repos: AcademicRepositories): AcademicSlice<FinancialSlice> => (set, get) => ({
   tarifario: null,
   metodoPago: 'sin_descuento',
   pagoUnicoPorPeriodo: {},
+  presupuestoMensual: '',
+  setPresupuestoMensual: (presupuestoMensual) => set({ presupuestoMensual }),
   setMetodoPago: (metodoPago) => set({ metodoPago }),
   setPagoUnico: (periodoId, activo) =>
     set((state) => ({ pagoUnicoPorPeriodo: { ...state.pagoUnicoPorPeriodo, [periodoId]: activo } })),
