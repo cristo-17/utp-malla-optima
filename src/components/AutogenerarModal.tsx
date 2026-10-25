@@ -6,7 +6,7 @@ import type { OpcionesAutogenerar } from '../store/types';
 import type { PropuestaPlan } from '../application/usecases/generateOptimalPlanUseCase';
 import { nombrePeriodoCorto } from '../domain/rules/jaladoRules';
 import { explicarMotivo } from '../presentation/messages/planningMessages';
-import { avisosPropuesta, cuotaDelPeriodo, periodosVistaPrevia } from '../presentation/messages/autogenerarMessages';
+import { avisoDePropuesta, avisosPropuesta, cuotaDelPeriodo, periodosVistaPrevia } from '../presentation/messages/autogenerarMessages';
 import { formatCredits } from '../utils/formatCredits';
 import { pluralizar } from '../utils/pluralizar';
 
@@ -92,10 +92,8 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
     try {
       await store.aplicar(propuesta);
       // Desde el chat, la app (no la IA) cuenta qué quedó en el próximo ciclo.
-      const proximo = propuesta.periodos.find((item) => item.periodo.id === propuesta.periodoInicio.id);
-      if (origen === 'chat' && proximo) {
-        store.setAvisoPlanDesdeChat({ ciclo: proximo.periodo.cicloReferencia, cursos: proximo.cursos.length, horas: proximo.horas });
-      }
+      const aviso = avisoDePropuesta(propuesta);
+      if (origen === 'chat' && aviso) store.setAvisoPlanDesdeChat(aviso);
       cerrar();
     } catch (causa) {
       setError(causa instanceof Error ? causa.message : 'No se pudo aplicar la propuesta.');

@@ -65,6 +65,12 @@ export const cicloVacioProximo = (
   return !tieneCursos && quedaPendiente ? proximo : null;
 };
 
+/** Resumen del próximo ciclo de una propuesta aplicada (para el mensaje de la app en el chat); null si queda vacío. */
+export const avisoDePropuesta = (propuesta: PropuestaPlan): { ciclo: number; cursos: number; horas: number } | null => {
+  const proximo = propuesta.periodos.find((item) => item.periodo.id === propuesta.periodoInicio.id);
+  return proximo ? { ciclo: proximo.periodo.cicloReferencia, cursos: proximo.cursos.length, horas: proximo.horas } : null;
+};
+
 /** El mensaje de la app en el chat después de aplicar desde él. */
 export const textoPlanAplicado = ({ ciclo, cursos, horas }: { ciclo: number; cursos: number; horas: number }): string =>
   `Listo, armé tu Ciclo ${ciclo}: ${pluralizar(cursos, '1 curso', `${cursos} cursos`)}, ${horas} h. ¿Lo analizo?`;
