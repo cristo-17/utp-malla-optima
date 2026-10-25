@@ -509,3 +509,13 @@ describe('evaluación - MAYOR limite-mal-dicho', () => {
     expect(con('contexto-limite-900', 'El Ciclo 10 no llega a S/ 800.')).toBe(true);
   });
 });
+
+describe('evaluación - chat-largo con propuestaConLimites (regla 17)', () => {
+  const noventa = Array.from({ length: 90 }, (_, indice) => `palabra${indice}`).join(' ');
+  it('hasta 100 palabras cuando el contexto trae la propuesta; 80 en el resto', () => {
+    expect(fallosDe(noventa, {}, ['arma mi plan con menos de 20h'], leerFixture('contexto-limite-20h'))).not.toContain('MENOR:chat-largo');
+    expect(fallosDe(noventa, {}, ['¿cómo voy?'])).toContain('MENOR:chat-largo');
+    const ciento_diez = Array.from({ length: 110 }, (_, indice) => `palabra${indice}`).join(' ');
+    expect(fallosDe(ciento_diez, {}, ['arma mi plan'], leerFixture('contexto-limite-20h'))).toContain('MENOR:chat-largo');
+  });
+});

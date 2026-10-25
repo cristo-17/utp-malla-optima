@@ -429,8 +429,8 @@ export const chequear = ({ modo, contexto, mensajes, esperado, respuesta, codigo
     const acciones = texto.split('\n').filter((linea) => /^\s*([•\-*]|\d+[.)])\s+/.test(linea)).length;
     if (acciones > 3) fallar('MENOR', 'mas-de-3-acciones', `${acciones} acciones.`);
     if (texto.length > 900) fallar('MENOR', 'respuesta-larga', `${texto.length} caracteres (máximo 900).`);
-    // Regla 8: hasta 100 palabras en bika y trika.
-    const maximo = /\b(bika|trika)\b/.test(normalizar(alumno)) ? 100 : 80;
+    // Regla 8: hasta 100 palabras en bika y trika; regla 17: también cuando responde con propuestaConLimites.
+    const maximo = /\b(bika|trika)\b/.test(normalizar(alumno)) || contexto.propuestaConLimites ? 100 : 80;
     const total = palabras(texto);
     if (total > maximo) fallar('MENOR', 'chat-largo', `${total} palabras (máximo ${maximo}).`);
     // La carga del próximo periodo: sus cifras (horas, nivel, número de cursos) o mencionarla / ofrecer revisarla.
