@@ -27,6 +27,17 @@ export const avisosPropuesta = (
       : `Con ${soles(limitesPedidos.maxCuotaMensual)} al mes${contexto.nombreMetodo ? ` (${contexto.nombreMetodo})` : ''} pagas hasta ${limitesPedidos.horasPorCuota} h por ciclo.`);
   }
   if (contexto.usarVeranos && !contexto.tieneIngreso) avisos.push('Configura tu mes de ingreso para poder usar veranos.');
+  // Lo que el alumno ya ubicó se conserva aunque pase su límite: se avisa cómo reordenarlo.
+  const { limites } = propuesta;
+  for (const { periodo, horas, creditos, cursos } of periodosVistaPrevia(propuesta)) {
+    const verano = periodo.tipo === 'VERANO';
+    const tope = verano ? limites.horasVerano : limites.horas;
+    const topeCreditos = verano ? limites.creditosVerano : limites.creditos;
+    const pasa = horas > tope ? `${horas} h` : topeCreditos !== null && creditos > topeCreditos ? `${creditos} cr` : null;
+    if (pasa && cursos.some((curso) => curso.conservado && !curso.jalado)) {
+      avisos.push(`El ${nombrePeriodoCorto(periodo)} que ya ubicaste pasa tu límite (${pasa}): desmarca «Conservar lo que ya ubiqué» para reordenarlo.`);
+    }
+  }
   return avisos;
 };
 

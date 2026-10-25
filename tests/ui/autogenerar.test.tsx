@@ -176,3 +176,20 @@ describe('😊 "Armar mi plan con límites"', () => {
     expect(html).toContain('Armar mi plan con límites');
   });
 });
+
+describe('Autogenerar - lo ya ubicado que pasa el límite', () => {
+  it('con "Conservar" avisa que el Ciclo 8 ubicado (25 h) pasa las 20 h; sin conservar, lo reordena y no avisa', async () => {
+    const { store } = await crearStore();
+    for (const codigo of ['100000S06I', '100000S72T', '100000S73T', '100000H01C', '100000TD09', '100000I62N', '100000S71T']) {
+      await store.getState().moverCursoAPeriodo(codigo, crearPeriodoRegular(8));
+    }
+    sembrar({ ...estadoDe(store), autogenerar: { inicial: { alcance: 'hastaEgresar', maxHorasPorPeriodo: 20 } } });
+    expect(renderToStaticMarkup(<AutogenerarModal />))
+      .toContain('El Ciclo 8 que ya ubicaste pasa tu límite (25 h): desmarca «Conservar lo que ya ubiqué» para reordenarlo.');
+    sembrar({ autogenerar: { inicial: { alcance: 'hastaEgresar', maxHorasPorPeriodo: 20, conservarUbicados: false } } });
+    const html = renderToStaticMarkup(<AutogenerarModal />);
+    expect(html).not.toContain('que ya ubicaste pasa tu límite');
+    expect(html).toContain('Ciclo 8<span>5 cursos · 19 h');
+    sembrar({ autogenerar: null });
+  });
+});
