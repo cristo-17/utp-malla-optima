@@ -11,6 +11,8 @@ import { validarCargaPlanificacionAutomatica } from '../../src/domain/services/a
 import { motivoPlanificadoInvalido } from '../../src/domain/services/prerequisiteService';
 import { calcularPresupuesto, cuotaMensualPorHoras, horasMaximasParaCuota } from '../../src/financial/engine/budgetCalculator';
 import { FinancialConfigurationProvider } from '../../src/infrastructure/configuration/FinancialConfigurationProvider';
+import { UniversityFinancialRulesProvider } from '../../src/financial/rules/UniversityFinancialRulesProvider';
+import { FinancialPlanningService } from '../../src/financial/services/FinancialPlanningService';
 import { createAcademicStore } from '../../src/store/createAcademicStore';
 import type { Curso, PeriodoAcademico } from '../../src/types/academic';
 import type { Tarifario } from '../../src/types/financial';
@@ -251,5 +253,70 @@ describe('planificador con límites (Plan_de_Estudio_1.xlsx, marzo, ciclo actual
     expect(propuesta.periodos[1].cursos.map((curso) => curso.codigo)).toEqual(['100000S71T']);
     const fuera = propuesta.cursos.filter((curso) => curso.estado === 'PENDIENTE' && curso.ubicacion === 'periodo' && curso.ciclo !== 8);
     expect(fuera.map((curso) => curso.codigo)).toEqual(['100000S71T']);
+  });
+});
+
+describe('alternativas y límites estrictos (Plan_de_Estudio_1.xlsx, escala real)', () => {
+  let store: Store;
+  beforeAll(async () => { store = await crearStore(); });
+
+  it('S/ 800 sin descuento: Ciclo 12; con pronto pago caben 22 h (Ciclo 11) y con pronto pago y el Verano 8 egresa en el Ciclo 10; las dos cuestan menos', () => {
+    const propuesta = generateOptimalPlanUseCase(entrada(store, { maxCuotaMensual: 800, metodoPago: 'sin_descuento' }));
+    expect(propuesta).toMatchObject({ cicloEgreso: 12, costoTotalHastaEgresar: 19349.5 });
+    expect(propuesta.alternativas.map((alternativa) => [alternativa.tipo, alternativa.opciones, alternativa.cicloEgreso, alternativa.costoTotalHastaEgresar]))
+      .toEqual([
+        ['metodoPagoYVeranos', { metodoPago: 'interbank_scotiabank', usarVeranos: true }, 10, 14456.45],
+        ['metodoPago', { metodoPago: 'interbank_scotiabank' }, 11, 15141.35],
+      ]);
+    const conProntoPago = propuesta.alternativas[0];
+    expect(conProntoPago.veranosUsados).toEqual(['verano-8']);
+    expect(conProntoPago.costoTotalHastaEgresar!).toBeLessThan(propuesta.costoTotalHastaEgresar!);
+    // Con pronto pago, la cuota de 22 h entra en S/ 800 (774.25); la de 23 h ya no (811.12).
+    expect(conProntoPago.horasPorPeriodo.every(({ horas }) => horas <= 22)).toBe(true);
+  });
+
+  it('el costo total es el de FinancialPlanningService para la malla de la propuesta (sin sumas nuevas)', () => {
+    const propuesta = generateOptimalPlanUseCase(entrada(store, { maxCuotaMensual: 800 }));
+    const servicio = new FinancialPlanningService(new UniversityFinancialRulesProvider());
+    const { tarifario, disciplinaActiva } = store.getState();
+    expect(propuesta.costoTotalHastaEgresar).toBe(
+      Math.round(servicio.calcular(propuesta.cursos, tarifario!, disciplinaActiva, { metodoPago: 'sin_descuento', cicloActual: 7 }).totalGeneral * 100) / 100);
+  });
+
+  it('sin límites: el Ciclo 11 es solo por un electivo; la alternativa de 23 h (con recargo) egresa en el Ciclo 10 y cuesta menos, y también el Verano 8', () => {
+    const propuesta = generateOptimalPlanUseCase(entrada(store));
+    expect(propuesta).toMatchObject({ ciclosAgregados: [11], costoTotalHastaEgresar: 15854.5 });
+    expect(propuesta.periodos.at(-1)).toMatchObject({ periodo: { id: 'ciclo-11' }, creditos: 3 });
+    const [tope, veranos] = propuesta.alternativas;
+    expect(tope).toMatchObject({ tipo: 'topeSinCicloExtra', opciones: { maxHorasPorPeriodo: 23 }, cicloEgreso: 10, ciclosAgregados: [],
+      conRecargo: true, costoTotalHastaEgresar: 13807.1 });
+    expect(veranos).toMatchObject({ tipo: 'veranos', cicloEgreso: 10, veranosUsados: ['verano-8'], costoTotalHastaEgresar: 14798.75 });
+  });
+
+  it('solo alternativas que egresan antes o cuestan menos: con S/ 900 queda el pronto pago (mismo egreso, menos costo)', () => {
+    const propuesta = generateOptimalPlanUseCase(entrada(store, { maxCuotaMensual: 900 }));
+    for (const alternativa of propuesta.alternativas) {
+      const antes = (alternativa.periodoEgreso?.orden ?? 99) < propuesta.periodoEgreso!.orden;
+      expect(antes || alternativa.costoTotalHastaEgresar! < propuesta.costoTotalHastaEgresar!).toBe(true);
+    }
+    expect(propuesta.alternativas.map((alternativa) => alternativa.tipo)).toEqual(['metodoPago']);
+  });
+
+  it('"menos de 18 créditos": ningún periodo llega a 18', () => {
+    const propuesta = generateOptimalPlanUseCase(entrada(store, { maxCreditosPorPeriodo: 18, creditosEstricto: true }));
+    expect(propuesta.limites).toMatchObject({ creditos: 18, creditosEstricto: true });
+    expect(propuesta.periodos.every(({ creditos }) => creditos < 18)).toBe(true);
+    expect(() => validarCargaPlanificacionAutomatica(propuesta)).not.toThrow();
+    // "Máximo 18" sí permite 18.
+    expect(generateOptimalPlanUseCase(entrada(store, { maxCreditosPorPeriodo: 18 })).periodos.some(({ creditos }) => creditos === 18)).toBe(true);
+  });
+
+  it('"menos de 20 h": ningún periodo llega a 20 h; "máximo 20 h" sí', () => {
+    const estricto = generateOptimalPlanUseCase(entrada(store, { maxHorasPorPeriodo: 20, horasEstricto: true }));
+    expect(estricto.periodos.every(({ horas }) => horas < 20)).toBe(true);
+    expect(generateOptimalPlanUseCase(entrada(store, { maxHorasPorPeriodo: 20 })).periodos.some(({ horas }) => horas === 20)).toBe(true);
+    // La validación trata llegar a N como exceso con el límite estricto.
+    const conVeinte = generateOptimalPlanUseCase(entrada(store, { maxHorasPorPeriodo: 20 }));
+    expect(() => validarCargaPlanificacionAutomatica({ ...conVeinte, limites: { ...conVeinte.limites, horasEstricto: true } })).toThrow();
   });
 });

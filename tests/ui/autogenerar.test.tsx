@@ -119,6 +119,29 @@ describe('Autogenerar - modal y vista previa', () => {
     sembrar({ autogenerar: null });
   });
 
+  it('S/ 800 sin descuento: el total, las alternativas con su egreso, total y ahorro, y "Usar esta"', async () => {
+    const { store } = await crearStore();
+    sembrar({ ...estadoDe(store), autogenerar: { inicial: { maxCuotaMensual: 800 } } });
+    const html = renderToStaticMarkup(<AutogenerarModal />);
+    expect(html).toContain('Egresas en el Ciclo 12 · S/ 19,349.50 en total');
+    expect(html).toContain('Otras opciones que te convienen');
+    expect(html).toContain('Con Interbank / Scotiabank — pronto pago y el Verano 8');
+    expect(html).toContain('Egresas en el Ciclo 10 · S/ 14,456.45 en total (S/ 4,893.05 menos)');
+    expect(html.match(/Usar esta/g)).toHaveLength(2);
+    // Las alternativas van debajo del aviso de ciclos extra.
+    expect(html.indexOf('Necesitas 2 ciclos más')).toBeLessThan(html.indexOf('Otras opciones'));
+    sembrar({ autogenerar: null });
+  });
+
+  it('sin límites: el Ciclo 11 por un electivo trae la alternativa de 23 h con recargo y la del Verano 8', async () => {
+    const { store } = await crearStore();
+    sembrar({ ...estadoDe(store), autogenerar: { inicial: {} } });
+    const html = renderToStaticMarkup(<AutogenerarModal />);
+    expect(html).toContain('Con hasta 23 h por ciclo (con recargo por horas adicionales)');
+    expect(html).toContain('Usando el Verano 8');
+    sembrar({ autogenerar: null });
+  });
+
   it('cerrado no renderiza nada', () => {
     sembrar({ autogenerar: null });
     expect(renderToStaticMarkup(<AutogenerarModal />)).toBe('');
