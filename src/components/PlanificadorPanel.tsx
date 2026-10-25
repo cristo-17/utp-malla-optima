@@ -1,10 +1,8 @@
 import { formatCredits } from '../utils/formatCredits';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, CreditCard, FileText, Settings2, Sparkles, TrendingUp, X } from 'lucide-react';
-import type { ResultadoPlanificacionAutomatica } from '../domain/services/automaticPlanningService';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { ChevronDown, CreditCard, Settings2, Sparkles, TrendingUp, X } from 'lucide-react';
 import { calcularRutaCritica } from '../domain/services/recommendationService';
 import { useAcademicStore } from '../store/useAcademicStore';
-import { PropuestaModal } from './PropuestaModal';
 import { useFinancialPlanning } from '../financial/FinancialPlanningContext';
 import { PeriodFinancialCard } from '../financial/components/PeriodFinancialCard';
 import { FinancialTotalCard } from '../financial/components/FinancialTotalCard';
@@ -12,21 +10,13 @@ import { LIMITE_HORAS_PLANIFICACION } from '../domain/rules/planningRules';
 
 export function PlanificadorPanel() {
   const {
-    cursos, tarifario, disciplinaActiva, panelPlanificadorAbierto, totalCiclos, ciclosExcluidos, cicloActual, periodoIngreso,
-    setPanelPlanificadorAbierto, previsualizarPlanificacionOptima,
-    aplicarPlanificacionOptima, metodoPago, setMetodoPago, pagoUnicoPorPeriodo: pagoUnico, setPagoUnico,
+    cursos, tarifario, disciplinaActiva, panelPlanificadorAbierto, totalCiclos, ciclosExcluidos, cicloActual,
+    setPanelPlanificadorAbierto, abrirAutogenerar, metodoPago, setMetodoPago, pagoUnicoPorPeriodo: pagoUnico, setPagoUnico,
   } = useAcademicStore();
   const financialPlanning = useFinancialPlanning();
   const [pestana, setPestana] = useState<'academico' | 'financiero'>('academico');
   const [ajustesCuotasAbiertos, setAjustesCuotasAbiertos] = useState(false);
   const [avisoPago, setAvisoPago] = useState('');
-  const [propuesta, setPropuesta] = useState<ResultadoPlanificacionAutomatica | null>(null);
-  const [detalleAbierto, setDetalleAbierto] = useState(false);
-  const [firmaOrigen, setFirmaOrigen] = useState('');
-  const [confirmar, setConfirmar] = useState(false);
-  const [error, setError] = useState('');
-  const confirmarRef = useRef<HTMLElement>(null);
-  const generarRef = useRef<HTMLButtonElement>(null);
   const criticos = useMemo(() => calcularRutaCritica(cursos).slice(0, 6), [cursos]);
   const creditosPendientes = cursos.filter((curso) => curso.estado === 'PENDIENTE')
     .reduce((suma, curso) => suma + curso.creditos, 0);
@@ -35,10 +25,6 @@ export function PlanificadorPanel() {
         metodoPago, pagoUnicoPorPeriodo: pagoUnico, cicloActual,
       })
     : null, [cursos, tarifario, disciplinaActiva, metodoPago, pagoUnico, cicloActual, financialPlanning]);
-
-  useLayoutEffect(() => {
-    if (confirmar) confirmarRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
-  }, [confirmar]);
 
   useLayoutEffect(() => {
     if (!avisoPago) return;
@@ -56,38 +42,8 @@ export function PlanificadorPanel() {
   if (!panelPlanificadorAbierto) return null;
 
   const cerrarEstrategia = () => {
-    setDetalleAbierto(false);
-    setConfirmar(false);
     setAvisoPago('');
     setPanelPlanificadorAbierto(false);
-  };
-  const generar = () => {
-    setError('');
-    try {
-      setPropuesta(previsualizarPlanificacionOptima());
-      setFirmaOrigen(JSON.stringify({ cursos, totalCiclos, ciclosExcluidos, cicloActual, periodoIngreso }));
-      setDetalleAbierto(true);
-    }
-    catch { setError('No se pudo generar la propuesta.'); }
-  };
-  const aplicar = async () => {
-    if (!propuesta) return;
-    try {
-      if (firmaOrigen !== JSON.stringify({ cursos, totalCiclos, ciclosExcluidos, cicloActual, periodoIngreso })) throw new Error('La malla o la configuración cambió. Genera una propuesta nueva.');
-      await aplicarPlanificacionOptima(propuesta);
-      setPropuesta(null);
-      setDetalleAbierto(false);
-      setConfirmar(false);
-      generarRef.current?.focus();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'No se pudo aplicar la propuesta.');
-      setConfirmar(false);
-      setDetalleAbierto(true);
-    }
-  };
-  const cancelarConfirmacion = () => {
-    setConfirmar(false);
-    setDetalleAbierto(true);
   };
 
   return <div className="strategy-layer">
@@ -109,11 +65,10 @@ export function PlanificadorPanel() {
       </div>
       {pestana === 'academico' ? <div className="strategy-tab-content" role="tabpanel">
         <section className="strategy-block strategy-automatic"><h3><TrendingUp size={15} /> Planificación automática</h3>
-          <p>Ciclo actual: {cicloActual ?? 'sin configurar'}. La propuesta utiliza ciclos regulares desde {(cicloActual ?? 0) + 1} hasta el {totalCiclos}, con un máximo de {LIMITE_HORAS_PLANIFICACION} horas. Los créditos no limitan la selección.</p>
-          <p>Primero se organizan los obligatorios. Al final se añade un solo electivo, elegido por menos horas y después por más créditos.</p>
+          <p>Ciclo actual: {cicloActual ?? 'sin configurar'}. La propuesta organiza tus pendientes desde el ciclo {(cicloActual ?? 0) + 1} (tu malla llega al {totalCiclos}). Sin límites usa hasta {LIMITE_HORAS_PLANIFICACION} horas por ciclo; puedes poner tu máximo de horas, de créditos o tu presupuesto mensual, y usar veranos.</p>
+          <p>Primero van los jalados en su ventana, luego los obligatorios por prioridad y al final los electivos que faltan para el mínimo de créditos. Si hace falta, agrega ciclos.</p>
           {ciclosExcluidos.length > 0 && <p>Ciclos retirados: {ciclosExcluidos.join(', ')}. No se utilizarán en la propuesta.</p>}
-          <button ref={generarRef} type="button" className="planning-generate-btn" onClick={generar}><Sparkles size={14} /> Generar propuesta</button>
-          {propuesta && <button type="button" className="strategy-review-btn" onClick={() => setDetalleAbierto(true)}><FileText size={16} /> Ver propuesta</button>}
+          <button type="button" className="planning-generate-btn" onClick={() => abrirAutogenerar({ alcance: 'hastaEgresar' })}><Sparkles size={14} /> Generar propuesta</button>
         </section>
         <section className="strategy-block"><h3>Cursos críticos</h3><p>Materias obligatorias pendientes que desbloquean más obligatorios posteriores.</p>
           <div className="critical-courses-grid">{criticos.map((curso) => <div className="critical-course-pill" key={curso.codigo}><b>{curso.codigo}</b><span>{curso.nombre}</span><small>Desbloquea {curso.desbloquea}</small></div>)}</div></section>
@@ -133,26 +88,7 @@ export function PlanificadorPanel() {
         {resumen && <FinancialTotalCard total={resumen.totalGeneral} />}
       </div>}
       <div className="strategy-shared-footer"><span>Créditos pendientes: <b>{formatCredits(creditosPendientes)}</b></span><span>Inversión estimada: <b>S/ {(resumen?.totalGeneral ?? 0).toFixed(2)}</b></span></div>
-      {error && !detalleAbierto && <p className="context-error" role="alert">{error}</p>}
     </aside>
     {avisoPago && <div className="nav-feedback-toast toast-exito" role="status">{avisoPago}</div>}
-    {detalleAbierto && propuesta && <PropuestaModal propuesta={propuesta} error={error}
-      onClose={() => setDetalleAbierto(false)}
-      onApply={() => { setDetalleAbierto(false); setConfirmar(true); }} />}
-    {confirmar && <div className="context-backdrop planning-confirm-backdrop"><section ref={confirmarRef} className="context-modal planning-confirm-modal" role="dialog" aria-modal="true" aria-label="Confirmar planificación"
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') { event.preventDefault(); cancelarConfirmacion(); }
-        if (event.key === 'Tab') {
-          const botones = confirmarRef.current?.querySelectorAll<HTMLButtonElement>('button');
-          const primero = botones?.[0];
-          const ultimo = botones?.[botones.length - 1];
-          if ((event.shiftKey && document.activeElement === primero) || (!event.shiftKey && document.activeElement === ultimo)) {
-            event.preventDefault();
-            (event.shiftKey ? ultimo : primero)?.focus();
-          }
-        }
-      }}>
-      <div className="context-modal-body"><AlertTriangle size={25} /><h2>Aplicar esta propuesta</h2><p>Se reorganizarán los obligatorios pendientes futuros y, si hace falta, un solo electivo al final, en ciclos regulares de hasta {LIMITE_HORAS_PLANIFICACION} horas. Los electivos alternativos quedarán en el banco. Se conservarán los cursos aprobados, los cursos en curso, los bloques cerrados y los veranos manuales válidos de obligatorios con sus prerrequisitos programados.</p><div className="confirm-actions"><button type="button" onClick={cancelarConfirmacion}>Cancelar</button><button type="button" className="context-save" onClick={() => void aplicar()}><Check size={15} /> Aplicar propuesta</button></div></div>
-    </section></div>}
   </div>;
 }
