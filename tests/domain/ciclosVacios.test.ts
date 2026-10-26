@@ -49,6 +49,10 @@ const generarYAplicar = async (store: Store, opciones: OpcionesAutogenerar = {})
   return propuesta;
 };
 
+const foto = (store: Store) => {
+  const { cursos, totalCiclos, ciclosExcluidos } = store.getState();
+  return structuredClone({ cursos, totalCiclos, ciclosExcluidos });
+};
 
 describe('Autogenerar varias veces no deja ciclos vacíos (Excel real)', () => {
   it('P1: un curso de un verano anterior ya no deja el Ciclo 10 vacío con el electivo solo en un Ciclo 11 nuevo', async () => {
@@ -81,5 +85,62 @@ describe('Autogenerar varias veces no deja ciclos vacíos (Excel real)', () => {
       sinHuecos(store);
       expect(store.getState().totalCiclos).toBe(12);
     }
+  });
+
+  it('P3: tres generaciones seguidas con las mismas opciones dan el mismo resultado', async () => {
+    for (const opciones of [{}, { maxHorasPorPeriodo: 20 }, { maxCuotaMensual: 800 }, { usarVeranos: true },
+      { maxCuotaMensual: 800, conservarUbicados: false }, { maxHorasPorPeriodo: 15, usarVeranos: true, conservarUbicados: false }]) {
+      const { store } = await crearStore();
+      const fotos = [];
+      for (let vez = 0; vez < 3; vez += 1) {
+        const propuesta = store.getState().previsualizarPlanificacionOptima(opciones);
+        if (vez === 0 || propuesta.totalPlanificados > 0) await store.getState().aplicarPlanificacionOptima(propuesta);
+        sinHuecos(store);
+        fotos.push(foto(store));
+      }
+      expect(fotos[1], JSON.stringify(opciones)).toEqual(fotos[0]);
+      expect(fotos[2], JSON.stringify(opciones)).toEqual(fotos[0]);
+    }
+  });
+
+  it('P3: con cualquier secuencia de límites no quedan ciclos vacíos entre ciclos con cursos', async () => {
+    const secuencia: OpcionesAutogenerar[] = [
+      { maxCuotaMensual: 800 }, { maxHorasPorPeriodo: 26, conservarUbicados: false }, { maxHorasPorPeriodo: 12, usarVeranos: true },
+      { maxHorasPorPeriodo: 20, conservarUbicados: false }, { maxCreditosPorPeriodo: 18, usarVeranos: true, conservarUbicados: false },
+      { maxHorasPorPeriodo: 10 }, {}, { conservarUbicados: false },
+    ];
+    for (const [ingreso, ciclo] of [['marzo', 7], ['agosto', 7], ['marzo', 6], ['agosto', 8]] as const) {
+      const { store } = await crearStore(ingreso, ciclo);
+      for (const opciones of secuencia) {
+        const propuesta = store.getState().previsualizarPlanificacionOptima(opciones);
+        if (!propuesta.totalPlanificados) continue;
+        await generarYAplicar(store, opciones);
+        sinHuecos(store);
+      }
+    }
+  });
+
+  it('P3: Deshacer deja la malla exactamente como estaba y quita los ciclos que agregó ese Aplicar', async () => {
+    const { store, memoria } = await crearStore();
+    const antes = foto(store);
+    const persistidosAntes = structuredClone([...memoria.cursosPersistidos.values()]);
+    const perfilAntes = structuredClone(await memoria.repos.profile.get());
+
+    await generarYAplicar(store, { maxCuotaMensual: 800 });
+    expect(store.getState().totalCiclos).toBe(12);
+    expect(await store.getState().deshacerPlanificacion()).toBe(true);
+    expect(foto(store)).toEqual(antes);
+    expect([...memoria.cursosPersistidos.values()]).toEqual(persistidosAntes);
+    expect(await memoria.repos.profile.get()).toEqual({ ...perfilAntes, ciclosExcluidos: [] });
+
+    // Con un ciclo retirado: Aplicar lo descarta si queda fuera de la malla y Deshacer lo devuelve.
+    await store.getState().agregarCiclo();
+    await store.getState().eliminarCiclo(11);
+    const conRetirado = foto(store);
+    expect(conRetirado.ciclosExcluidos).toEqual([11]);
+    await generarYAplicar(store, { usarVeranos: true });
+    expect(store.getState()).toMatchObject({ totalCiclos: 10, ciclosExcluidos: [] });
+    expect(await store.getState().deshacerPlanificacion()).toBe(true);
+    expect(foto(store)).toEqual(conRetirado);
   });
 });
