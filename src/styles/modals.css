@@ -636,6 +636,9 @@
 
 .planner-toast-undo { margin-top: 9px; padding: 5px 12px; border: 1px solid rgba(255,255,255,0.35); border-radius: 5px; background: transparent; color: var(--t-white); font-size: 0.7rem; font-weight: 750; cursor: pointer; }
 .planner-toast-undo:hover { background: rgba(255,255,255,0.12); }
+.planner-toast-acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.planner-toast-analizar { display: inline-flex; align-items: center; gap: 5px; margin-top: 9px; padding: 5px 12px; border: 0; border-radius: 5px; background: var(--t-white); color: #0f172a; font-size: 0.7rem; font-weight: 800; cursor: pointer; }
+.planner-toast-analizar:hover { background: rgba(255,255,255,0.88); }
 .jalado-modal h3 { margin: 14px 0 6px; color: #0f172a; font-size: 0.82rem; }
 .jalado-preview-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .jalado-preview-list li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 5px; background: #f1f5f9; font-size: 0.72rem; }

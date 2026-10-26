@@ -24,7 +24,7 @@ export const createPlanningSlice = (repos: AcademicRepositories): AcademicSlice<
     });
   },
 
-  aplicarPlanificacionOptima: async (resultado) => {
+  aplicarPlanificacionOptima: async (resultado, opciones = {}) => {
     const state = get();
     const actuales = state.cursos;
     if (resultado.cursos.length !== actuales.length ||
@@ -46,7 +46,7 @@ export const createPlanningSlice = (repos: AcademicRepositories): AcademicSlice<
     });
     set({ cursos, totalCiclos, ciclosExcluidos, cursosSeleccionadosParaMatricula: [], cursoAMover: null,
       planAnterior: { cursos: actuales, totalCiclos: state.totalCiclos, ciclosExcluidos: state.ciclosExcluidos },
-      notificacionMovimiento: notificacionPlanAplicado(resultado.advertenciasHoras, resultado.totalPlanificados) });
+      notificacionMovimiento: notificacionPlanAplicado(resultado.advertenciasHoras, resultado.totalPlanificados, opciones.ofrecerAnalisis) });
   },
 
   deshacerPlanificacion: async () => {

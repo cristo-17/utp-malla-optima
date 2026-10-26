@@ -83,6 +83,8 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
   let estado = estadoInicial(Boolean(dependencias.privacidadAceptada));
   let siguienteId = 1;
   let generacion = 0;
+  // "Analizar con el asistente" antes de aceptar el aviso de privacidad: el análisis sale al aceptarlo.
+  let analisisPendiente = false;
   const oyentes = new Set<() => void>();
 
   const actualizar = (cambios: Partial<EstadoAsistente>) => {
@@ -136,8 +138,19 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
     aceptarPrivacidad: () => {
       dependencias.alAceptarPrivacidad?.();
       actualizar({ privacidadAceptada: true });
+      if (analisisPendiente) {
+        analisisPendiente = false;
+        void enviar({ modo: 'analisis', texto: TEXTO_ANALISIS, foco: estado.foco });
+      }
     },
     analizar: () => enviar({ modo: 'analisis', texto: TEXTO_ANALISIS, foco: estado.foco }),
+    /** El análisis ya, o apenas se acepte el aviso de privacidad (toast "Analizar con el asistente"). */
+    pedirAnalisis: () => {
+      if (estado.privacidadAceptada) return enviar({ modo: 'analisis', texto: TEXTO_ANALISIS, foco: estado.foco });
+      analisisPendiente = true;
+      return Promise.resolve();
+    },
+    cancelarAnalisisPendiente: () => { analisisPendiente = false; },
     preguntar: (texto: string) => enviar({ modo: 'chat', texto, foco: estado.foco }),
     /** Quita la burbuja de error y repite la misma solicitud con el contexto recalculado. */
     reintentar: (idError: number) => {

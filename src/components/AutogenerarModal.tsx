@@ -109,7 +109,8 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
     setAplicando(true);
     setError('');
     try {
-      await store.aplicar(propuesta);
+      // Desde el chat, el análisis lo ofrece el mensaje de la app (D-056); si no, el toast.
+      await store.aplicar(propuesta, { ofrecerAnalisis: origen !== 'chat' });
       if (metodoElegido && metodoElegido !== store.metodoPago) store.setMetodoPago(metodoElegido);
       // Desde el chat, la app (no la IA) cuenta qué quedó en el próximo ciclo.
       const aviso = avisoDePropuesta(propuesta);

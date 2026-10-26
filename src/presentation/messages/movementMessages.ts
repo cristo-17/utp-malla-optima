@@ -97,8 +97,10 @@ export const notificacionJaladoRetirado = (
 export const notificacionPlanAplicado = (
   advertencias: { periodo: PeriodoAcademico; total: number; limite: number }[],
   totalPlanificados = 0,
+  analizarConAsistente = false,
 ): NotificacionMovimiento => ({
   tipo: 'PLAN_APLICADO', cursoNombre: 'Planificación automática', deshacerPlan: true,
+  ...(analizarConAsistente ? { analizarConAsistente } : {}),
   mensaje: [
     `Se aplicó la propuesta: ${pluralizar(totalPlanificados, '1 curso ubicado', `${totalPlanificados} cursos ubicados`)}.`,
     ...(advertencias.length ? [`Carga recomendada superada: ${advertencias.map((aviso) => `${aviso.periodo.etiqueta}: ${aviso.total} h (recomendadas: ${aviso.limite} h)`).join('; ')}.`] : []),

@@ -136,6 +136,21 @@ export function Asistente({ onSubirExcel }: { onSubirExcel?: () => void } = {}) 
     else setAbierto(false);
   }, []);
 
+  // "Analizar con el asistente" (toast de Autogenerar): abre el chat y lanza el análisis con el presupuesto compartido.
+  // Sin el aviso de privacidad aceptado, el análisis sale al aceptarlo (controlador.pedirAnalisis).
+  const abiertoRef = useRef(abierto);
+  const abrirRef = useRef(abrir);
+  useEffect(() => {
+    abiertoRef.current = abierto;
+    abrirRef.current = abrir;
+  });
+  useEffect(() => useAcademicStore.subscribe((state) => {
+    if (!state.analisisPedido) return;
+    state.atenderAnalisisIA();
+    if (!abiertoRef.current) abrirRef.current();
+    void controlador.pedirAnalisis();
+  }), [controlador]);
+
   useEffect(() => {
     if (!abierto) return;
     const alVolver = () => setAbierto(false);
@@ -215,7 +230,7 @@ export function Asistente({ onSubirExcel }: { onSubirExcel?: () => void } = {}) 
         onCerrar={cerrar}
         onNuevaConversacion={controlador.nuevaConversacion}
         onAceptarPrivacidad={controlador.aceptarPrivacidad}
-        onCancelarPrivacidad={cerrar}
+        onCancelarPrivacidad={() => { controlador.cancelarAnalisisPendiente(); cerrar(); }}
         onAnalizar={() => void controlador.analizar()}
         onPresupuesto={setPresupuestoMensual}
         onPreguntar={(texto) => void controlador.preguntar(texto)}
