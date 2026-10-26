@@ -66,7 +66,7 @@ export interface AcademicStore {
   /** Aplica la propuesta y guarda el estado anterior para deshacerPlanificacion. */
   aplicarPlanificacionOptima: (resultado: ResultadoPlanificacionAutomatica) => Promise<void>;
   /** Malla y total de ciclos antes del último "Aplicar a mi malla"; null si no hay nada que deshacer. */
-  planAnterior: { cursos: Curso[]; totalCiclos: number } | null;
+  planAnterior: { cursos: Curso[]; totalCiclos: number; ciclosExcluidos: number[] } | null;
   /** Restaura exactamente el estado anterior al último plan aplicado. */
   deshacerPlanificacion: () => Promise<boolean>;
   autogenerar: EstadoAutogenerar | null;
