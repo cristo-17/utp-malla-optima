@@ -99,6 +99,17 @@ describe('fixtures de la evaluación (buildAIContext)', () => {
     await expect(comoJson(contexto)).toMatchFileSnapshot(destino(archivo));
   });
 
+  /** Meta de egreso (R): el Ciclo 9 se puede (34 h, o 28 h con el Verano 8); el Ciclo 8 no (cadena de prerrequisitos). */
+  it.each([
+    ['contexto-meta-9.json', 'Quiero terminar mi carrera en el ciclo 9, se puede?', true],
+    ['contexto-meta-8.json', '¿Puedo egresar en el ciclo 8?', false],
+  ])('%s: el mismo plan con "%s"', async (archivo, mensaje, sePuede) => {
+    const contexto = buildAIContext((await crearPlan1ConOctavo()).getState(), { presupuestoMensual: 900, limites: detectarLimites(mensaje) });
+    expect(contexto.propuestaConLimites).toBeNull();
+    expect(contexto.metaEgreso?.sePuede).toBe(sePuede);
+    await expect(comoJson(contexto)).toMatchFileSnapshot(destino(archivo));
+  });
+
   it('contexto-ciclo-vacio.json: Plan_de_Estudio_1 recién importado (Ciclo 8 vacío), con la ruta sugerida sin aplicar', async () => {
     const contexto = buildAIContext((await crearStore('Plan_de_Estudio_1.xlsx')).getState(), { presupuestoMensual: 900 });
     expect(contexto.proximoPeriodo).toBeNull();
