@@ -9,7 +9,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "evaluar": "node --import ./scripts/registrar-ts.mjs scripts/evaluar.ts"
+    "evaluar": "node --import ./scripts/registrar-ts.mjs scripts/evaluar.ts",
+    "reproducir": "node --import ./scripts/registrar-ts.mjs scripts/reproducir.ts"
   },
   "dependencies": {
     "zod": "^4.6.5"
