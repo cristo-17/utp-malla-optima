@@ -135,6 +135,31 @@ describe('prompt del sistema', () => {
     expect(construirMensajes({ modo: 'analisis', contexto, mensajes: historial })[3].content).toBe('En el Ciclo 11 .');
   });
 
+  it('N1: el CONTEXTO va una sola vez y todos los turnos del historial llegan en orden (conversación real del 502)', () => {
+    // "¿Estoy sobrecargado?" → "¿Qué electivo me conviene?" → "¿En qué ciclo meto el electivo?" → la misma otra vez.
+    const historial = [
+      { rol: 'user' as const, texto: '¿Estoy sobrecargado?' },
+      { rol: 'assistant' as const, texto: 'Tu Ciclo 8 tiene 25 h: estás en nivel de riesgo.' },
+      { rol: 'user' as const, texto: '¿Qué electivo me conviene?' },
+      { rol: 'assistant' as const, texto: 'CALIDAD DE SOFTWARE, de 3 créditos.' },
+      { rol: 'user' as const, texto: '¿En qué ciclo meto el electivo?' },
+      { rol: 'assistant' as const, texto: 'En el Ciclo 10.' },
+      { rol: 'user' as const, texto: '¿En qué ciclo meto el electivo?' },
+    ];
+    const mensajes = construirMensajes({ modo: 'chat', contexto, mensajes: historial });
+    const json = JSON.stringify(contexto);
+    expect(mensajes.filter((mensaje) => mensaje.content.startsWith('<<CONTEXTO_MALLAU>>'))).toHaveLength(1);
+    expect(mensajes.filter((mensaje) => mensaje.content.includes(json))).toHaveLength(1);
+    expect(mensajes.map((mensaje) => mensaje.role)).toEqual(['system', 'system', ...historial.map((mensaje) => mensaje.rol)]);
+    expect(mensajes.slice(2).map((mensaje) => mensaje.role === 'assistant' ? JSON.parse(mensaje.content).texto : mensaje.content))
+      .toEqual(historial.map((mensaje) => mensaje.texto));
+    // Ningún turno lleva el contexto ni el prompt: el payload no crece con cada turno más que el texto de ese turno.
+    for (const mensaje of mensajes.slice(2)) {
+      expect(mensaje.content).not.toContain('"catalogo"');
+      expect(mensaje.content).not.toContain('Eres el asesor académico IA de MallaU');
+    }
+  });
+
   it('el frontend nunca contiene el prompt del sistema', () => {
     const src = fileURLToPath(new URL('../../src', import.meta.url));
     const conPrompt = archivos(src).filter((ruta) => readFileSync(ruta, 'utf8').includes('Eres el asesor académico IA de MallaU'));
