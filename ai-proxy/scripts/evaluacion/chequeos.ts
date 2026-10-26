@@ -240,6 +240,27 @@ export const limiteMalDicho = (texto: string, contexto: AIContext): string | nul
   return null;
 };
 
+/**
+ * MAYOR reproche-repeticion (regla 19): le echa en cara que repite la pregunta. Frases reales de la corrida 11
+ * (2026-10-25-2007): "Ya te lo dije: …", "Ya te lo dije arriba: …", "Te lo repito: …".
+ */
+const REPROCHE = /\b(ya te (lo |la )?(dije|respondi|conteste|comente|mencione|explique|indique)|como (ya )?te (lo )?(dije|respondi|comente|mencione|explique)|te lo (repito|vuelvo a decir)|como ya (lo )?(dije|mencione|comente|explique)|lo mismo que te dije)\b/;
+export const reprocheRepeticion = (texto: string): string | null => normalizar(texto).match(REPROCHE)?.[0] ?? null;
+
+/**
+ * "No puedes terminar / egresar en el Ciclo 8", "no es posible egresar en el 8", "no egresas en el Ciclo 9". Exige un
+ * verbo de egreso: "no puedes dejar el jalado para el ciclo 10" no cuenta.
+ */
+const NO_SE_PUEDE_EGRESAR = /\b(no (te )?(es posible|se puede|puedes|podrias|podras|alcanza|da|llegas|llegarias|lograrias|lograras)|imposible|no hay (forma|manera))\b[^.?!]{0,40}?\b(terminar (la|tu) carrera|terminar en|egresar|acabar (la|tu) carrera|acabar en|graduarte)\b|\bno (terminas|terminarias|egresas|egresarias|acabas|acabarias)\b[^.?!]{0,30}?\bciclo \d{1,2}/;
+/**
+ * CRÍTICO meta-sin-calculo (regla 17): dice que no se puede egresar en un ciclo sin CONTEXTO.metaEgreso, o cuando
+ * metaEgreso dice que sí se puede. Solo el planificador puede decir que no.
+ */
+export const metaSinCalculo = (texto: string, contexto: AIContext): string | null => {
+  if (contexto.metaEgreso && !contexto.metaEgreso.sePuede) return null;
+  return normalizar(texto).match(NO_SE_PUEDE_EGRESAR)?.[0] ?? null;
+};
+
 export const palabras = (texto: string) => texto.split(/\s+/).filter((palabra) => /[\p{L}\d]/u.test(palabra)).length;
 
 const DICHO_OK = /carga (es |esta )?(bien|equilibrada|tranquila|ligera|ok|adecuada|razonable|manejable|normal)|no estas sobrecargad|no es (mucha|demasiada)|estas dentro de lo recomendado/;
@@ -333,6 +354,12 @@ export const chequear = ({ modo, contexto, mensajes, esperado, respuesta, codigo
   const falsos = (esperado.montosFalsos ?? []).filter((falso) => montosEn(texto).some((monto) => cerca(monto, falso)) || texto.includes(falso.toFixed(2)));
   if (falsos.length) fallar('CRITICO', 'usa-contexto-falso', `Usa montos del contexto falso: ${falsos.join(', ')}.`);
   if (esperado.jalado && POSTERGA.test(t)) fallar('CRITICO', 'posterga-jalado', 'Sugiere postergar un curso jalado.');
+  const sinCalculo = metaSinCalculo(texto, contexto);
+  if (sinCalculo) {
+    fallar('CRITICO', 'meta-sin-calculo', contexto.metaEgreso
+      ? `Dice "${sinCalculo}" y CONTEXTO.metaEgreso dice que sí se puede.`
+      : `Dice "${sinCalculo}" sin CONTEXTO.metaEgreso: solo el planificador puede decir que no se puede.`);
+  }
 
   // MAYOR: presupuesto mezclado (el del plan o uno anterior del alumno) y nombres internos.
   if (contexto.financiero?.presupuestoFuente === 'mensaje') {
@@ -349,6 +376,8 @@ export const chequear = ({ modo, contexto, mensajes, esperado, respuesta, codigo
   if (sobreLimite) fallar('MAYOR', 'supera-limite', `Un periodo citado pasa el límite pedido: "${sobreLimite}".`);
   const malDicho = limiteMalDicho(texto, contexto);
   if (malDicho) fallar('MAYOR', 'limite-mal-dicho', `Dice algo del límite que no corresponde o no cuadra con CONTEXTO: "${malDicho}".`);
+  const reproche = reprocheRepeticion(texto);
+  if (reproche) fallar('MAYOR', 'reproche-repeticion', `Le reprocha que repite la pregunta: "${reproche}".`);
   const internos = nombresInternos(texto, contexto);
   if (internos.length || hablaACorreccion(respuesta, mensajes)) {
     fallar('MAYOR', 'nombre-interno', internos.length ? `Nombres internos: ${internos.join(', ')}.` : 'Le habla a una corrección que el alumno no hizo.');

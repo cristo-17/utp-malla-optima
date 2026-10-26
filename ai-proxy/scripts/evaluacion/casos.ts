@@ -324,10 +324,11 @@ export const CASOS: Caso[] = [
     mensajes: ['¿Estoy sobrecargado?', '¿Qué electivo me conviene?', '¿En qué ciclo meto el electivo?', '¿En qué ciclo meto el electivo?'],
     esperado: {},
   },
+  // Regla 19: la pregunta repetida se responde completa (sin "ya te lo dije"); valen las cuotas mensuales o los totales.
   {
     id: 'conversacion-repetida', grupo: 'Conversación', fixture: 'contexto-plan1', modo: 'chat', encadenada: true,
     mensajes: ['¿cuánto pago el próximo ciclo?', '¿cuánto pago el próximo ciclo?', '¿cuánto pago el próximo ciclo?'],
-    esperado: { montos: [5055.15, 4822.3, 4938.7, 4705.86] },
+    esperado: { montos: [931.43, 884.86, 908.14, 5055.15, 4822.3, 4938.7, 4705.86] },
   },
   {
     id: 'conversacion-cambio-tema', grupo: 'Conversación', fixture: 'contexto-plan1', modo: 'chat', encadenada: true,

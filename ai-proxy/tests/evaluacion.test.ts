@@ -54,6 +54,36 @@ describe('evaluación - casos', () => {
   });
 });
 
+describe('evaluación - chequeos del feedback v2', () => {
+  it('MAYOR reproche-repeticion con las frases reales de la corrida 11 ("Ya te lo dije:", "Te lo repito:")', () => {
+    for (const texto of [
+      'Ya te lo dije: sin descuento S/ 931.43 al mes.',
+      'Ya te lo dije arriba: sin descuento S/ 931.43 al mes.',
+      'Te lo repito: Ciclo 8, S/ 931.43 al mes.',
+      'Como te dije, son S/ 931.43 al mes.',
+      'Ya te respondí: S/ 931.43 al mes.',
+    ]) expect(fallosDe(texto), texto).toEqual(['MAYOR:reproche-repeticion']);
+    // Responder de nuevo, completo y sin reproche, pasa.
+    expect(fallosDe('En tu Ciclo 8 pagas S/ 931.43 al mes sin descuento, o S/ 884.86 con pronto pago de Interbank o Scotiabank.')).toEqual([]);
+    expect(fallosDe('Si lo jalaras de nuevo, igual tendría que ir en el Ciclo 8.')).toEqual([]);
+  });
+
+  it('CRÍTICO meta-sin-calculo: "no se puede egresar" sin metaEgreso (o cuando dice que sí se puede); con el motivo calculado, pasa', () => {
+    expect(fallosDe('No, no puedes terminar tu carrera en el Ciclo 9.')).toEqual(['CRITICO:meta-sin-calculo']);
+    expect(fallosDe('Es imposible egresar en el Ciclo 9 con tu malla.')).toEqual(['CRITICO:meta-sin-calculo']);
+    expect(fallosDe('No egresas en el Ciclo 9.')).toEqual(['CRITICO:meta-sin-calculo']);
+    // Con la meta calculada que sí se puede, decir que no también es CRÍTICO.
+    const meta9 = leerFixture('contexto-meta-9');
+    expect(fallosDe('No puedes terminar en el Ciclo 9.', {}, ['hola'], meta9)).toContain('CRITICO:meta-sin-calculo');
+    // Con metaEgreso.sePuede false, el "no" sale del planificador.
+    const meta8 = leerFixture('contexto-meta-8');
+    expect(fallosDe('No puedes egresar en el Ciclo 8: lo más cercano es el Ciclo 9.', {}, ['hola'], meta8)).toEqual([]);
+    // Sin un verbo de egreso no es una meta: "no puedes dejar el jalado para el ciclo 10".
+    expect(fallosDe('No, no puedes dejarlo para el Ciclo 10.')).not.toContain('CRITICO:meta-sin-calculo');
+    expect(fallosDe('Para probarlo, usa Autogenerar con tu máximo de horas.')).toEqual([]);
+  });
+});
+
 describe('evaluación - chequeos', () => {
   it('montos: todo "S/ x" debe estar en el contexto (±0.01); el del alumno, solo con aplicarMontoDelAlumno', () => {
     expect(montosEn('S/ 4,705.86, S/4705.86 y S/. 900')).toEqual([4705.86, 4705.86, 900]);
