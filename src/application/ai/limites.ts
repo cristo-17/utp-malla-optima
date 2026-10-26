@@ -21,6 +21,13 @@ export interface LimitesDelMensaje {
   ciclos: number[];
   /** Nombra un solo ciclo ("el ciclo 8", "el próximo ciclo"): la propuesta se limita a ese periodo. */
   unSoloCiclo: boolean;
+  /**
+   * Meta de egreso: "terminar / egresar / acabar en el ciclo N" o "para el ciclo N" (ciclo N), "en N ciclos" (N ciclos
+   * después del actual). El ciclo de la meta no cuenta en `ciclos`.
+   */
+  metaEgreso: { ciclo: number } | { enCiclos: number } | null;
+  /** Pide un plan con límites (horas, créditos, cuota, un ciclo más o veranos): el contexto trae propuestaConLimites. */
+  pidePropuesta: boolean;
 }
 
 const sinTildes = (texto: string) => texto.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
@@ -40,10 +47,27 @@ const PIDE_PLAN = /\b(arma|armar|armame|armes|arme|ordena|ordenar|ordenes|reorde
 const RANGO_CICLOS = /\bciclos?\s+(\d{1,2})\s*(?:al|a|hasta(?:\s+el)?|-)\s*(?:ciclo\s+)?(\d{1,2})\b/;
 const CICLO_SUELTO = /\bciclo\s+(\d{1,2})\b/g;
 const PROXIMO_CICLO = /\b(proximo|siguiente)\s+(ciclo|semestre|periodo)\b/;
+/** Terminar, egresar, acabar o graduarse, y lo que sigue hasta la meta ("terminar mi carrera en el ciclo 9"). */
+const VERBO_META = String.raw`\b(?:terminar|termino|termine|terminaria|terminare|egresar|egreso|egrese|egresaria|egresare|acabar|acabo|acabe|acabaria|acabare|graduarme|graduarte|graduo|graduaria)\b[^.?!\d]{0,40}?`;
+const META_CICLO = new RegExp(String.raw`${VERBO_META}\b(?:en|para|hasta)\s+el\s+(?:ciclo|semestre)\s+(\d{1,2})\b`);
+const NUMEROS_EN_LETRAS: Record<string, number> = { un: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8 };
+const META_EN_CICLOS = new RegExp(String.raw`${VERBO_META}\ben\s+(\d{1,2}|${Object.keys(NUMEROS_EN_LETRAS).join('|')})\s+(?:ciclos?|semestres?)\b`);
 
 const aNumero = (texto: string) => Number(texto.replace(',', '.'));
 
-/** Los límites del mensaje, o null si no pide ninguno. Un mensaje con JSON o con la palabra CONTEXTO no cuenta. */
+/** La meta de egreso del mensaje (sin tildes) y el texto de la meta, para no contarlo como ciclo nombrado. */
+const metaDelMensaje = (t: string): { meta: LimitesDelMensaje['metaEgreso']; texto: string } => {
+  const ciclo = t.match(META_CICLO);
+  if (ciclo) return { meta: { ciclo: Number(ciclo[1]) }, texto: ciclo[0] };
+  const enCiclos = t.match(META_EN_CICLOS);
+  if (enCiclos) return { meta: { enCiclos: NUMEROS_EN_LETRAS[enCiclos[1]] ?? Number(enCiclos[1]) }, texto: enCiclos[0] };
+  return { meta: null, texto: '' };
+};
+
+/**
+ * Los límites del mensaje, o null si no pide ninguno ni una meta de egreso. Un mensaje con JSON o con la palabra
+ * CONTEXTO no cuenta.
+ */
 export const detectarLimites = (mensaje: string): LimitesDelMensaje | null => {
   if (/[{}]|contexto/i.test(mensaje)) return null;
   const t = sinTildes(mensaje);
@@ -53,11 +77,13 @@ export const detectarLimites = (mensaje: string): LimitesDelMensaje | null => {
   const maxCuotaMensual = pidePlan ? montoDelMensaje(mensaje) : null;
   const agregarCiclo = AGREGAR_CICLO.test(t);
   const usarVeranos = SIN_VERANO.test(t) ? false : VERANO.test(t) ? true : null;
+  const { meta: metaEgreso, texto: textoMeta } = metaDelMensaje(t);
+  const sinMeta = textoMeta ? t.replace(textoMeta, ' ') : t;
 
-  const rango = t.match(RANGO_CICLOS);
+  const rango = sinMeta.match(RANGO_CICLOS);
   const ciclos = rango
     ? Array.from({ length: Math.max(0, Number(rango[2]) - Number(rango[1]) + 1) }, (_, indice) => Number(rango[1]) + indice)
-    : [...new Set([...t.matchAll(CICLO_SUELTO)].map((m) => Number(m[1])))];
+    : [...new Set([...sinMeta.matchAll(CICLO_SUELTO)].map((m) => Number(m[1])))];
   const unSoloCiclo = !agregarCiclo && (ciclos.length === 1 || (!ciclos.length && PROXIMO_CICLO.test(t)));
 
   const limites: LimitesDelMensaje = {
@@ -70,10 +96,14 @@ export const detectarLimites = (mensaje: string): LimitesDelMensaje | null => {
     usarVeranos,
     ciclos,
     unSoloCiclo,
+    metaEgreso,
+    pidePropuesta: false,
   };
-  const pideAlgo = limites.maxHorasPorPeriodo !== null || limites.maxCreditosPorPeriodo !== null ||
-    limites.maxCuotaMensual !== null || agregarCiclo || (usarVeranos !== null && pidePlan) || (usarVeranos === true && LLEVA_VERANO.test(t));
-  return pideAlgo ? limites : null;
+  // Con una meta de egreso, los veranos son parte de la meta ("terminar en el ciclo 9 con veranos"), no otro pedido.
+  const pideVeranos = (usarVeranos !== null && pidePlan) || (usarVeranos === true && LLEVA_VERANO.test(t));
+  limites.pidePropuesta = limites.maxHorasPorPeriodo !== null || limites.maxCreditosPorPeriodo !== null ||
+    limites.maxCuotaMensual !== null || agregarCiclo || (pideVeranos && !metaEgreso);
+  return limites.pidePropuesta || metaEgreso ? limites : null;
 };
 
 /**

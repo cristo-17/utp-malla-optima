@@ -409,7 +409,7 @@ const repartirEnUnCicloMas = (entrada: GenerateOptimalPlanInput, base: Propuesta
 const propuestaConLimitesDe = (
   estado: EstadoContextoIA, limites: LimitesDelMensaje | null | undefined, servicio?: FinancialPlanningService,
 ): AIPropuestaConLimites | null => {
-  if (!limites) return null;
+  if (!limites?.pidePropuesta) return null;
   const proximo = (estado.cicloActual ?? 0) + 1;
   const alcance = limites.unSoloCiclo && (!limites.ciclos.length || limites.ciclos[0] === proximo) ? 'proximoPeriodo' : 'hastaEgresar';
   const entrada: GenerateOptimalPlanInput = {
