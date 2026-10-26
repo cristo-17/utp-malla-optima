@@ -15,8 +15,10 @@ import { FinancialPlanningService } from '../../financial/services/FinancialPlan
 import { UniversityFinancialRulesProvider } from '../../financial/rules/UniversityFinancialRulesProvider';
 import type { MotivoNoPlanificado } from '../../domain/services/automaticPlanningService';
 import { generateOptimalPlanUseCase, type GenerateOptimalPlanInput, type PropuestaPlan } from '../usecases/generateOptimalPlanUseCase';
+import { metaEgresoUseCase } from '../usecases/metaEgresoUseCase';
 import type {
-  AICarga, AIContext, AICursoPlanificado, AIDerivados, AIEscenarioPeriodo, AIFoco, AIFocoContexto, AIPropuestaConLimites, AIWhatIf,
+  AICarga, AIContext, AICursoPlanificado, AIDerivados, AIEscenarioPeriodo, AIFoco, AIFocoContexto, AIMetaEgreso, AIPropuestaConLimites,
+  AIWhatIf,
 } from './contracts';
 import type { LimitesDelMensaje } from './limites';
 import { pagoUnicoDe, positivo, presupuestoPorEscenario, r2 } from './presupuesto';
@@ -401,6 +403,70 @@ const repartirEnUnCicloMas = (entrada: GenerateOptimalPlanInput, base: Propuesta
   return mejor;
 };
 
+/** Cada periodo de una propuesta como lo ve el asistente: cursos, horas, créditos y la cuota con el método elegido. */
+const periodosParaContexto = (periodos: PropuestaPlan['periodos'], metodoPago: string): AIPropuestaConLimites['periodos'] =>
+  periodos.map(({ periodo, cursos, horas, creditos, costos }) => {
+    const cuotas = costos?.cuotas ?? [];
+    return {
+      periodoId: periodo.id,
+      etiqueta: nombrePeriodoCorto(periodo),
+      cursos: cursos.map((curso) => curso.codigo),
+      numeroCursos: cursos.length,
+      horas: r2(horas),
+      creditos: r2(creditos),
+      cuotaMensual: (cuotas.find((cuota) => cuota.metodo === metodoPago) ?? cuotas[0])?.cuotaMensual ?? null,
+      pagoUnicoAlInicio: costos?.pagoUnico?.pensionAlInicio ?? null,
+    };
+  });
+
+/**
+ * CONTEXTO.metaEgreso: "¿puedo terminar en el Ciclo N?" con el mismo planificador (metaEgresoUseCase). "En N ciclos"
+ * es N ciclos después del actual. Sin ciclo actual no hay meta.
+ */
+const metaEgresoDe = (
+  estado: EstadoContextoIA, limites: LimitesDelMensaje | null | undefined, servicio?: FinancialPlanningService,
+): AIMetaEgreso | null => {
+  const meta = limites?.metaEgreso;
+  if (!meta) return null;
+  const cicloMeta = 'ciclo' in meta ? meta.ciclo : estado.cicloActual ? estado.cicloActual + meta.enCiclos : null;
+  if (!cicloMeta) return null;
+  const resultado = metaEgresoUseCase({
+    cursos: estado.cursos, totalCiclos: estado.totalCiclos, ciclosExcluidos: estado.ciclosExcluidos,
+    cicloActual: estado.cicloActual, periodoIngreso: estado.periodoIngreso,
+    tarifario: estado.tarifario, disciplina: estado.disciplinaActiva, metodoPago: estado.metodoPago, servicioFinanciero: servicio,
+  }, cicloMeta, limites.usarVeranos !== false);
+  const { elegida, conVeranos, motivo } = resultado;
+  const propuesta = elegida?.propuesta;
+  const periodos = propuesta ? periodosParaContexto(propuesta.periodos, estado.metodoPago) : [];
+  const recomendadas = ACADEMIC_LIMITS.horasRecomendadasPeriodo;
+  return {
+    cicloMeta,
+    sePuede: resultado.sePuede,
+    horasMaximasNecesarias: elegida?.horasMaximasNecesarias ?? null,
+    usaVeranos: Boolean(propuesta?.veranosUsados.length),
+    veranosUsados: propuesta?.veranosUsados ?? [],
+    periodos,
+    costoTotalHastaEgresar: propuesta?.costoTotalHastaEgresar ?? null,
+    cicloEgreso: propuesta?.cicloEgreso ?? null,
+    horasRecomendadas: recomendadas,
+    periodosCargaPesada: periodos.filter((periodo) => periodo.horas > recomendadas).map((periodo) => periodo.periodoId),
+    // Solo como otra opción de una meta que ya se logra sin veranos.
+    conVeranos: conVeranos && elegida !== conVeranos ? {
+      horasMaximasNecesarias: conVeranos.horasMaximasNecesarias,
+      veranosUsados: conVeranos.propuesta.veranosUsados,
+      horasPorPeriodo: conVeranos.propuesta.periodos.map(({ periodo, horas }) => ({ periodoId: periodo.id, horas: r2(horas) })),
+      costoTotalHastaEgresar: conVeranos.propuesta.costoTotalHastaEgresar,
+    } : null,
+    motivo: !motivo ? null : motivo.tipo === 'CADENA_PRERREQUISITOS'
+      ? { tipo: 'cadenaPrerrequisitos', cursos: motivo.cadena.map((curso) => curso.codigo),
+        periodosNecesarios: motivo.periodosNecesarios, periodosDisponibles: motivo.periodosDisponibles }
+      : { tipo: 'topeCreditos', creditosPendientes: r2(motivo.creditosPendientes), periodosDisponibles: motivo.periodosDisponibles,
+        creditosMaximosPorCiclo: motivo.creditosMaximosPorCiclo, creditosMaximosVerano: motivo.creditosMaximosVerano },
+    cicloMasCercano: resultado.cicloMasCercano,
+    aplicadaEnMalla: false,
+  };
+};
+
 /**
  * CONTEXTO.propuestaConLimites: el planificador (el mismo de Autogenerar) con los límites del mensaje. Un solo ciclo
  * nombrado, si es el próximo, arma solo ese periodo; si no, hasta egresar. Reordena lo ubicado: el alumno pidió
@@ -424,6 +490,7 @@ const propuestaConLimitesDe = (
   const propuesta = limites.agregarCiclo ? repartirEnUnCicloMas(entrada, base) : base;
   const periodos = alcance === 'proximoPeriodo'
     ? propuesta.periodos.filter((item) => item.periodo.id === propuesta.periodoInicio.id) : propuesta.periodos;
+  const periodosDeLaPropuesta = periodosParaContexto(periodos, estado.metodoPago);
   return {
     limites: {
       maxHorasPorPeriodo: limites.maxHorasPorPeriodo,
@@ -439,19 +506,7 @@ const propuestaConLimitesDe = (
       agregarCiclo: limites.agregarCiclo,
       alcance,
     },
-    periodos: periodos.map(({ periodo, cursos, horas, creditos, costos }) => {
-      const cuotas = costos?.cuotas ?? [];
-      return {
-        periodoId: periodo.id,
-        etiqueta: nombrePeriodoCorto(periodo),
-        cursos: cursos.map((curso) => curso.codigo),
-        numeroCursos: cursos.length,
-        horas: r2(horas),
-        creditos: r2(creditos),
-        cuotaMensual: (cuotas.find((cuota) => cuota.metodo === estado.metodoPago) ?? cuotas[0])?.cuotaMensual ?? null,
-        pagoUnicoAlInicio: costos?.pagoUnico?.pensionAlInicio ?? null,
-      };
-    }),
+    periodos: periodosDeLaPropuesta,
     ciclosAgregados: propuesta.ciclosAgregados,
     veranosUsados: propuesta.veranosUsados,
     cicloEgreso: propuesta.cicloEgreso,
@@ -631,6 +686,7 @@ export const buildAIContext = (estado: EstadoContextoIA, opciones: OpcionesConte
         : [],
     },
     propuestaConLimites: propuestaConLimitesDe(estado, opciones.limites, entorno?.servicio),
+    metaEgreso: metaEgresoDe(estado, opciones.limites, entorno?.servicio),
     descuentos: descuentosDe(tarifario, disciplinaActiva, topeEscala),
   };
 };

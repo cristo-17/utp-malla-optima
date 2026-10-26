@@ -3,7 +3,7 @@ import {
   type AIAnalisisResponse, type AIContext, type AIErrorCodigo, type AIFoco, type AIMensaje, type AIRequest,
 } from '../../application/ai/contracts';
 import type { AIClient } from '../../infrastructure/ai/HttpAIClient';
-import { opcionesDePropuesta, type OpcionesPropuesta } from '../../application/ai/limites';
+import { opcionesDeMeta, opcionesDePropuesta, type OpcionesPropuesta } from '../../application/ai/limites';
 import { focoParaEnviar, mismoFoco, type FocoUI } from './asistenteLogica';
 
 export interface Solicitud {
@@ -117,6 +117,9 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
     if (generacionEnvio !== generacion) return;
 
     const id = siguienteId++;
+    // "Aplicar a mi malla" bajo la respuesta: la propuesta con límites o, si no hay, la meta de egreso que se logra.
+    const propuesta = contexto.propuestaConLimites ? opcionesDePropuesta(contexto.propuestaConLimites)
+      : contexto.metaEgreso ? opcionesDeMeta(contexto.metaEgreso) : null;
     const respuesta: MensajeChat = !resultado.ok
       ? { id, rol: 'assistant', tipo: 'error', error: resultado.error, mensaje: resultado.mensaje, reintento: { ...solicitud, texto } }
       : 'secciones' in resultado.respuesta
@@ -124,7 +127,7 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
         : {
           id, rol: 'assistant', tipo: 'texto', texto: resultado.respuesta.texto, cursos: resultado.respuesta.cursos,
           preguntas: resultado.respuesta.preguntasSugeridas,
-          ...(contexto.propuestaConLimites ? { propuesta: opcionesDePropuesta(contexto.propuestaConLimites) } : {}),
+          ...(propuesta ? { propuesta } : {}),
         };
     actualizar({ mensajes: [...estado.mensajes, respuesta], enviando: false });
   };

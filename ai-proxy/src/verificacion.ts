@@ -216,6 +216,9 @@ const fuentesPorPeriodo = (contexto: AIContext) => {
   // Las horas de cada periodo de una alternativa también son de la propuesta.
   contexto.propuestaConLimites?.alternativas.forEach((alternativa) =>
     alternativa.horasPorPeriodo.forEach(({ periodoId, horas }) => agregar(periodoId, { horas })));
+  // La meta de egreso: su plan y las horas de cada periodo de la opción con veranos.
+  contexto.metaEgreso?.periodos.forEach((periodo) => agregar(periodo.periodoId, periodo));
+  contexto.metaEgreso?.conVeranos?.horasPorPeriodo.forEach(({ periodoId, horas }) => agregar(periodoId, { horas }));
   contexto.rutaSugerida.propuesta.forEach((periodo) => agregar(periodo.periodoId, periodo));
   contexto.periodosPlanificados.forEach((periodo) => agregar(periodo.id, periodo));
   // Del próximo periodo, además: sus restas ya calculadas (sobre el tope, sin cada curso) y la carga.
@@ -250,13 +253,15 @@ const periodosDeCursos = (contexto: AIContext, fuentes: Map<string, FuentePeriod
 
 /** Topes y totales que se pueden citar junto a cualquier periodo ("el tope de 22 h", "tu límite de 20 h"). */
 const numerosGenerales = (contexto: AIContext) => {
-  const { limites, carga, derivados, propuestaConLimites, descuentos, perfil } = contexto;
+  const { limites, carga, derivados, propuestaConLimites, metaEgreso, descuentos, perfil } = contexto;
   const horas = [limites.horasMaximasPlanificacion, limites.horasRecomendadasPeriodo, limites.topeEscalaPension, carga.topeEscala,
     carga.limiteRecomendado, derivados.horas.topeEscala, derivados.horas.recomendadas, descuentos?.horasSinRecargo,
-    propuestaConLimites?.limites.maxHorasPorPeriodo, propuestaConLimites?.limites.horasAplicadas, propuestaConLimites?.limites.horasPorCuota];
-  const creditos = [limites.creditosMaximosVerano, limites.creditosMinimosElectivos, propuestaConLimites?.limites.maxCreditosPorPeriodo,
+    propuestaConLimites?.limites.maxHorasPorPeriodo, propuestaConLimites?.limites.horasAplicadas, propuestaConLimites?.limites.horasPorCuota,
+    metaEgreso?.horasMaximasNecesarias, metaEgreso?.horasRecomendadas, metaEgreso?.conVeranos?.horasMaximasNecesarias];
+  const creditos = [limites.creditosMaximosVerano, limites.creditosMaximos, limites.creditosMinimosElectivos, propuestaConLimites?.limites.maxCreditosPorPeriodo,
     propuestaConLimites?.limites.creditosAplicados, ...numerosDe(derivados.creditos), derivados.creditosElectivosFaltantes,
-    ...numerosDe(perfil.creditos), ...numerosDe(perfil.electivos)];
+    ...numerosDe(perfil.creditos), ...numerosDe(perfil.electivos),
+    ...(metaEgreso?.motivo?.tipo === 'topeCreditos' ? numerosDe(metaEgreso.motivo) : [])];
   const definidos = (valores: (number | null | undefined)[]) => valores.filter((valor): valor is number => typeof valor === 'number');
   return { horas: definidos(horas), creditos: definidos(creditos) };
 };

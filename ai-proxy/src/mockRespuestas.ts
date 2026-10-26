@@ -452,6 +452,32 @@ const respuestaPropuesta = (contexto: AIContext): AIChatResponse | null => {
   };
 };
 
+/** Regla 17 con la meta de egreso: si se puede, con cuántas horas, veranos, el costo total y el botón; si no, el motivo. */
+const respuestaMeta = (contexto: AIContext): AIChatResponse | null => {
+  const meta = contexto.metaEgreso;
+  if (!meta) return null;
+  const preguntasSugeridas = ['¿Estoy sobrecargado?', '¿Me alcanza mi presupuesto?'];
+  if (!meta.sePuede || meta.horasMaximasNecesarias === null) {
+    const motivo = meta.motivo?.tipo === 'cadenaPrerrequisitos'
+      ? `la cadena de prerrequisitos de ${listar(meta.motivo.cursos.map((codigo) => nombreDe(contexto, codigo)))} necesita ${meta.motivo.periodosNecesarios} periodos seguidos y hasta el Ciclo ${meta.cicloMeta} hay ${meta.motivo.periodosDisponibles}`
+      : meta.motivo ? `tus ${meta.motivo.creditosPendientes} créditos pendientes no entran con el tope de ${meta.motivo.creditosMaximosPorCiclo} créditos por ciclo` : 'no entra con los límites de la UTP';
+    return {
+      texto: `En el Ciclo ${meta.cicloMeta} no llegas: ${motivo}.` +
+        (meta.cicloMasCercano !== null ? ` Lo más cercano es egresar en el Ciclo ${meta.cicloMasCercano}; pruébalo con Autogenerar.` : ''),
+      cursos: [], preguntasSugeridas,
+    };
+  }
+  const veranos = meta.veranosUsados.length ? ` usando el ${listar(meta.veranosUsados.map(periodo))}` : ' sin veranos';
+  const pesada = meta.periodosCargaPesada.length ? ` Ojo: pasa de ${horas(meta.horasRecomendadas)} en ${listar(meta.periodosCargaPesada.map(periodo))}, es una carga pesada.` : '';
+  const otra = meta.conVeranos ? ` Con el ${listar(meta.conVeranos.veranosUsados.map(periodo))} bastan ${horas(meta.conVeranos.horasMaximasNecesarias)} por periodo.` : '';
+  return {
+    texto: `Sí se puede terminar en el Ciclo ${meta.cicloMeta}${veranos}, con hasta ${horas(meta.horasMaximasNecesarias)} por periodo` +
+      `${meta.costoTotalHastaEgresar !== null ? ` y ${soles(meta.costoTotalHastaEgresar)} en total hasta egresar` : ''}.${pesada}${otra}\n` +
+      'Es una propuesta: si te convence, aplícala con el botón «Aplicar a mi malla».',
+    cursos: [], preguntasSugeridas,
+  };
+};
+
 /** Regla 16: con el próximo periodo vacío, la ruta es una propuesta del planificador y se arma con Autogenerar. */
 const respuestaCicloVacio = (contexto: AIContext): AIChatResponse | null => {
   const ruta = contexto.rutaSugerida;
@@ -490,7 +516,7 @@ export const mockChat = (contexto: AIContext, pregunta: string): AIChatResponse 
   const tema = detectarTema(pregunta);
   if (tema === 'bienestar') return respuestaBienestar();
   if (tema === 'identidad') return respuestaIdentidad();
-  const conPropuesta = respuestaPropuesta(contexto);
+  const conPropuesta = respuestaPropuesta(contexto) ?? respuestaMeta(contexto);
   if (conPropuesta) return conPropuesta;
   if (tema === 'guia' && !/descuento/.test(normalizar(pregunta))) return respuestaGuia();
   if (/descuento/.test(normalizar(pregunta)) && !/\d/.test(pregunta)) {

@@ -1,4 +1,4 @@
-import type { AIPropuestaConLimites } from './contracts';
+import type { AIMetaEgreso, AIPropuestaConLimites } from './contracts';
 import { montoDelMensaje } from './presupuesto';
 
 /**
@@ -120,4 +120,23 @@ export const opcionesDePropuesta = ({ limites }: AIPropuestaConLimites) => ({
   horasEstricto: limites.horasEstricto,
   creditosEstricto: limites.creditosEstricto,
 });
-export type OpcionesPropuesta = ReturnType<typeof opcionesDePropuesta>;
+/**
+ * Opciones de Autogenerar para la meta de egreso: las horas mínimas que la logran, con o sin veranos, sin presupuesto
+ * (null: el modal no usa el del alumno) y con la meta, que decide qué veranos se habilitan. null si no se puede.
+ */
+export const opcionesDeMeta = (meta: AIMetaEgreso): OpcionesPropuesta | null => meta.sePuede && meta.horasMaximasNecesarias !== null ? {
+  alcance: 'hastaEgresar',
+  maxHorasPorPeriodo: meta.horasMaximasNecesarias,
+  maxCreditosPorPeriodo: null,
+  maxCuotaMensual: null,
+  usarVeranos: meta.usaVeranos,
+  conservarUbicados: false,
+  horasEstricto: false,
+  creditosEstricto: false,
+  cicloMeta: meta.cicloMeta,
+} : null;
+
+export type OpcionesPropuesta = Omit<ReturnType<typeof opcionesDePropuesta>, 'alcance'> & {
+  alcance: 'proximoPeriodo' | 'hastaEgresar';
+  cicloMeta?: number | null;
+};

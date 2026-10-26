@@ -67,6 +67,7 @@ export const crearContextoMinimo = (cambios: Partial<AIContext> = {}): AIContext
     planificadosBloqueadosPorJalado: [],
   },
   propuestaConLimites: null,
+  metaEgreso: null,
   descuentos: {
     metodosPago: [
       { id: 'sin_descuento', nombre: 'Sin descuento', descuentoPorcentaje: 0, requiereProntoPago: false },
