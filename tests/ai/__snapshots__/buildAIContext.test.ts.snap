@@ -978,6 +978,7 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > con S6
     "horasRecomendadasPeriodo": 24,
     "topeEscalaPension": 22,
   },
+  "metaEgreso": null,
   "perfil": {
     "cicloActual": 7,
     "creditos": {
@@ -2247,6 +2248,7 @@ exports[`buildAIContext con Plan_de_Estudio_1.xlsx y el 8vo planificado > cumple
     "horasRecomendadasPeriodo": 24,
     "topeEscalaPension": 22,
   },
+  "metaEgreso": null,
   "perfil": {
     "cicloActual": 7,
     "creditos": {

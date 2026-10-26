@@ -1351,6 +1351,7 @@
     ],
     "aplicadaEnMalla": false
   },
+  "metaEgreso": null,
   "descuentos": {
     "metodosPago": [
       {

@@ -4,7 +4,7 @@ import { pluralizar } from '../utils/pluralizar';
 import { useAcademicStore } from '../store/useAcademicStore';
 
 export function PrerequisitoToast() {
-  const { notificacionMovimiento, limpiarNotificacionMovimiento, desmarcarJalado, deshacerPlanificacion } = useAcademicStore();
+  const { notificacionMovimiento, limpiarNotificacionMovimiento, desmarcarJalado, deshacerPlanificacion, pedirAnalisisIA } = useAcademicStore();
 
   useEffect(() => {
     if (!notificacionMovimiento) return;
@@ -25,7 +25,7 @@ export function PrerequisitoToast() {
     tipo === 'ERROR_PERSISTENCIA'
       ? 'No se pudo guardar'
       : tipo === 'PLAN_APLICADO'
-      ? 'Propuesta aplicada'
+      ? notificacionMovimiento.analizarConAsistente ? 'Listo, apliqué tu plan' : 'Propuesta aplicada'
       : tipo === 'INMOVIBLE'
       ? 'Curso bloqueado'
       : tipo === 'IMPACTO_DESCENDIENTE'
@@ -84,8 +84,12 @@ export function PrerequisitoToast() {
             onClick={() => void desmarcarJalado(notificacionMovimiento.deshacerJalado!)}>Deshacer</button>}</>
       ) : tipo === 'PLAN_APLICADO' ? (
         <><p>{notificacionMovimiento.mensaje}</p>
-          {notificacionMovimiento.deshacerPlan && <button type="button" className="planner-toast-undo"
-            onClick={() => void deshacerPlanificacion()}>Deshacer</button>}</>
+          <div className="planner-toast-acciones">
+            {notificacionMovimiento.analizarConAsistente && <button type="button" className="planner-toast-analizar"
+              onClick={pedirAnalisisIA}><Sparkles size={14} aria-hidden="true" /> Analizar con el asistente</button>}
+            {notificacionMovimiento.deshacerPlan && <button type="button" className="planner-toast-undo"
+              onClick={() => void deshacerPlanificacion()}>Deshacer</button>}
+          </div></>
       ) : tipo === 'PRERREQUISITOS' ? (
         <>
           <p>

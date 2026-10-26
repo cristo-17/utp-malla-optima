@@ -3,7 +3,7 @@ import { calcularHorasEfectivas } from '../rules/planningRules';
 import { horasValidas } from './planning/unplannedReasons';
 import type { ResultadoPlanificacionAutomatica } from './planning/types';
 
-export { generarPlanificacionAutomatica } from './planning/planBuilder';
+export { cumpleMetaEgreso, generarPlanificacionAutomatica } from './planning/planBuilder';
 export type {
   AlcancePlanificacion, CicloPlanificadoResumen, CostosPeriodoPropuesto, CursoNoPlanificado, CursoPlanificadoResumen,
   CursoPropuesto, ExplicacionPlan, LimitesPlanificacion, MotivoNoPlanificado, OpcionesPlanificacion, PeriodoPropuesto,

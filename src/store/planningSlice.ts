@@ -1,6 +1,6 @@
 import type { AcademicRepositories } from '../application/ports/AcademicRepositories';
 import { generateOptimalPlanUseCase } from '../application/usecases/generateOptimalPlanUseCase';
-import { determinarTotalCiclos } from '../domain/rules/cycleRules';
+import { CICLOS_INICIALES, determinarTotalCiclos } from '../domain/rules/cycleRules';
 import { ordenarCursos } from '../domain/rules/courseRules';
 import { validarCargaPlanificacionAutomatica } from '../domain/services/automaticPlanningService';
 import { notificacionErrorPersistencia, notificacionPlanAplicado } from '../presentation/messages/movementMessages';
@@ -24,7 +24,7 @@ export const createPlanningSlice = (repos: AcademicRepositories): AcademicSlice<
     });
   },
 
-  aplicarPlanificacionOptima: async (resultado) => {
+  aplicarPlanificacionOptima: async (resultado, opciones = {}) => {
     const state = get();
     const actuales = state.cursos;
     if (resultado.cursos.length !== actuales.length ||
@@ -37,14 +37,16 @@ export const createPlanningSlice = (repos: AcademicRepositories): AcademicSlice<
       throw new Error('La propuesta utiliza un ciclo retirado. Genera una propuesta nueva.');
     }
     const cursos = ordenarCursos(resultado.cursos);
-    const totalCiclos = determinarTotalCiclos(cursos, Math.max(state.totalCiclos, resultado.cicloFinal));
+    // La malla llega hasta el último periodo con cursos: un ciclo extra (11, 12…) que queda vacío se quita.
+    const totalCiclos = determinarTotalCiclos(cursos, Math.max(CICLOS_INICIALES, state.cicloActual ?? 1));
+    const ciclosExcluidos = state.ciclosExcluidos.filter((ciclo) => ciclo <= totalCiclos);
     await repos.transaction(async () => {
       await repos.courses.saveMany(cursos);
-      await repos.profile.save({ totalCiclos });
+      await repos.profile.save({ totalCiclos, ciclosExcluidos });
     });
-    set({ cursos, totalCiclos, cursosSeleccionadosParaMatricula: [], cursoAMover: null,
-      planAnterior: { cursos: actuales, totalCiclos: state.totalCiclos },
-      notificacionMovimiento: notificacionPlanAplicado(resultado.advertenciasHoras, resultado.totalPlanificados) });
+    set({ cursos, totalCiclos, ciclosExcluidos, cursosSeleccionadosParaMatricula: [], cursoAMover: null,
+      planAnterior: { cursos: actuales, totalCiclos: state.totalCiclos, ciclosExcluidos: state.ciclosExcluidos },
+      notificacionMovimiento: notificacionPlanAplicado(resultado.advertenciasHoras, resultado.totalPlanificados, opciones.ofrecerAnalisis) });
   },
 
   deshacerPlanificacion: async () => {
@@ -53,13 +55,13 @@ export const createPlanningSlice = (repos: AcademicRepositories): AcademicSlice<
     try {
       await repos.transaction(async () => {
         await repos.courses.saveMany(planAnterior.cursos);
-        await repos.profile.save({ totalCiclos: planAnterior.totalCiclos });
+        await repos.profile.save({ totalCiclos: planAnterior.totalCiclos, ciclosExcluidos: planAnterior.ciclosExcluidos });
       });
     } catch {
       set({ notificacionMovimiento: notificacionErrorPersistencia('Planificación automática') });
       return false;
     }
-    set({ cursos: planAnterior.cursos, totalCiclos: planAnterior.totalCiclos, planAnterior: null,
+    set({ cursos: planAnterior.cursos, totalCiclos: planAnterior.totalCiclos, ciclosExcluidos: planAnterior.ciclosExcluidos, planAnterior: null,
       cursoAMover: null, notificacionMovimiento: null });
     return true;
   },

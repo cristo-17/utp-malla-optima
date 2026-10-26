@@ -138,4 +138,6 @@ export interface OpcionesPlanificacion {
   alcance?: AlcancePlanificacion;
   /** Conserva los pendientes que el alumno ya ubicó en periodos futuros (por defecto true). */
   conservarUbicados?: boolean;
+  /** Meta de egreso (egresar a más tardar en ese ciclo): con usarVeranos, se habilitan veranos también para lograrla. */
+  cicloMeta?: number | null;
 }

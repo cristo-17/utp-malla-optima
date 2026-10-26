@@ -3,7 +3,7 @@ import { detectarLimites } from '../../src/application/ai/limites';
 
 const sinNada = {
   maxHorasPorPeriodo: null, maxCreditosPorPeriodo: null, horasEstricto: false, creditosEstricto: false, maxCuotaMensual: null,
-  agregarCiclo: false, usarVeranos: null, ciclos: [], unSoloCiclo: false,
+  agregarCiclo: false, usarVeranos: null, ciclos: [], unSoloCiclo: false, metaEgreso: null, pidePropuesta: true,
 };
 
 describe('detectarLimites con las frases reales del feedback', () => {
@@ -72,6 +72,35 @@ describe('detectarLimites: variantes', () => {
     expect(detectarLimites('¿Estoy sobrecargado con 25 horas?')).toBeNull();
     expect(detectarLimites('¿Cómo funcionan los descuentos de la UTP?')).toBeNull();
     expect(detectarLimites('¿Qué pasa si jalo un curso del ciclo 8?')).toBeNull();
+  });
+
+  it('meta de egreso: "Quiero terminar mi carrera en el ciclo 9, se puede?" (sin propuesta con límites)', () => {
+    expect(detectarLimites('Quiero terminar mi carrera en el ciclo 9, se puede?'))
+      .toEqual({ ...sinNada, metaEgreso: { ciclo: 9 }, pidePropuesta: false });
+    expect(detectarLimites('¿Puedo egresar en el ciclo 8?')).toEqual({ ...sinNada, metaEgreso: { ciclo: 8 }, pidePropuesta: false });
+  });
+
+  it('meta de egreso: terminar, egresar o acabar "en el ciclo N", "para el ciclo N" y "en N ciclos"', () => {
+    for (const [frase, meta] of [
+      ['¿Puedo acabar la carrera para el ciclo 10?', { ciclo: 10 }],
+      ['quisiera egresar hasta el ciclo 11', { ciclo: 11 }],
+      ['¿terminaré en el semestre 9?', { ciclo: 9 }],
+      ['quiero graduarme en el ciclo 10', { ciclo: 10 }],
+      ['¿puedo terminar en 3 ciclos?', { enCiclos: 3 }],
+      ['quiero acabar en dos ciclos más', { enCiclos: 2 }],
+    ] as const) expect(detectarLimites(frase)?.metaEgreso, frase).toEqual(meta);
+    // El ciclo de la meta no es un ciclo nombrado: no limita la propuesta a ese periodo.
+    expect(detectarLimites('quiero terminar en el ciclo 9 con máximo 26 h'))
+      .toMatchObject({ metaEgreso: { ciclo: 9 }, ciclos: [], unSoloCiclo: false, maxHorasPorPeriodo: 26, pidePropuesta: true });
+    // Con la meta, "con veranos" es parte de la meta, no un pedido de plan aparte.
+    expect(detectarLimites('¿puedo terminar en el ciclo 9 si llevo veranos?'))
+      .toMatchObject({ metaEgreso: { ciclo: 9 }, usarVeranos: true, pidePropuesta: false });
+  });
+
+  it('sin verbo de egreso no es meta: "arma el ciclo 9", "¿qué llevo en el ciclo 9?", "termina el ciclo 8"', () => {
+    expect(detectarLimites('arma el ciclo 9 con menos de 20 h')?.metaEgreso).toBeNull();
+    expect(detectarLimites('¿Qué llevo en el ciclo 9?')).toBeNull();
+    expect(detectarLimites('¿cuándo termina el ciclo 8?')).toBeNull();
   });
 
   it('un mensaje con JSON o con la palabra CONTEXTO no cuenta (regla 15)', () => {

@@ -1194,6 +1194,7 @@
     "planificadosBloqueadosPorJalado": []
   },
   "propuestaConLimites": null,
+  "metaEgreso": null,
   "descuentos": {
     "metodosPago": [
       {

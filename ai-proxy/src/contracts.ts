@@ -210,6 +210,20 @@ const DerivadosSchema = z.object({
  * un ciclo más o veranos). La arma el código (D-001); la IA solo la explica y el alumno la aplica con
  * "Aplicar a mi malla". null si el mensaje no pide límites.
  */
+/** Un periodo de una propuesta del planificador (propuestaConLimites o metaEgreso). */
+const PeriodoPropuestaSchema = z.object({
+  periodoId: PeriodoIdSchema,
+  etiqueta: z.string(),
+  cursos: z.array(z.string()),
+  numeroCursos: z.number().int(),
+  horas: z.number(),
+  creditos: z.number(),
+  /** Cuota mensual con el método de pago elegido (en verano, sin descuento); null sin tarifario. */
+  cuotaMensual: monto.nullable(),
+  /** Pago único: la pensión del ciclo, toda al inicio; null en verano o sin tarifario. */
+  pagoUnicoAlInicio: monto.nullable(),
+});
+
 const PropuestaConLimitesSchema = z.object({
   limites: z.object({
     maxHorasPorPeriodo: z.number().nullable(),
@@ -230,18 +244,7 @@ const PropuestaConLimitesSchema = z.object({
     agregarCiclo: z.boolean(),
     alcance: z.enum(['proximoPeriodo', 'hastaEgresar']),
   }),
-  periodos: z.array(z.object({
-    periodoId: PeriodoIdSchema,
-    etiqueta: z.string(),
-    cursos: z.array(z.string()),
-    numeroCursos: z.number().int(),
-    horas: z.number(),
-    creditos: z.number(),
-    /** Cuota mensual con el método de pago elegido (en verano, sin descuento); null sin tarifario. */
-    cuotaMensual: monto.nullable(),
-    /** Pago único: la pensión del ciclo, toda al inicio; null en verano o sin tarifario. */
-    pagoUnicoAlInicio: monto.nullable(),
-  })),
+  periodos: z.array(PeriodoPropuestaSchema),
   /** Ciclos que hay que agregar después del último de la malla (11, 12…). */
   ciclosAgregados: z.array(z.number().int()),
   veranosUsados: z.array(PeriodoIdSchema),
@@ -276,6 +279,56 @@ const PropuestaConLimitesSchema = z.object({
   /** Nunca está en la malla: el alumno la aplica con el botón "Aplicar a mi malla". */
   aplicadaEnMalla: z.literal(false),
 });
+
+/**
+ * "¿Puedo terminar en el Ciclo N?": el planificador busca el menor máximo de horas por periodo con el que se egresa a
+ * más tardar en el Ciclo N, primero sin veranos y después con veranos (prerrequisitos, ventana de los jalados, 11
+ * créditos por verano y creditosMaximos por ciclo).
+ */
+const MetaEgresoSchema = z.object({
+  cicloMeta: z.number().int(),
+  sePuede: z.boolean(),
+  /** El menor máximo de horas por periodo que lo logra; null si no se puede. */
+  horasMaximasNecesarias: z.number().nullable(),
+  usaVeranos: z.boolean(),
+  veranosUsados: z.array(PeriodoIdSchema),
+  /** El plan con esa carga, periodo por periodo (vacío si no se puede). */
+  periodos: z.array(PeriodoPropuestaSchema),
+  /** Total de todos los periodos con el método de pago elegido; null sin tarifario o si no se puede. */
+  costoTotalHastaEgresar: monto.nullable(),
+  cicloEgreso: z.number().int().nullable(),
+  /** Horas recomendadas por periodo (24): los periodos que las pasan son una carga pesada. */
+  horasRecomendadas: z.number(),
+  periodosCargaPesada: z.array(PeriodoIdSchema),
+  /** Si se puede sin veranos y con veranos alcanza con menos horas por periodo: esa otra opción. */
+  conVeranos: z.object({
+    horasMaximasNecesarias: z.number(),
+    veranosUsados: z.array(PeriodoIdSchema),
+    horasPorPeriodo: z.array(z.object({ periodoId: PeriodoIdSchema, horas: z.number() })),
+    costoTotalHastaEgresar: monto.nullable(),
+  }).nullable(),
+  /** Por qué no se puede: la cadena de prerrequisitos más larga (códigos, en orden) o el tope de créditos por periodo. */
+  motivo: z.discriminatedUnion('tipo', [
+    z.object({
+      tipo: z.literal('cadenaPrerrequisitos'),
+      cursos: z.array(z.string()),
+      periodosNecesarios: z.number().int(),
+      periodosDisponibles: z.number().int(),
+    }),
+    z.object({
+      tipo: z.literal('topeCreditos'),
+      creditosPendientes: z.number(),
+      periodosDisponibles: z.number().int(),
+      creditosMaximosPorCiclo: z.number(),
+      creditosMaximosVerano: z.number(),
+    }),
+  ]).nullable(),
+  /** El primer ciclo en el que sí se puede egresar; null si ninguno hasta el 18. */
+  cicloMasCercano: z.number().int().nullable(),
+  /** Nunca está en la malla: el alumno la aplica con el botón "Aplicar a mi malla". */
+  aplicadaEnMalla: z.literal(false),
+});
+export type AIMetaEgreso = z.infer<typeof MetaEgresoSchema>;
 
 const WhatIfSchema = z.object({
   codigo: z.string(),
@@ -391,6 +444,8 @@ export const AIContextSchema = z.object({
   foco: z.discriminatedUnion('tipo', [z.object({ tipo: z.literal('plan') }), FocoCicloSchema, FocoCursoSchema]).nullable(),
   derivados: DerivadosSchema,
   propuestaConLimites: PropuestaConLimitesSchema.nullable(),
+  /** Meta de egreso que pidió el alumno ("terminar en el Ciclo 9"); null si no la pidió. */
+  metaEgreso: MetaEgresoSchema.nullable(),
   /** Descuentos y formas de pago del tarifario, para explicarlos sin inventar porcentajes; null sin tarifario. */
   descuentos: z.object({
     /** Pronto pago por banco: porcentaje sobre cada cuota mensual de un ciclo regular. */

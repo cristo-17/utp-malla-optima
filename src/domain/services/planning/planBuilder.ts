@@ -3,7 +3,8 @@ import {
   determinarPeriodoEnCurso, obtenerPeriodoCurso, crearPeriodoRegular, crearPeriodoVerano,
 } from '../../rules/academicPeriodRules';
 import {
-  FACTOR_HORAS_VERANO, LIMITE_CREDITOS_VERANO, LIMITE_HORAS_PLANIFICACION, LIMITE_HORAS_PERIODO, MINIMO_CREDITOS_ELECTIVOS,
+  FACTOR_HORAS_VERANO, LIMITE_CREDITOS_PERIODO, LIMITE_CREDITOS_VERANO, LIMITE_HORAS_PLANIFICACION, LIMITE_HORAS_PERIODO,
+  MINIMO_CREDITOS_ELECTIVOS,
   calcularHorasEfectivas, validarLimiteCreditosVerano,
 } from '../../rules/planningRules';
 import { calcularPrioridadesPendientes } from '../recommendationService';
@@ -51,6 +52,10 @@ const planificar = (
   const horasEstricto = Boolean(opciones.horasEstricto);
   const creditosEstricto = Boolean(opciones.creditosEstricto && limiteCreditos !== null);
   const efectivo = (limite: number, estricto: boolean) => estricto ? limite - MARGEN_ESTRICTO : limite;
+  // Créditos de un periodo: el límite del alumno y, en ciclos regulares, nunca más de creditosMaximos (F-016).
+  const topeCreditos = (esVerano: boolean) => esVerano
+    ? efectivo(limiteCreditosVerano, creditosEstricto)
+    : Math.min(limiteCreditos === null ? Infinity : efectivo(limiteCreditos, creditosEstricto), LIMITE_CREDITOS_PERIODO);
 
   const originales = new Map(cursosEntrada.map((curso) => [curso.codigo, curso]));
   const cursosBase = cursosEntrada.map((curso) => ({ ...curso }));
@@ -96,9 +101,11 @@ const planificar = (
     .sort((a, b) => (horasValidas(a) ? a.horasSemanales : Infinity) - (horasValidas(b) ? b.horasSemanales : Infinity) ||
       b.creditos - a.creditos || a.codigo.localeCompare(b.codigo));
 
-  // Con alcance "proximoPeriodo" solo se arma ese periodo: lo ubicado en los demás se conserva siempre.
+  // Con alcance "proximoPeriodo" solo se arma ese periodo: lo ubicado en los demás se conserva siempre. Sin
+  // conservar, los veranos de un plan anterior también se vuelven a planificar (los jalados van igual a su ventana).
   const conservacion = {
     regulares: conservar || soloProximo,
+    veranos: conservar || soloProximo,
     excepto: soloProximo && !conservar ? periodoInicio.id : undefined,
   };
   const calcularConservados = () =>
@@ -176,9 +183,46 @@ const planificar = (
   const faltaUbicar = () => restantes.size > 0 || electivosPorUbicar.length > 0;
   // Alcance "proximoPeriodo": cursos que se podían llevar en el periodo pero no entraron por los límites.
   const noCabenEnProximo: Curso[] = [];
+  // Periodos de la lista que quedaron sin ninguna carga: se reutilizan, en orden, antes de agregar un ciclo nuevo.
+  const vacios: PeriodoAcademico[] = [];
+  const reutilizarVacios = () => {
+    for (const periodo of [...vacios]) {
+      if (!faltaUbicar()) return;
+      const esVerano = periodo.tipo === 'VERANO';
+      const factor = esVerano ? FACTOR_HORAS_VERANO : 1;
+      let horasDisponibles = efectivo(esVerano ? limiteHorasVerano : limiteHoras, horasEstricto) / factor;
+      let creditosDisponibles = topeCreditos(esVerano);
+      const prioridades = calcularPrioridadesPendientes([...restantes.values()]);
+      const seleccionados: Curso[] = [];
+      for (const curso of [...restantes.values(), ...electivosPorUbicar]) {
+        if (!horasValidas(curso) || curso.horasSemanales > horasDisponibles + EPSILON || curso.creditos > creditosDisponibles + EPSILON ||
+            !prerrequisitosCumplidos(curso, periodo, porCodigo, asignaciones)) continue;
+        seleccionados.push(curso);
+        horasDisponibles -= curso.horasSemanales;
+        creditosDisponibles -= curso.creditos;
+        nuevasAsignaciones.set(curso.codigo, periodo);
+        asignaciones.set(curso.codigo, periodo);
+        restantes.delete(curso.codigo);
+        if (electivosPorUbicar.includes(curso)) electivosPorUbicar.splice(electivosPorUbicar.indexOf(curso), 1);
+      }
+      if (!seleccionados.length) continue;
+      vacios.splice(vacios.indexOf(periodo), 1);
+      ciclos.push({
+        ciclo: periodo.cicloReferencia, periodo,
+        creditos: sumarCreditos(seleccionados),
+        horasEfectivas: calcularHorasEfectivas(seleccionados, periodo.tipo),
+        impacto: seleccionados.reduce((suma, curso) => suma + (prioridades.get(curso.codigo)?.impacto ?? 0), 0),
+        cursos: seleccionados.map((curso) => ({
+          codigo: curso.codigo, nombre: curso.nombre, creditos: curso.creditos, impacto: prioridades.get(curso.codigo)?.impacto ?? 0,
+        })),
+      });
+    }
+  };
 
   for (let indice = 0; ; indice += 1) {
     while (indice >= lista.length && !soloProximo && faltaUbicar() && ultimoCiclo < MAXIMO_CICLOS) {
+      reutilizarVacios();
+      if (!faltaUbicar()) break;
       ultimoCiclo += 1;
       agregarCiclo(ultimoCiclo);
     }
@@ -191,8 +235,7 @@ const planificar = (
     const factor = esVerano ? FACTOR_HORAS_VERANO : 1;
     let horasDisponibles = Math.max(0,
       (efectivo(esVerano ? limiteHorasVerano : limiteHoras, horasEstricto) - calcularHorasEfectivas(cargaConservada, periodo.tipo)) / factor);
-    let creditosDisponibles = efectivo(esVerano ? limiteCreditosVerano : limiteCreditos ?? Infinity, creditosEstricto) -
-      sumarCreditos(cargaConservada);
+    let creditosDisponibles = topeCreditos(esVerano) - sumarCreditos(cargaConservada);
     const prioridades = calcularPrioridadesPendientes([...restantes.values()]);
     const disponibles = [...restantes.values()].filter((curso) => horasValidas(curso) &&
       prerrequisitosCumplidos(curso, periodo, porCodigo, asignaciones));
@@ -241,6 +284,7 @@ const planificar = (
     if (seleccionados.length === 0 && jaladosPeriodo.length === 0) {
       // Un ciclo agregado que no recibe nada no deja avanzar a los siguientes: se deja de agregar.
       if (!esVerano && periodo.cicloReferencia > cicloFinal) break;
+      if (!cargaConservada.length && !soloProximo) vacios.push(periodo);
       continue;
     }
     const cursosPeriodo = [...cargaConservada, ...seleccionados];
@@ -255,6 +299,8 @@ const planificar = (
       })),
     });
   }
+  if (!soloProximo) reutilizarVacios();
+  ciclos.sort((a, b) => a.periodo.orden - b.periodo.orden);
   const ultimoPeriodo = lista.at(-1);
   const cicloUltimo = Math.max(cicloFinal, ...lista.filter((periodo) => periodo.tipo === 'REGULAR' &&
     ciclos.some((ciclo) => ciclo.periodo.id === periodo.id)).map((periodo) => periodo.cicloReferencia));
@@ -370,19 +416,25 @@ const veranosDelCalendario = (opciones: OpcionesPlanificacion, cicloActual: numb
     .filter((ciclo) => ciclo >= Math.max(1, cicloActual) && permiteVeranoDespuesDe(ciclo, ingreso));
 };
 
+/** Egresa a más tardar en el Ciclo `cicloMeta` (sin meta, siempre true). */
+export const cumpleMetaEgreso = (
+  resultado: Pick<ResultadoPlanificacionAutomatica, 'noPlanificados' | 'periodoEgreso'>, cicloMeta: number | null | undefined,
+) => !cicloMeta || (!resultado.noPlanificados.length && (resultado.periodoEgreso?.orden ?? -1) <= crearPeriodoRegular(cicloMeta).orden);
+
 export const generarPlanificacionAutomatica = (
   cursosEntrada: Curso[], opciones: OpcionesPlanificacion = {}
 ): ResultadoPlanificacionAutomatica => {
   const sinVeranos = planificar(cursosEntrada, opciones, new Set());
   let elegido = sinVeranos;
-  // Los veranos se usan solo si hacen falta: se habilitan desde el más cercano hasta no necesitar ciclos extra.
+  // Los veranos se usan solo si hacen falta: se habilitan desde el más cercano hasta no necesitar ciclos extra (y,
+  // con una meta de egreso, hasta lograrla).
   if (opciones.usarVeranos && sinVeranos.alcance === 'hastaEgresar' &&
-      (sinVeranos.ciclosAgregados.length || sinVeranos.noPlanificados.length)) {
+      (sinVeranos.ciclosAgregados.length || sinVeranos.noPlanificados.length || !cumpleMetaEgreso(sinVeranos, opciones.cicloMeta))) {
     const candidatos = veranosDelCalendario(opciones, sinVeranos.cicloInicio - 1);
     for (let cantidad = 1; cantidad <= candidatos.length; cantidad += 1) {
       const intento = planificar(cursosEntrada, opciones, new Set(candidatos.slice(0, cantidad)));
       if (egresaAntes(intento, elegido)) elegido = intento;
-      if (!intento.ciclosAgregados.length && !intento.noPlanificados.length) break;
+      if (!intento.ciclosAgregados.length && !intento.noPlanificados.length && cumpleMetaEgreso(intento, opciones.cicloMeta)) break;
     }
   }
   if (elegido.alcance !== 'hastaEgresar') return { ...elegido, comparacionSinLimites: null };

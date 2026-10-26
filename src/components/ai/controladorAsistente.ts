@@ -3,7 +3,7 @@ import {
   type AIAnalisisResponse, type AIContext, type AIErrorCodigo, type AIFoco, type AIMensaje, type AIRequest,
 } from '../../application/ai/contracts';
 import type { AIClient } from '../../infrastructure/ai/HttpAIClient';
-import { opcionesDePropuesta, type OpcionesPropuesta } from '../../application/ai/limites';
+import { opcionesDeMeta, opcionesDePropuesta, type OpcionesPropuesta } from '../../application/ai/limites';
 import { focoParaEnviar, mismoFoco, type FocoUI } from './asistenteLogica';
 
 export interface Solicitud {
@@ -83,6 +83,8 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
   let estado = estadoInicial(Boolean(dependencias.privacidadAceptada));
   let siguienteId = 1;
   let generacion = 0;
+  // "Analizar con el asistente" antes de aceptar el aviso de privacidad: el análisis sale al aceptarlo.
+  let analisisPendiente = false;
   const oyentes = new Set<() => void>();
 
   const actualizar = (cambios: Partial<EstadoAsistente>) => {
@@ -115,6 +117,9 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
     if (generacionEnvio !== generacion) return;
 
     const id = siguienteId++;
+    // "Aplicar a mi malla" bajo la respuesta: la propuesta con límites o, si no hay, la meta de egreso que se logra.
+    const propuesta = contexto.propuestaConLimites ? opcionesDePropuesta(contexto.propuestaConLimites)
+      : contexto.metaEgreso ? opcionesDeMeta(contexto.metaEgreso) : null;
     const respuesta: MensajeChat = !resultado.ok
       ? { id, rol: 'assistant', tipo: 'error', error: resultado.error, mensaje: resultado.mensaje, reintento: { ...solicitud, texto } }
       : 'secciones' in resultado.respuesta
@@ -122,7 +127,7 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
         : {
           id, rol: 'assistant', tipo: 'texto', texto: resultado.respuesta.texto, cursos: resultado.respuesta.cursos,
           preguntas: resultado.respuesta.preguntasSugeridas,
-          ...(contexto.propuestaConLimites ? { propuesta: opcionesDePropuesta(contexto.propuestaConLimites) } : {}),
+          ...(propuesta ? { propuesta } : {}),
         };
     actualizar({ mensajes: [...estado.mensajes, respuesta], enviando: false });
   };
@@ -136,8 +141,19 @@ export const crearControladorAsistente = (dependencias: DependenciasAsistente) =
     aceptarPrivacidad: () => {
       dependencias.alAceptarPrivacidad?.();
       actualizar({ privacidadAceptada: true });
+      if (analisisPendiente) {
+        analisisPendiente = false;
+        void enviar({ modo: 'analisis', texto: TEXTO_ANALISIS, foco: estado.foco });
+      }
     },
     analizar: () => enviar({ modo: 'analisis', texto: TEXTO_ANALISIS, foco: estado.foco }),
+    /** El análisis ya, o apenas se acepte el aviso de privacidad (toast "Analizar con el asistente"). */
+    pedirAnalisis: () => {
+      if (estado.privacidadAceptada) return enviar({ modo: 'analisis', texto: TEXTO_ANALISIS, foco: estado.foco });
+      analisisPendiente = true;
+      return Promise.resolve();
+    },
+    cancelarAnalisisPendiente: () => { analisisPendiente = false; },
     preguntar: (texto: string) => enviar({ modo: 'chat', texto, foco: estado.foco }),
     /** Quita la burbuja de error y repite la misma solicitud con el contexto recalculado. */
     reintentar: (idError: number) => {

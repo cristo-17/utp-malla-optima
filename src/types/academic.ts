@@ -69,4 +69,6 @@ export interface NotificacionMovimiento {
   deshacerJalado?: string;
   /** El plan recién aplicado se puede deshacer (deshacerPlanificacion). */
   deshacerPlan?: boolean;
+  /** Aplicado desde el modal de Autogenerar: el toast ofrece "Analizar con el asistente". */
+  analizarConAsistente?: boolean;
 }

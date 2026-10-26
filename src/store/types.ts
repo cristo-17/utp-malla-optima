@@ -7,7 +7,7 @@ import type { StateCreator } from 'zustand';
 /** Límites que el alumno elige en Autogenerar (o que detecta el asistente); todos opcionales. */
 export type OpcionesAutogenerar = Pick<GenerateOptimalPlanInput,
   'alcance' | 'maxHorasPorPeriodo' | 'maxCreditosPorPeriodo' | 'maxCuotaMensual' | 'usarVeranos' | 'conservarUbicados' | 'metodoPago' |
-  'horasEstricto' | 'creditosEstricto'>;
+  'horasEstricto' | 'creditosEstricto' | 'cicloMeta'>;
 
 /** Modal Autogenerar abierto, con los valores con los que se abre. */
 export interface EstadoAutogenerar {
@@ -63,10 +63,13 @@ export interface AcademicStore {
   generarPlanificacionOptima: () => Promise<ResultadoPlanificacionAutomatica>;
   /** La propuesta del planificador con el estado actual y los límites dados (nada cambia en la malla). */
   previsualizarPlanificacionOptima: (opciones?: OpcionesAutogenerar) => PropuestaPlan;
-  /** Aplica la propuesta y guarda el estado anterior para deshacerPlanificacion. */
-  aplicarPlanificacionOptima: (resultado: ResultadoPlanificacionAutomatica) => Promise<void>;
+  /**
+   * Aplica la propuesta y guarda el estado anterior para deshacerPlanificacion. Con ofrecerAnalisis (desde el modal),
+   * el toast trae "Analizar con el asistente".
+   */
+  aplicarPlanificacionOptima: (resultado: ResultadoPlanificacionAutomatica, opciones?: { ofrecerAnalisis?: boolean }) => Promise<void>;
   /** Malla y total de ciclos antes del último "Aplicar a mi malla"; null si no hay nada que deshacer. */
-  planAnterior: { cursos: Curso[]; totalCiclos: number } | null;
+  planAnterior: { cursos: Curso[]; totalCiclos: number; ciclosExcluidos: number[] } | null;
   /** Restaura exactamente el estado anterior al último plan aplicado. */
   deshacerPlanificacion: () => Promise<boolean>;
   autogenerar: EstadoAutogenerar | null;
@@ -74,6 +77,10 @@ export interface AcademicStore {
   cerrarAutogenerar: () => void;
   avisoPlanDesdeChat: AvisoPlanDesdeChat | null;
   setAvisoPlanDesdeChat: (aviso: AvisoPlanDesdeChat | null) => void;
+  /** "Analizar con el asistente" del toast: el asistente se abre y lanza el análisis (lo atiende Asistente). */
+  analisisPedido: boolean;
+  pedirAnalisisIA: () => void;
+  atenderAnalisisIA: () => void;
   toggleSeleccionMatricula: (codigo: string) => void;
   setTarifario: (tarifario: Tarifario) => Promise<void>;
   setMetodoPago: (metodoPago: string) => void;

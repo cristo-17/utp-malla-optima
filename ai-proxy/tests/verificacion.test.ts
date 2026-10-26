@@ -94,6 +94,20 @@ describe('filtro de salida - un plan citado sale de propuestaConLimites o rutaSu
     expect(chequeos('Con pronto pago egresas en el Ciclo 10 y pagas S/ 13,000.00 en total.', limite800)).toEqual(['monto']);
   });
 
+  it('la meta de egreso (metaEgreso) es fuente: sus horas, cursos, cuotas y el costo total; una cifra inventada falla', () => {
+    const meta9: AIContext = JSON.parse(readFileSync(new URL('./fixtures/contexto-meta-9.json', import.meta.url), 'utf8'));
+    expect(chequeos('Sí se puede terminar en el Ciclo 9 sin veranos, con hasta 34 h por periodo: el Ciclo 8 con 9 cursos (34 h, S/ 1,280.72 al mes) ' +
+      'y el Ciclo 9 con 11 cursos (31 créditos). Pagas S/ 13,603.20 en total. Es carga pesada: pasa de 24 h. Con el Verano 8 bastan 28 h por periodo ' +
+      'y pagas S/ 13,180.22.', meta9)).toEqual([]);
+    expect(chequeos('Con la meta, el Ciclo 9 queda con 11 cursos y 34 h.', meta9)).toEqual([]);
+    expect(chequeos('Con la meta, el Ciclo 9 queda con 11 cursos y 34 h.')).toEqual(['plan', 'plan']);
+    expect(chequeos('Con la meta, el Ciclo 9 queda con 30 h.', meta9)).toEqual(['plan']);
+    expect(chequeos('Terminar en el Ciclo 9 te cuesta S/ 12,000.00 en total.', meta9)).toEqual(['monto']);
+    const meta8: AIContext = JSON.parse(readFileSync(new URL('./fixtures/contexto-meta-8.json', import.meta.url), 'utf8'));
+    expect(chequeos('En el Ciclo 8 no llegas: INTELIGENCIA DE NEGOCIOS (100000I62N) es prerrequisito de CURSO INTEGRADOR II: SISTEMAS (100000S09I). ' +
+      'Lo más cercano es el Ciclo 9.', meta8)).toEqual([]);
+  });
+
   it('sin propuesta, la ruta sugerida es la fuente', () => {
     expect(chequeos(`El planificador te propone el Ciclo 9 con ${plan1.rutaSugerida.propuesta[1].cursos.length} cursos (${plan1.rutaSugerida.propuesta[1].horas} h).`)).toEqual([]);
     expect(chequeos('El planificador te propone el Ciclo 9 con 2 cursos.')).toEqual(['plan']);
@@ -108,6 +122,18 @@ describe('filtro de salida - falsos positivos de la corrida 8 (F-044)', () => {
     const real = 'Con tu límite de 18 créditos, ningún periodo llega a 18: quedan en 17, 17, 17 y 9. Serían 4 periodos (Ciclo 8 al 11): 5, 7, 5 y 3 cursos. Ojo, eso agrega el Ciclo 11.';
     expect(chequeos(real, contexto)).toEqual([]);
     expect(chequeos('En el Ciclo 8 van 3 cursos.', contexto)).toEqual(['plan']);
+  });
+
+  it('plan (F-046): "en el 9 / en el 10" son otros ciclos cuando la frase ya nombró uno; "en el Ciclo 8 llevas 9 cursos" sigue fallando', () => {
+    const contexto = fixture('contexto-ciclo-vacio');
+    const real = 'Tu próximo periodo está vacío, así que aún no tienes cursos asignados. Te propongo esta ruta: en el Ciclo 8 llevarías 6 cursos ' +
+      '(20 créditos, 22 h), en el 9 serían 7 cursos (18 créditos, 22 h) y en el 10 otros 6 (19 créditos, 21 h). Te quedaría un curso en el ' +
+      'Ciclo 11 para cerrar. Es una sugerencia: ábrela con Autogenerar y aplícala con «Aplicar a mi malla».';
+    expect(chequeos(real, contexto)).toEqual([]);
+    expect(chequeos('En el Ciclo 8 llevas 9 cursos.', contexto)).toEqual(['plan']);
+    // Sin un ciclo nombrado, "el 9" no es un periodo; y "el 9 de" o "el 22 h" no son ciclos.
+    expect(chequeos('El Ciclo 8 lleva 6 cursos, el 22 h de tope no se pasa.', contexto)).toEqual([]);
+    expect(chequeos('El Ciclo 8 lleva 9 cursos, el 9 de ellos sin prerrequisitos.', contexto)).toEqual(['plan']);
   });
 
   it('atributo-curso: "A, B y C (20 créditos)" es el total del periodo si coincide con CONTEXTO; si no, o sin lista, sigue fallando', () => {

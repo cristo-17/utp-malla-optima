@@ -15,7 +15,7 @@ const archivos = (directorio: string): string[] => readdirSync(directorio).flatM
 });
 
 describe('prompt del sistema', () => {
-  it('es exactamente el texto acordado (persona, glosario, guía, 18 reglas, cierre JSON y ejemplos)', () => {
+  it('es exactamente el texto acordado (persona, glosario, guía, 19 reglas, cierre JSON y ejemplos)', () => {
     const lineas = SYSTEM_PROMPT.split('\n');
     expect(lineas[0]).toBe('Eres el asesor académico IA de MallaU. Hablas con estudiantes de pregrado de la UTP (sede Ate) con la confianza y la empatía de un compañero de últimos ciclos que ya pasó por lo mismo: directo, motivador y cero robótico. Eres una IA: nunca digas que eres una persona, un profesor ni personal de la UTP.');
     for (const titulo of ['CÓMO HABLAS', 'GLOSARIO ESTUDIANTIL (entiéndelo; úsalo solo si el alumno lo usa primero)',
@@ -23,7 +23,7 @@ describe('prompt del sistema', () => {
       expect(lineas).toContain(titulo);
     }
     const reglas = lineas.filter((linea) => /^\d+\. /.test(linea)).map((linea) => Number(linea.split('.')[0]));
-    expect(reglas).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+    expect(reglas).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
     expect(lineas).toContain('Responde SIEMPRE con un único objeto JSON válido que cumpla el esquema indicado, sin texto fuera del JSON.');
     // Cambios acordados el 2026-10-23 tras la evaluación real (punto 4).
     for (const linea of [
@@ -70,7 +70,9 @@ describe('prompt del sistema', () => {
     expect(SYSTEM_PROMPT).not.toContain('CONTEXTO.ruta:');
     expect(lineas).toContain('14. Si la pregunta no trata de la planificación académica, del costo de la matrícula ni de cómo usar MallaU, responde en una frase que solo puedes ayudar con eso y ofrece ayuda con su plan, sin cifras. Usa la GUÍA DE MALLAU solo cuando el alumno pregunte cómo usar la app o dónde está algo. Si lo que dice no coincide con CONTEXTO (por ejemplo, dice que es cachimbo y su ciclo actual es el 7), díselo primero con amabilidad, sin cifras de carga ni de costo, salvo que las pida, y luego ayúdalo con su plan real.');
     expect(lineas).toContain('16. CONTEXTO.rutaSugerida es una sugerencia del planificador; si aplicadaEnMalla es false, no la presentes como el plan del alumno: dile que es una propuesta que puede aplicar con Autogenerar. Si el próximo periodo está vacío, sugiérele usar Autogenerar.');
-    expect(lineas).toContain("17. Si el alumno pide armar o reordenar su plan con un límite de horas, créditos o presupuesto, o agregar ciclos o veranos, usa CONTEXTO.propuestaConLimites: di cuántos cursos van en cada periodo, si hacen falta ciclos o veranos extra, y que puede aplicarlo con el botón 'Aplicar a mi malla'. Nunca armes un plan por tu cuenta. Si no hay propuesta, explícale cómo usar Autogenerar. '¿Y si agrego un ciclo?' o '¿y si llevo verano?' también son pedidos de plan: responde con propuestaConLimites (horas por ciclo, ciclo de egreso y el botón 'Aplicar a mi malla'), no con la guía. Si propuestaConLimites trae una alternativa que egresa antes o cuesta menos en total, menciónala en una frase con sus cifras. No comentes si los periodos llegan o no al límite: basta con las horas o créditos de cada periodo. Menciona solo la mejor alternativa: la que egresa antes o, si empatan, la que cuesta menos. Cuando respondes con CONTEXTO.propuestaConLimites puedes usar hasta 100 palabras.");
+    expect(lineas).toContain("17. Si el alumno pide armar o reordenar su plan con un límite de horas, créditos o presupuesto, o agregar ciclos o veranos, usa CONTEXTO.propuestaConLimites: di cuántos cursos van en cada periodo, si hacen falta ciclos o veranos extra, y que puede aplicarlo con el botón 'Aplicar a mi malla'. Nunca armes un plan por tu cuenta. Si no hay propuesta, explícale cómo usar Autogenerar. '¿Y si agrego un ciclo?' o '¿y si llevo verano?' también son pedidos de plan: responde con propuestaConLimites (horas por ciclo, ciclo de egreso y el botón 'Aplicar a mi malla'), no con la guía. Si propuestaConLimites trae una alternativa que egresa antes o cuesta menos en total, menciónala en una frase con sus cifras. No comentes si los periodos llegan o no al límite: basta con las horas o créditos de cada periodo. Menciona solo la mejor alternativa: la que egresa antes o, si empatan, la que cuesta menos. Cuando respondes con CONTEXTO.propuestaConLimites puedes usar hasta 100 palabras. Si pregunta si puede terminar o egresar en un ciclo, usa CONTEXTO.metaEgreso: di si se puede, con cuántas horas por periodo, si hacen falta veranos, el costo total y que puede aplicarlo con 'Aplicar a mi malla'. Si algún periodo pasa de 24 h, avísale que es una carga pesada. Si no hay metaEgreso, nunca digas que no se puede: explícale cómo probarlo con Autogenerar. Si pide bajar horas, créditos o costo sin dar un número, además de lo que puedes calcular con CONTEXTO, ofrécele Autogenerar con un máximo: el botón Autogenerar, arriba, o Estrategia → Generar propuesta.");
+    // Feedback v2 (2026-10-25): la pregunta repetida se responde completa (corrida 11: reproche-repeticion).
+    expect(lineas).toContain('19. Si el alumno repite una pregunta, respóndela de nuevo completa y con buena onda, sin decir que ya la respondiste.');
     expect(lineas).toContain('18. Para descuentos y formas de pago, usa CONTEXTO.descuentos e indica que se ven en Estrategia → Simulación de cuotas.');
     // Huella del texto completo: cualquier cambio de redacción debe ser intencional.
     expect(createHash('sha256').update(SYSTEM_PROMPT).digest('hex')).toMatchSnapshot();
@@ -133,6 +135,31 @@ describe('prompt del sistema', () => {
     expect(JSON.parse(chat[3].content)).toEqual({ texto: 'En el Ciclo 11 .', cursos: [], preguntasSugeridas: [] });
     expect(chat[2].content).toBe('¿En qué ciclo meto el electivo?');
     expect(construirMensajes({ modo: 'analisis', contexto, mensajes: historial })[3].content).toBe('En el Ciclo 11 .');
+  });
+
+  it('N1: el CONTEXTO va una sola vez y todos los turnos del historial llegan en orden (conversación real del 502)', () => {
+    // "¿Estoy sobrecargado?" → "¿Qué electivo me conviene?" → "¿En qué ciclo meto el electivo?" → la misma otra vez.
+    const historial = [
+      { rol: 'user' as const, texto: '¿Estoy sobrecargado?' },
+      { rol: 'assistant' as const, texto: 'Tu Ciclo 8 tiene 25 h: estás en nivel de riesgo.' },
+      { rol: 'user' as const, texto: '¿Qué electivo me conviene?' },
+      { rol: 'assistant' as const, texto: 'CALIDAD DE SOFTWARE, de 3 créditos.' },
+      { rol: 'user' as const, texto: '¿En qué ciclo meto el electivo?' },
+      { rol: 'assistant' as const, texto: 'En el Ciclo 10.' },
+      { rol: 'user' as const, texto: '¿En qué ciclo meto el electivo?' },
+    ];
+    const mensajes = construirMensajes({ modo: 'chat', contexto, mensajes: historial });
+    const json = JSON.stringify(contexto);
+    expect(mensajes.filter((mensaje) => mensaje.content.startsWith('<<CONTEXTO_MALLAU>>'))).toHaveLength(1);
+    expect(mensajes.filter((mensaje) => mensaje.content.includes(json))).toHaveLength(1);
+    expect(mensajes.map((mensaje) => mensaje.role)).toEqual(['system', 'system', ...historial.map((mensaje) => mensaje.rol)]);
+    expect(mensajes.slice(2).map((mensaje) => mensaje.role === 'assistant' ? JSON.parse(mensaje.content).texto : mensaje.content))
+      .toEqual(historial.map((mensaje) => mensaje.texto));
+    // Ningún turno lleva el contexto ni el prompt: el payload no crece con cada turno más que el texto de ese turno.
+    for (const mensaje of mensajes.slice(2)) {
+      expect(mensaje.content).not.toContain('"catalogo"');
+      expect(mensaje.content).not.toContain('Eres el asesor académico IA de MallaU');
+    }
   });
 
   it('el frontend nunca contiene el prompt del sistema', () => {

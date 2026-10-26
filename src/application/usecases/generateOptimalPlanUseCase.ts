@@ -30,6 +30,8 @@ export interface GenerateOptimalPlanInput {
   usarVeranos?: boolean;
   alcance?: AlcancePlanificacion;
   conservarUbicados?: boolean;
+  /** Meta de egreso ("terminar en el Ciclo N"): con usarVeranos, los veranos también se habilitan para lograrla. */
+  cicloMeta?: number | null;
   /** Para la cuota máxima y los costos de cada periodo; sin tarifario, la propuesta no trae costos. */
   tarifario?: Tarifario | null;
   disciplina?: string;
@@ -153,6 +155,7 @@ export const generateOptimalPlanUseCase = (input: GenerateOptimalPlanInput): Pro
     usarVeranos: input.usarVeranos,
     alcance: input.alcance,
     conservarUbicados: input.conservarUbicados,
+    cicloMeta: input.cicloMeta,
   });
   const servicio = input.servicioFinanciero ?? new FinancialPlanningService(new UniversityFinancialRulesProvider());
   const principal = {

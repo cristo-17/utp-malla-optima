@@ -1,3 +1,3 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`prompt del sistema > es exactamente el texto acordado (persona, glosario, guía, 18 reglas, cierre JSON y ejemplos) 1`] = `"42ede0fd4068a3cc3e8174aece9a1a1a5a4f6477dfb6029380a9e9344ce16a58"`;
+exports[`prompt del sistema > es exactamente el texto acordado (persona, glosario, guía, 19 reglas, cierre JSON y ejemplos) 1`] = `"24279105793129571ed9f39ebe81be46762c5194f72e196de4e0817dadef612d"`;

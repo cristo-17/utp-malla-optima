@@ -24,7 +24,7 @@ describe('evaluación - casos', () => {
   it('cubre todos los tipos de fallo pedidos', () => {
     expect([...new Set(CASOS.map((caso) => caso.grupo))].sort()).toEqual([
       'Bienestar', 'Bika y trika', 'Carga', 'Contexto incoherente', 'Contrato', 'Conversación', 'Cursos', 'Datos faltantes', 'Datos que no existen',
-      'Foco', 'Fuera de tema', 'Guía y descuentos', 'Identidad', 'Jalados', 'Montos', 'Plan con límites', 'Registro', 'Seguridad', 'What-if',
+      'Foco', 'Fuera de tema', 'Guía y descuentos', 'Identidad', 'Jalados', 'Meta de egreso', 'Montos', 'Plan con límites', 'Registro', 'Seguridad', 'What-if',
     ]);
     const preguntas = CASOS.flatMap((caso) => caso.mensajes);
     for (const pregunta of ['hice trika en herramientas de desarrollo', 'si hago pago único, ¿me alcanza con 900 al mes?', '¿cuántos créditos me faltan para egresar?', '¿convalidé cálculo II?', '¿cuánto me falta para llegar a 900 con BCP?',
@@ -35,20 +35,52 @@ describe('evaluación - casos', () => {
       'Quiero armar un plan que tenga menos de 20h semanales', 'Quiero que ordenes mis ciclos restantes con menos de 18 créditos',
       'arma un plan con 900 soles de presupuesto mensual', 'y qué pasa si agrego otro ciclo?', '¿cómo uso la plataforma?',
       '¿Cómo funcionan los descuentos de la UTP?', '¿dónde veo los descuentos?', 'Arma mi plan con menos de 18 créditos por ciclo',
-      '¿y si llevo verano?']) {
+      '¿y si llevo verano?',
+      // Feedback v2: meta de egreso y bajar horas sin un número.
+      'Quiero terminar mi carrera en el ciclo 9, se puede?', '¿Puedo egresar en el ciclo 8?', 'Del plan actual, ¿cómo puedo reducir las horas semanales?']) {
       expect(preguntas).toContain(pregunta);
     }
     expect(CASOS.filter((caso) => caso.esperado.formal)).toHaveLength(3);
     // Los 38 casos de la primera evaluación se mantienen; se agregaron 4, luego 1 (pago único), 1 (trika con jalado), 1 (1000 tras 800)
     // y 9 del feedback del primer test con alumnos (plan con límites, ruta sugerida, guía y descuentos), luego 2 (menos de 18 y verano)
-    // y 4 conversaciones de 3 a 4 turnos (F-047).
-    expect(CASOS).toHaveLength(60);
+    // y 4 conversaciones de 3 a 4 turnos (F-047), luego 3 de la meta de egreso y de bajar horas (feedback v2).
+    expect(CASOS).toHaveLength(63);
     const conversaciones = CASOS.filter((caso) => caso.encadenada);
     expect(conversaciones.map((caso) => caso.id)).toEqual(['conversacion-real', 'conversacion-repetida', 'conversacion-cambio-tema', 'conversacion-agrego-ciclo']);
     for (const caso of conversaciones) expect(caso.mensajes.length).toBeGreaterThanOrEqual(3);
     expect(conversaciones[0].mensajes).toEqual(['¿Estoy sobrecargado?', '¿Qué electivo me conviene?', '¿En qué ciclo meto el electivo?', '¿En qué ciclo meto el electivo?']);
     expect(CASOS.find((caso) => caso.id === 'bika-inteligencia')).toMatchObject({ fixture: 'contexto-plan1-jalado' });
     expect(CASOS.filter((caso) => caso.esperado.montosFalsos)).toHaveLength(2);
+  });
+});
+
+describe('evaluación - chequeos del feedback v2', () => {
+  it('MAYOR reproche-repeticion con las frases reales de la corrida 11 ("Ya te lo dije:", "Te lo repito:")', () => {
+    for (const texto of [
+      'Ya te lo dije: sin descuento S/ 931.43 al mes.',
+      'Ya te lo dije arriba: sin descuento S/ 931.43 al mes.',
+      'Te lo repito: Ciclo 8, S/ 931.43 al mes.',
+      'Como te dije, son S/ 931.43 al mes.',
+      'Ya te respondí: S/ 931.43 al mes.',
+    ]) expect(fallosDe(texto), texto).toEqual(['MAYOR:reproche-repeticion']);
+    // Responder de nuevo, completo y sin reproche, pasa.
+    expect(fallosDe('En tu Ciclo 8 pagas S/ 931.43 al mes sin descuento, o S/ 884.86 con pronto pago de Interbank o Scotiabank.')).toEqual([]);
+    expect(fallosDe('Si lo jalaras de nuevo, igual tendría que ir en el Ciclo 8.')).toEqual([]);
+  });
+
+  it('CRÍTICO meta-sin-calculo: "no se puede egresar" sin metaEgreso (o cuando dice que sí se puede); con el motivo calculado, pasa', () => {
+    expect(fallosDe('No, no puedes terminar tu carrera en el Ciclo 9.')).toEqual(['CRITICO:meta-sin-calculo']);
+    expect(fallosDe('Es imposible egresar en el Ciclo 9 con tu malla.')).toEqual(['CRITICO:meta-sin-calculo']);
+    expect(fallosDe('No egresas en el Ciclo 9.')).toEqual(['CRITICO:meta-sin-calculo']);
+    // Con la meta calculada que sí se puede, decir que no también es CRÍTICO.
+    const meta9 = leerFixture('contexto-meta-9');
+    expect(fallosDe('No puedes terminar en el Ciclo 9.', {}, ['hola'], meta9)).toContain('CRITICO:meta-sin-calculo');
+    // Con metaEgreso.sePuede false, el "no" sale del planificador.
+    const meta8 = leerFixture('contexto-meta-8');
+    expect(fallosDe('No puedes egresar en el Ciclo 8: lo más cercano es el Ciclo 9.', {}, ['hola'], meta8)).toEqual([]);
+    // Sin un verbo de egreso no es una meta: "no puedes dejar el jalado para el ciclo 10".
+    expect(fallosDe('No, no puedes dejarlo para el Ciclo 10.')).not.toContain('CRITICO:meta-sin-calculo');
+    expect(fallosDe('Para probarlo, usa Autogenerar con tu máximo de horas.')).toEqual([]);
   });
 });
 

@@ -6,6 +6,8 @@ import { esJaladoSinReplanificar } from '../rules/courseRules';
 export interface OpcionesConservacion {
   /** También conserva los pendientes ubicados en ciclos regulares futuros (y su secuencia). */
   regulares?: boolean;
+  /** Conserva los pendientes ubicados en veranos (por defecto true). */
+  veranos?: boolean;
   /** Periodo cuyos cursos no se conservan (se vuelven a planificar). */
   excepto?: PeriodoAcademico['id'];
 }
@@ -44,7 +46,7 @@ export const obtenerAsignacionesConservadas = (
   };
 
   // Primero se conserva la secuencia completa de cada verano válido.
-  for (const curso of cursos) {
+  for (const curso of (opciones.veranos ?? true) ? cursos : []) {
     if (curso.estado === 'PENDIENTE' && curso.ubicacion === 'periodo' && curso.tipoPeriodo === 'VERANO' &&
         validoAntesDe(curso.codigo, crearPeriodoRegular(curso.ciclo + 1))) conservarSecuencia(curso);
   }

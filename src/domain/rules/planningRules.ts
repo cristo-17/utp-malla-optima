@@ -8,6 +8,8 @@ export const LIMITE_HORAS_PERIODO = ACADEMIC_LIMITS.horasRecomendadasPeriodo;
 export const LIMITE_HORAS_PLANIFICACION = ACADEMIC_LIMITS.horasMaximasPlanificacion;
 export const FACTOR_HORAS_VERANO = ACADEMIC_LIMITS.factorHorasVerano;
 export const LIMITE_CREDITOS_VERANO = ACADEMIC_LIMITS.creditosMaximosVerano;
+/** creditosMaximos de academic.json: ningún ciclo regular del planificador pasa de este total (F-016). */
+export const LIMITE_CREDITOS_PERIODO = ACADEMIC_LIMITS.creditosMaximos;
 export const MINIMO_CREDITOS_ELECTIVOS = ACADEMIC_LIMITS.creditosMinimosElectivos;
 
 export interface ResultadoLimite {
