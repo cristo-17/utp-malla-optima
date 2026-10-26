@@ -124,6 +124,18 @@ describe('filtro de salida - falsos positivos de la corrida 8 (F-044)', () => {
     expect(chequeos('En el Ciclo 8 van 3 cursos.', contexto)).toEqual(['plan']);
   });
 
+  it('plan (F-046): "en el 9 / en el 10" son otros ciclos cuando la frase ya nombró uno; "en el Ciclo 8 llevas 9 cursos" sigue fallando', () => {
+    const contexto = fixture('contexto-ciclo-vacio');
+    const real = 'Tu próximo periodo está vacío, así que aún no tienes cursos asignados. Te propongo esta ruta: en el Ciclo 8 llevarías 6 cursos ' +
+      '(20 créditos, 22 h), en el 9 serían 7 cursos (18 créditos, 22 h) y en el 10 otros 6 (19 créditos, 21 h). Te quedaría un curso en el ' +
+      'Ciclo 11 para cerrar. Es una sugerencia: ábrela con Autogenerar y aplícala con «Aplicar a mi malla».';
+    expect(chequeos(real, contexto)).toEqual([]);
+    expect(chequeos('En el Ciclo 8 llevas 9 cursos.', contexto)).toEqual(['plan']);
+    // Sin un ciclo nombrado, "el 9" no es un periodo; y "el 9 de" o "el 22 h" no son ciclos.
+    expect(chequeos('El Ciclo 8 lleva 6 cursos, el 22 h de tope no se pasa.', contexto)).toEqual([]);
+    expect(chequeos('El Ciclo 8 lleva 9 cursos, el 9 de ellos sin prerrequisitos.', contexto)).toEqual(['plan']);
+  });
+
   it('atributo-curso: "A, B y C (20 créditos)" es el total del periodo si coincide con CONTEXTO; si no, o sin lista, sigue fallando', () => {
     const contexto = fixture('contexto-ciclo-vacio');
     const real = 'Te propongo esta ruta: Diseño e Implementación de Arquitectura Empresarial, Herramientas para la Comunicación Efectiva, Innovación y Transformación Digital, Inteligencia de Negocios, Formación para la Investigación - Sistemas y Sistemas de Información Empresarial (20 créditos).';

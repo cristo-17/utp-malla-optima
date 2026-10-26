@@ -269,6 +269,11 @@ const numerosGenerales = (contexto: AIContext) => {
 /** Relaciones entre cursos: ahí un curso se nombra junto a un periodo que no es el suyo. */
 const HABLA_DE_RELACION = /prerrequisito|requisito|habilita|desbloquea|bloquea|depende|abre/;
 const PERIODO_EN_TEXTO = /\b(ciclo|verano)\s+(\d{1,2})\b/g;
+/**
+ * "en el 9", "y el 10": otro periodo, del mismo tipo que el primero que nombró la frase ("en el Ciclo 8 llevarías 6
+ * cursos…, en el 9 serían 7…", F-046). No cuenta si sigue una unidad ("el 9 de 10 cursos", "el 22 h").
+ */
+const PERIODO_SUELTO = /\bel\s+(\d{1,2})\b(?!\s*(?:h\b|hrs?\b|horas?\b|creditos?\b|cr\b|cursos?\b|materias?\b|%|de\b|soles\b))/g;
 const RANGO_DE_CICLOS = /\bciclos?\s+(\d{1,2})\s*(?:al|a|hasta(?:\s+el)?|-)\s*(?:ciclo\s+)?(\d{1,2})\b/g;
 
 export interface PlanNoVerificado { periodo: string; detalle: string }
@@ -293,7 +298,10 @@ export const planNoVerificado = (texto: string, contexto: AIContext): PlanNoVeri
     // "Ciclo 8 al 11" nombra los ciclos 8, 9, 10 y 11 (corrida 2026-10-25-1530).
     const enRango = [...frase.matchAll(RANGO_DE_CICLOS)].flatMap((m) =>
       Array.from({ length: Math.max(0, Number(m[2]) - Number(m[1]) + 1) }, (_, indice) => `ciclo-${Number(m[1]) + indice}`));
-    const mencionados = [...new Set([...[...frase.matchAll(PERIODO_EN_TEXTO)].map((m) => `${m[1]}-${Number(m[2])}`), ...enRango])];
+    const nombrados = [...frase.matchAll(PERIODO_EN_TEXTO)].map((m) => `${m[1]}-${Number(m[2])}`);
+    const tipo = nombrados[0]?.split('-')[0];
+    const sueltos = tipo ? [...frase.matchAll(PERIODO_SUELTO)].map((m) => `${tipo}-${Number(m[1])}`) : [];
+    const mencionados = [...new Set([...nombrados, ...sueltos, ...enRango])];
     if (propuesta) {
       for (const m of frase.matchAll(/\b(\d+)\s+ciclos?\s+(mas|extra|adicional(?:es)?)\b/g)) {
         const permitidos = [propuesta.ciclosAgregados.length, propuesta.ciclosExtraVsSinLimites, propuesta.limites.agregarCiclo ? 1 : null,
