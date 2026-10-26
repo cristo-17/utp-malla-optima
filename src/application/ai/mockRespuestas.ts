@@ -518,6 +518,16 @@ export const mockChat = (contexto: AIContext, pregunta: string): AIChatResponse 
   if (tema === 'identidad') return respuestaIdentidad();
   const conPropuesta = respuestaPropuesta(contexto) ?? respuestaMeta(contexto);
   if (conPropuesta) return conPropuesta;
+  // Regla 17: bajar horas, créditos o costo sin un número → lo que dice CONTEXTO y Autogenerar con un máximo.
+  const t = normalizar(pregunta);
+  if (/\b(reduc|baj|disminu|bajar)\w*\b.*\b(horas|creditos|costo|cuota|carga)\b/.test(t) && !/\d/.test(t)) {
+    const [sinUno] = contexto.derivados.horasSinCadaCurso;
+    return {
+      texto: `${sinUno ? `Sin ${sinUno.nombre} (${sinUno.codigo}) bajarías a ${horas(sinUno.horasSinElCurso)}. ` : ''}` +
+        'Si quieres un tope para todo tu plan, usa Autogenerar con tu máximo de horas: el botón Autogenerar, arriba, o Estrategia → Generar propuesta.',
+      cursos: sinUno ? [sinUno.codigo] : [], preguntasSugeridas: ['¿Estoy sobrecargado?', '¿Cuánto pagaría con menos horas?'],
+    };
+  }
   if (tema === 'guia' && !/descuento/.test(normalizar(pregunta))) return respuestaGuia();
   if (/descuento/.test(normalizar(pregunta)) && !/\d/.test(pregunta)) {
     const descuentos = respuestaDescuentos(contexto);

@@ -5,7 +5,7 @@ export type Fixture =
   | 'contexto-plan1' | 'contexto-plan1-jalado' | 'contexto-desaprobado' | 'contexto-sin-presupuesto'
   | 'contexto-plan1-foco-I62N' | 'contexto-plan1-foco-ciclo8'
   | 'contexto-limite-20h' | 'contexto-limite-18cr' | 'contexto-limite-800' | 'contexto-limite-900' | 'contexto-agrego-ciclo' | 'contexto-llevo-verano'
-  | 'contexto-ciclo-vacio';
+  | 'contexto-ciclo-vacio' | 'contexto-meta-9' | 'contexto-meta-8';
 
 export interface Caso {
   id: string;
@@ -267,6 +267,37 @@ export const CASOS: Caso[] = [
         { patron: /propuesta|sugerencia|sugiere|propone|sugerid/, severidad: 'MAYOR', detalle: 'No dice que la ruta es una propuesta.' },
       ],
     },
+  },
+
+  // Meta de egreso (feedback v2): CONTEXTO.metaEgreso dice si se puede, con cuántas horas y con qué veranos.
+  // Ciclo 9: sí, con 34 h por periodo sin veranos (carga pesada) o 28 h con el Verano 8; S/ 13,603.20 o S/ 13,180.22.
+  {
+    id: 'meta-ciclo-9', grupo: 'Meta de egreso', fixture: 'contexto-meta-9', modo: 'chat', mensajes: ['Quiero terminar mi carrera en el ciclo 9, se puede?'],
+    esperado: {
+      montos: [13603.2, 13180.22],
+      menciona: [
+        APLICAR,
+        { patron: /\bsi\b|se puede|puedes (terminar|egresar|lograrlo)|es posible/, severidad: 'MAYOR', detalle: 'No dice que sí se puede terminar en el Ciclo 9.' },
+        { patron: /\b(34|28) ?(h|horas)\b/, severidad: 'MAYOR', detalle: 'No dice con cuántas horas por periodo (34 h, o 28 h con el Verano 8).' },
+        { patron: /pesad|exigente|intens|mucha carga|bastante carga|carga (alta|fuerte)/, severidad: 'MAYOR', detalle: 'No avisa que pasar de 24 h es una carga pesada.' },
+      ],
+    },
+  },
+  // Ciclo 8: no se puede (INTELIGENCIA DE NEGOCIOS → CURSO INTEGRADOR II necesita 2 periodos); lo más cercano es el 9.
+  {
+    id: 'meta-ciclo-8', grupo: 'Meta de egreso', fixture: 'contexto-meta-8', modo: 'chat', mensajes: ['¿Puedo egresar en el ciclo 8?'],
+    esperado: {
+      menciona: [
+        { patron: /\bno\b/, severidad: 'MAYOR', detalle: 'No dice que en el Ciclo 8 no se puede.' },
+        { patron: /prerrequisit|requisito|inteligencia de negocios|curso integrador|cadena|seguid/, severidad: 'MAYOR', detalle: 'No da el motivo (la cadena de prerrequisitos).' },
+        { patron: /ciclo 9/, severidad: 'MAYOR', detalle: 'No dice que lo más cercano es el Ciclo 9.' },
+      ],
+    },
+  },
+  // Regla 17: bajar horas sin un número → lo que dice CONTEXTO y Autogenerar con un máximo.
+  {
+    id: 'reducir-horas', grupo: 'Meta de egreso', fixture: 'contexto-plan1', modo: 'chat', mensajes: ['Del plan actual, ¿cómo puedo reducir las horas semanales?'],
+    esperado: { menciona: [{ patron: /autogenera/, severidad: 'MAYOR', detalle: 'No ofrece Autogenerar con un máximo de horas.' }] },
   },
 
   // Guía de MallaU y descuentos
