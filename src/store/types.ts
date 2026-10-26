@@ -7,7 +7,7 @@ import type { StateCreator } from 'zustand';
 /** Límites que el alumno elige en Autogenerar (o que detecta el asistente); todos opcionales. */
 export type OpcionesAutogenerar = Pick<GenerateOptimalPlanInput,
   'alcance' | 'maxHorasPorPeriodo' | 'maxCreditosPorPeriodo' | 'maxCuotaMensual' | 'usarVeranos' | 'conservarUbicados' | 'metodoPago' |
-  'horasEstricto' | 'creditosEstricto'>;
+  'horasEstricto' | 'creditosEstricto' | 'cicloMeta'>;
 
 /** Modal Autogenerar abierto, con los valores con los que se abre. */
 export interface EstadoAutogenerar {

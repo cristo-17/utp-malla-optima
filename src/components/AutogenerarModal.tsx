@@ -77,7 +77,9 @@ function Contenido({ inicial, origen, store }: { inicial: OpcionesAutogenerar; o
   const opciones: OpcionesAutogenerar = useMemo(() => ({
     alcance, maxHorasPorPeriodo: aNumero(horas), maxCreditosPorPeriodo: aNumero(creditos),
     maxCuotaMensual: aNumero(cuota), usarVeranos, conservarUbicados: conservar, metodoPago, horasEstricto, creditosEstricto,
-  }), [alcance, horas, creditos, cuota, usarVeranos, conservar, metodoPago, horasEstricto, creditosEstricto]);
+    // La meta de egreso del chat ("terminar en el Ciclo 9") decide qué veranos se habilitan.
+    cicloMeta: inicial.cicloMeta ?? null,
+  }), [alcance, horas, creditos, cuota, usarVeranos, conservar, metodoPago, horasEstricto, creditosEstricto, inicial.cicloMeta]);
   const propuesta = useMemo((): PropuestaPlan | null => {
     try {
       return previsualizar(opciones);
