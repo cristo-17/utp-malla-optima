@@ -5,7 +5,8 @@
  * y, si no pasa el contrato, los problemas de Zod (path y code). Reporte en docs/evaluaciones/ (local).
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { AIAnalisisLibreSchema, AIChatResponseSchema, AIRequestSchema } from '../src/contracts.js';
+import { AIRequestSchema, parsearRespuesta } from '../src/contracts.js';
+import { problemasDelContenido } from '../src/deepseek.js';
 import { crearHandlers, leerConfig } from '../src/handler.js';
 import { crearLimitadorMemoria } from '../src/limites.js';
 import { leerEnvLocal } from './evaluacion/cli.js';
@@ -25,18 +26,14 @@ const apiKey = process.env.DEEPSEEK_API_KEY ?? local.DEEPSEEK_API_KEY;
 if (!apiKey) throw new Error('Falta DEEPSEEK_API_KEY en ai-proxy/.env.local.');
 
 interface Intento { contenido: string; finishReason: string | null; problemas: string[] }
-const esquema = peticion.modo === 'analisis' ? AIAnalisisLibreSchema : AIChatResponseSchema;
-
-/** Problemas del contrato de una salida cruda: "path:code" (o "json" si no es JSON). */
-export const problemasDe = (contenido: string): string[] => {
-  let datos: unknown;
+/** Problemas del contrato de una salida cruda, igual que el log del proxy ("path:code", vacío o JSON inválido). */
+const problemasDe = (contenido: string): string[] => {
   try {
-    datos = JSON.parse(contenido);
-  } catch {
-    return ['json:invalid_json'];
+    parsearRespuesta(peticion.modo, JSON.parse(contenido), peticion.contexto, true);
+    return [];
+  } catch (error) {
+    return problemasDelContenido(contenido, error);
   }
-  const resultado = esquema.safeParse(datos);
-  return resultado.success ? [] : resultado.error.issues.map((issue) => `${issue.path.join('.') || '(raíz)'}:${issue.code}`);
 };
 
 const lineas: string[] = [`# Reproducción de ${ruta}`, '', `Modo ${peticion.modo}, ${peticion.mensajes.length} mensajes, ${veces} veces.`, ''];

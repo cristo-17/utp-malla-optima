@@ -1,3 +1,4 @@
+import { ZodError } from 'zod';
 import { leerUso, type UsoTokens } from './consumo.js';
 import { esquemaRespuesta, parsearRespuesta, type AIErrorCodigo, type AIRequest, type AIRespuesta } from './contracts.js';
 import { SYSTEM_PROMPT } from './systemPrompt.js';
@@ -93,7 +94,19 @@ export interface OpcionesLlamada {
   alIntentar?: () => void;
   /** Diagnóstico: se llama con cada respuesta 200 cruda. Producción no lo usa (llevaría contenido). */
   alResponder?: (intento: IntentoCrudo) => void;
+  /** Problemas del contrato de un intento que no se pudo leer (solo "path:code", nunca el texto). */
+  alInvalida?: (problemas: string[]) => void;
 }
+
+/**
+ * Por qué una salida del modelo no cumple el contrato, sin contenido: "(contenido):vacio" (solo espacios),
+ * "(contenido):json_invalido" o, por cada problema de Zod, "path:code" (por ejemplo "cursos:too_big").
+ */
+export const problemasDelContenido = (contenido: string, error: unknown): string[] => {
+  if (!contenido.trim()) return ['(contenido):vacio'];
+  if (error instanceof ZodError) return error.issues.map((issue) => `${issue.path.join('.') || '(raíz)'}:${issue.code}`);
+  return ['(contenido):json_invalido'];
+};
 
 type Intento = { tipo: 'ok'; respuesta: AIRespuesta } | { tipo: 'cortada' } | { tipo: 'invalida' };
 
@@ -123,10 +136,16 @@ const intentar = async (peticion: AIRequest, opciones: OpcionesLlamada, extra: M
       razonamiento: Boolean(eleccion?.message?.reasoning_content), contenido,
     });
     if (eleccion?.finish_reason === 'length') return { tipo: 'cortada' };
-    // Secciones libres: si faltan o sobran, el filtro de salida (verificacion.ts) pide corregirlas.
-    return { tipo: 'ok', respuesta: parsearRespuesta(peticion.modo, JSON.parse(contenido), peticion.contexto, true) };
+    try {
+      // Secciones libres: si faltan o sobran, el filtro de salida (verificacion.ts) pide corregirlas.
+      return { tipo: 'ok', respuesta: parsearRespuesta(peticion.modo, JSON.parse(contenido), peticion.contexto, true) };
+    } catch (error) {
+      opciones.alInvalida?.(problemasDelContenido(contenido, error));
+      return { tipo: 'invalida' };
+    }
   } catch {
     if (opciones.signal.aborted) throw new ErrorProveedor('PROVEEDOR_CAIDO', 504);
+    opciones.alInvalida?.(['(respuesta):json_invalido']);
     return { tipo: 'invalida' };
   }
 };
