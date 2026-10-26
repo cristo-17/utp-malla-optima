@@ -16,6 +16,13 @@ export interface Caso {
   foco?: AIFoco;
   /** Mensajes del alumno (en chat, el último es la pregunta). */
   mensajes: string[];
+  /**
+   * Conversación de varios turnos (F-047): cada mensaje anterior se pregunta de verdad y su respuesta entra al
+   * historial como lo arma el cliente. Se evalúa solo la última respuesta.
+   */
+  encadenada?: boolean;
+  /** Contexto de los turnos anteriores, si no es el de `fixture` (por ejemplo, sin la propuesta del último mensaje). */
+  fixturePrevio?: Fixture;
   esperado: Esperado;
 }
 
@@ -278,5 +285,28 @@ export const CASOS: Caso[] = [
   {
     id: 'descuentos-donde', grupo: 'Guía y descuentos', fixture: 'contexto-plan1', modo: 'chat', mensajes: ['¿dónde veo los descuentos?'],
     esperado: { porcentajes: true, menciona: [ESTRATEGIA, { patron: /simulacion de cuotas/, severidad: 'MAYOR', detalle: 'No dice que se ven en Simulación de cuotas.' }] },
+  },
+
+  // Conversación (F-047): con turnos del asistente en el historial, el modelo devolvía solo espacios (RESPUESTA_INVALIDA).
+  {
+    id: 'conversacion-real', grupo: 'Conversación', fixture: 'contexto-plan1', modo: 'chat', encadenada: true,
+    mensajes: ['¿Estoy sobrecargado?', '¿Qué electivo me conviene?', '¿En qué ciclo meto el electivo?', '¿En qué ciclo meto el electivo?'],
+    esperado: {},
+  },
+  {
+    id: 'conversacion-repetida', grupo: 'Conversación', fixture: 'contexto-plan1', modo: 'chat', encadenada: true,
+    mensajes: ['¿cuánto pago el próximo ciclo?', '¿cuánto pago el próximo ciclo?', '¿cuánto pago el próximo ciclo?'],
+    esperado: { montos: [5055.15, 4822.3, 4938.7, 4705.86] },
+  },
+  {
+    id: 'conversacion-cambio-tema', grupo: 'Conversación', fixture: 'contexto-plan1', modo: 'chat', encadenada: true,
+    mensajes: ['¿mi carga está bien?', '¿cuánto es la matrícula?', '¿qué profe es bueno para inteligencia de negocios?'],
+    esperado: SIN_DATOS_INVENTADOS,
+  },
+  // Los turnos de costos van sin propuesta; el último trae la del planificador (hasta el Ciclo 12, 14 h por ciclo).
+  {
+    id: 'conversacion-agrego-ciclo', grupo: 'Conversación', fixture: 'contexto-agrego-ciclo', fixturePrevio: 'contexto-plan1', modo: 'chat', encadenada: true,
+    mensajes: ['¿cuánto me cuesta el próximo ciclo?', '¿me alcanza con 900 al mes?', '¿y si agrego otro ciclo?'],
+    esperado: { menciona: [APLICAR, { patron: /\b14 ?(h|horas)\b|ciclo 12/, severidad: 'MAYOR', detalle: 'No dice con cuántas horas por ciclo (14 h) o hasta qué ciclo (12) queda.' }] },
   },
 ];

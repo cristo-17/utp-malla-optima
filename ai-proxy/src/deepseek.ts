@@ -1,3 +1,4 @@
+import { ZodError } from 'zod';
 import { leerUso, type UsoTokens } from './consumo.js';
 import { esquemaRespuesta, parsearRespuesta, type AIErrorCodigo, type AIRequest, type AIRespuesta } from './contracts.js';
 import { SYSTEM_PROMPT } from './systemPrompt.js';
@@ -25,6 +26,15 @@ export const FIN_CONTEXTO = '<<FIN_CONTEXTO_MALLAU>>';
 export const quitarDelimitadores = (texto: string) => texto.split(INICIO_CONTEXTO).join('').split(FIN_CONTEXTO).join('');
 
 /**
+ * En el chat, los turnos anteriores del asistente viajan en el mismo JSON que debe producir el modelo: con dos o más
+ * turnos en texto plano, el modo json_object devolvía solo espacios (F-047). El cliente manda solo el texto.
+ */
+const contenidoDelTurno = (modo: AIRequest['modo'], mensaje: AIRequest['mensajes'][number]) => {
+  const texto = quitarDelimitadores(mensaje.texto);
+  return modo === 'chat' && mensaje.rol === 'assistant' ? JSON.stringify({ texto, cursos: [], preguntasSugeridas: [] }) : texto;
+};
+
+/**
  * Mensajes para DeepSeek, en este orden:
  * 1) system = prompt estático + esquema; 2) system = contexto (con el foco) entre delimitadores;
  * 3) el historial y 4) el mensaje del alumno (el último de `mensajes`), sin delimitadores.
@@ -35,7 +45,7 @@ export const construirMensajes = (peticion: AIRequest) => [
     content: `${SYSTEM_PROMPT}\n\nESQUEMA JSON de la respuesta (modo "${peticion.modo}"):\n${JSON.stringify(esquemaRespuesta(peticion.modo))}`,
   },
   { role: 'system', content: `${INICIO_CONTEXTO}\n${JSON.stringify(peticion.contexto)}\n${FIN_CONTEXTO}` },
-  ...peticion.mensajes.map((mensaje) => ({ role: mensaje.rol, content: quitarDelimitadores(mensaje.texto) })),
+  ...peticion.mensajes.map((mensaje) => ({ role: mensaje.rol, content: contenidoDelTurno(peticion.modo, mensaje) })),
 ];
 
 /** Tope de salida por modo (incluiría el razonamiento): el análisis trae 5 secciones; el chat, un párrafo. */
@@ -93,7 +103,19 @@ export interface OpcionesLlamada {
   alIntentar?: () => void;
   /** Diagnóstico: se llama con cada respuesta 200 cruda. Producción no lo usa (llevaría contenido). */
   alResponder?: (intento: IntentoCrudo) => void;
+  /** Problemas del contrato de un intento que no se pudo leer (solo "path:code", nunca el texto). */
+  alInvalida?: (problemas: string[]) => void;
 }
+
+/**
+ * Por qué una salida del modelo no cumple el contrato, sin contenido: "(contenido):vacio" (solo espacios),
+ * "(contenido):json_invalido" o, por cada problema de Zod, "path:code" (por ejemplo "cursos:too_big").
+ */
+export const problemasDelContenido = (contenido: string, error: unknown): string[] => {
+  if (!contenido.trim()) return ['(contenido):vacio'];
+  if (error instanceof ZodError) return error.issues.map((issue) => `${issue.path.join('.') || '(raíz)'}:${issue.code}`);
+  return ['(contenido):json_invalido'];
+};
 
 type Intento = { tipo: 'ok'; respuesta: AIRespuesta } | { tipo: 'cortada' } | { tipo: 'invalida' };
 
@@ -123,10 +145,16 @@ const intentar = async (peticion: AIRequest, opciones: OpcionesLlamada, extra: M
       razonamiento: Boolean(eleccion?.message?.reasoning_content), contenido,
     });
     if (eleccion?.finish_reason === 'length') return { tipo: 'cortada' };
-    // Secciones libres: si faltan o sobran, el filtro de salida (verificacion.ts) pide corregirlas.
-    return { tipo: 'ok', respuesta: parsearRespuesta(peticion.modo, JSON.parse(contenido), peticion.contexto, true) };
+    try {
+      // Secciones libres: si faltan o sobran, el filtro de salida (verificacion.ts) pide corregirlas.
+      return { tipo: 'ok', respuesta: parsearRespuesta(peticion.modo, JSON.parse(contenido), peticion.contexto, true) };
+    } catch (error) {
+      opciones.alInvalida?.(problemasDelContenido(contenido, error));
+      return { tipo: 'invalida' };
+    }
   } catch {
     if (opciones.signal.aborted) throw new ErrorProveedor('PROVEEDOR_CAIDO', 504);
+    opciones.alInvalida?.(['(respuesta):json_invalido']);
     return { tipo: 'invalida' };
   }
 };

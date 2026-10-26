@@ -53,6 +53,8 @@ export interface RegistroConsumo extends RegistroAsistente, UsoTokens {
   verificacion: Verificacion | null;
   /** Solo los nombres de los chequeos que fallaron, nunca el contenido. */
   chequeos_fallidos: string[];
+  /** Por qué no se pudo leer la salida del modelo en cada intento inválido: "path:code" de Zod, vacío o JSON inválido. */
+  problemas_esquema: string[];
   tarifa: 'normal' | 'pico';
   costo_usd: number;
 }
@@ -117,6 +119,7 @@ export const crearHandlers = (config: ConfigProxy) => {
     let modo = 'desconocido';
     let consumo: {
       uso: UsoTokens; intentos: number; finishReasons: (string | null)[]; verificacion: Verificacion | null; chequeosFallidos: string[];
+      problemasEsquema: string[];
     } | null = null;
     const terminar = (codigo: 'ok' | AIErrorCodigo, cuerpo: unknown, status: number) => {
       const base: RegistroAsistente = { evento: 'asistente', modo, codigo, duracion_ms: Date.now() - inicio, mock: config.mock };
@@ -126,7 +129,8 @@ export const crearHandlers = (config: ConfigProxy) => {
         const pico = esHorarioPico(new Date(config.ahora()), config.horarioPicoUtc);
         const registro: RegistroConsumo = {
           ...base, modelo: config.modelo, intentos: consumo.intentos, finish_reasons: consumo.finishReasons,
-          verificacion: consumo.verificacion, chequeos_fallidos: consumo.chequeosFallidos, ...consumo.uso,
+          verificacion: consumo.verificacion, chequeos_fallidos: consumo.chequeosFallidos,
+          problemas_esquema: consumo.problemasEsquema, ...consumo.uso,
           tarifa: pico ? 'pico' : 'normal', costo_usd: costoEstimadoUsd(consumo.uso, pico),
         };
         config.registrar(registro);
@@ -173,6 +177,7 @@ export const crearHandlers = (config: ConfigProxy) => {
     const temporizador = setTimeout(() => controlador.abort(), config.timeoutMs);
     const acumulado = {
       uso: USO_VACIO, intentos: 0, finishReasons: [] as (string | null)[], verificacion: null as Verificacion | null, chequeosFallidos: [] as string[],
+      problemasEsquema: [] as string[],
     };
     consumo = acumulado;
     try {
@@ -183,6 +188,7 @@ export const crearHandlers = (config: ConfigProxy) => {
           acumulado.finishReasons.push(finishReason);
         },
         alIntentar: () => { acumulado.intentos += 1; },
+        alInvalida: (problemas) => { acumulado.problemasEsquema = [...new Set([...acumulado.problemasEsquema, ...problemas])]; },
       });
       acumulado.verificacion = resultado.verificacion;
       acumulado.chequeosFallidos = resultado.chequeosFallidos;

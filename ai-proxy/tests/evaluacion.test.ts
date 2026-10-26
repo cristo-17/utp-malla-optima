@@ -23,7 +23,7 @@ describe('evaluación - casos', () => {
 
   it('cubre todos los tipos de fallo pedidos', () => {
     expect([...new Set(CASOS.map((caso) => caso.grupo))].sort()).toEqual([
-      'Bienestar', 'Bika y trika', 'Carga', 'Contexto incoherente', 'Contrato', 'Cursos', 'Datos faltantes', 'Datos que no existen',
+      'Bienestar', 'Bika y trika', 'Carga', 'Contexto incoherente', 'Contrato', 'Conversación', 'Cursos', 'Datos faltantes', 'Datos que no existen',
       'Foco', 'Fuera de tema', 'Guía y descuentos', 'Identidad', 'Jalados', 'Montos', 'Plan con límites', 'Registro', 'Seguridad', 'What-if',
     ]);
     const preguntas = CASOS.flatMap((caso) => caso.mensajes);
@@ -40,8 +40,13 @@ describe('evaluación - casos', () => {
     }
     expect(CASOS.filter((caso) => caso.esperado.formal)).toHaveLength(3);
     // Los 38 casos de la primera evaluación se mantienen; se agregaron 4, luego 1 (pago único), 1 (trika con jalado), 1 (1000 tras 800)
-    // y 9 del feedback del primer test con alumnos (plan con límites, ruta sugerida, guía y descuentos), y luego 2 (menos de 18 y verano).
-    expect(CASOS).toHaveLength(56);
+    // y 9 del feedback del primer test con alumnos (plan con límites, ruta sugerida, guía y descuentos), luego 2 (menos de 18 y verano)
+    // y 4 conversaciones de 3 a 4 turnos (F-047).
+    expect(CASOS).toHaveLength(60);
+    const conversaciones = CASOS.filter((caso) => caso.encadenada);
+    expect(conversaciones.map((caso) => caso.id)).toEqual(['conversacion-real', 'conversacion-repetida', 'conversacion-cambio-tema', 'conversacion-agrego-ciclo']);
+    for (const caso of conversaciones) expect(caso.mensajes.length).toBeGreaterThanOrEqual(3);
+    expect(conversaciones[0].mensajes).toEqual(['¿Estoy sobrecargado?', '¿Qué electivo me conviene?', '¿En qué ciclo meto el electivo?', '¿En qué ciclo meto el electivo?']);
     expect(CASOS.find((caso) => caso.id === 'bika-inteligencia')).toMatchObject({ fixture: 'contexto-plan1-jalado' });
     expect(CASOS.filter((caso) => caso.esperado.montosFalsos)).toHaveLength(2);
   });
@@ -310,6 +315,37 @@ describe('evaluación - ejecución', () => {
     expect(resultado.casos[0].repeticiones[0].fallos).toMatchObject([{ severidad: 'CRITICO', chequeo: 'error-proveedor' }]);
     await expect(evaluar({ casos: CASOS, solo: 'no-existe', fixtures: leerFixture, llamar, repeticiones: 1, maxUsd: 1, horarioPico: () => false })).rejects.toThrow();
     expect([percentil([10, 20, 30, 40], 50), percentil([10, 20, 30, 40], 95)]).toEqual([20, 40]);
+  });
+
+  it('caso encadenado: pregunta cada turno, arma el historial como el cliente, suma el costo y evalúa la última respuesta', async () => {
+    const caso = CASOS.find((uno) => uno.id === 'conversacion-cambio-tema')!;
+    const llamar = vi.fn()
+      .mockResolvedValueOnce({ ...respuestaOk, respuesta: chat('Tu carga está bien: 25 h.') })
+      .mockResolvedValueOnce({ ...respuestaOk, respuesta: null, error: 'PROVEEDOR_CAIDO' })
+      .mockResolvedValueOnce({ ...respuestaOk, respuesta: chat('MallaU no tiene datos de profesores.') });
+    const resultado = await evaluar({ casos: [caso], fixtures: leerFixture, llamar, repeticiones: 1, maxUsd: 1, horarioPico: () => false });
+    expect(llamar).toHaveBeenCalledTimes(3);
+    // La respuesta con error no entra al historial (historialParaEnviar).
+    expect(llamar.mock.calls[2][0].mensajes).toEqual([
+      { rol: 'user', texto: '¿mi carga está bien?' }, { rol: 'assistant', texto: 'Tu carga está bien: 25 h.' },
+      { rol: 'user', texto: '¿cuánto es la matrícula?' }, { rol: 'user', texto: '¿qué profe es bueno para inteligencia de negocios?' },
+    ]);
+    const [fila] = resultado.casos[0].repeticiones;
+    expect(fila.fallos).toEqual([]);
+    expect(fila.historial).toHaveLength(3);
+    expect(fila.uso.prompt_tokens).toBe(3000);
+    expect(resultado.latenciasPorModo.chat).toHaveLength(1);
+  });
+
+  it('el último turno con contexto propio (fixturePrevio) y RESPUESTA_INVALIDA en la salida final es CRÍTICO', async () => {
+    const caso = CASOS.find((uno) => uno.id === 'conversacion-agrego-ciclo')!;
+    const llamar = vi.fn()
+      .mockResolvedValueOnce(respuestaOk).mockResolvedValueOnce(respuestaOk)
+      .mockResolvedValueOnce({ ...respuestaOk, respuesta: null, error: 'RESPUESTA_INVALIDA' });
+    const resultado = await evaluar({ casos: [caso], fixtures: leerFixture, llamar, repeticiones: 1, maxUsd: 1, horarioPico: () => false });
+    expect(llamar.mock.calls[0][0].contexto.propuestaConLimites).toBeNull();
+    expect(llamar.mock.calls[2][0].contexto.propuestaConLimites).not.toBeNull();
+    expect(resultado.casos[0].repeticiones[0].fallos).toMatchObject([{ severidad: 'CRITICO', chequeo: 'respuesta-invalida' }]);
   });
 
   it('el reporte se llama AAAA-MM-DD-HHMM.md en hora de Lima', () => {
