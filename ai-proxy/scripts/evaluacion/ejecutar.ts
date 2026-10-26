@@ -1,4 +1,4 @@
-import type { AIContext, AIErrorCodigo, AIRequest, AIRespuesta } from '../../src/contracts.js';
+import { MAX_MENSAJES, MAX_TEXTO_MENSAJE, type AIContext, type AIErrorCodigo, type AIMensaje, type AIRequest, type AIRespuesta } from '../../src/contracts.js';
 import { costoEstimadoUsd, sumarUso, USO_VACIO, type UsoTokens } from '../../src/consumo.js';
 import type { IntentoCrudo, Verificacion } from '../../src/deepseek.js';
 import { aplicarMontoDelAlumno } from '../../src/presupuesto.js';
@@ -34,6 +34,8 @@ export interface Repeticion {
   verificacion: Verificacion | null;
   chequeosFiltro: string[];
   fallos: Fallo[];
+  /** Caso encadenado: el historial con que se hizo la última pregunta (sin ella). */
+  historial?: AIMensaje[];
 }
 
 export interface ResultadoCaso {
@@ -83,6 +85,22 @@ const codigosCrudos = (crudo: string | null): string[] => {
   }
 };
 
+/**
+ * Turnos anteriores de un caso encadenado, preguntados de verdad. Como el cliente (historialParaEnviar): una respuesta
+ * con error no entra al historial, el texto se recorta a 1000 caracteres y van los últimos 8 mensajes.
+ */
+const historialDe = async (caso: Caso, contexto: AIContext, llamar: OpcionesEvaluacion['llamar']) => {
+  const historial: AIMensaje[] = [];
+  const llamadas: ResultadoLlamada[] = [];
+  for (const texto of caso.mensajes.slice(0, -1)) {
+    historial.push({ rol: 'user', texto });
+    const llamada = await llamar({ modo: caso.modo, contexto, ...(caso.foco ? { foco: caso.foco } : {}), mensajes: historial.slice(-MAX_MENSAJES) });
+    llamadas.push(llamada);
+    if (llamada.respuesta && 'texto' in llamada.respuesta) historial.push({ rol: 'assistant', texto: llamada.respuesta.texto.slice(0, MAX_TEXTO_MENSAJE) });
+  }
+  return { historial, llamadas };
+};
+
 /** Corre los casos en serie. Antes de cada llamada revisa el tope de costo. */
 export const evaluar = async (opciones: OpcionesEvaluacion): Promise<ResultadoEvaluacion> => {
   const { llamar, fixtures, repeticiones, maxUsd, horarioPico, ahora = Date.now, progreso = () => undefined } = opciones;
@@ -100,16 +118,23 @@ export const evaluar = async (opciones: OpcionesEvaluacion): Promise<ResultadoEv
         resultado.detenidoPorCosto = true;
         break;
       }
+      const previo = caso.encadenada ? await historialDe(caso, caso.fixturePrevio ? fixtures(caso.fixturePrevio) : contexto, llamar) : null;
+      const peticion = peticionDe(caso, contexto);
+      if (previo) peticion.mensajes = [...previo.historial, ...peticion.mensajes.slice(-1)].slice(-MAX_MENSAJES);
+      // La latencia es la de la última pregunta; el costo, el de toda la conversación.
       const inicio = ahora();
-      const llamada = await llamar(peticionDe(caso, contexto));
+      const llamada = await llamar(peticion);
       const ms = ahora() - inicio;
-      const costoUsd = costoEstimadoUsd(llamada.uso, horarioPico());
+      const usoTotal = (previo?.llamadas ?? []).reduce((suma, previa) => sumarUso(suma, previa.uso), llamada.uso);
+      const costoUsd = costoEstimadoUsd(usoTotal, horarioPico());
       // Se evalúa lo que ve el alumno: la respuesta que pasó el filtro de salida, o el aviso que la reemplaza.
       const fallos: Fallo[] = llamada.error === 'RESPUESTA_NO_VERIFICADA'
         ? [{ severidad: 'MAYOR', chequeo: 'respuesta-segura', detalle: `El filtro de salida devolvió la respuesta segura (${(llamada.chequeosFiltro ?? []).join(', ')}).` }]
         : llamada.error === 'RESPUESTA_LARGA'
           ? [{ severidad: 'CRITICO', chequeo: 'respuesta-cortada', detalle: 'Se cortó dos veces (finish_reason "length"): el alumno ve RESPUESTA_LARGA.' }]
-          : llamada.error && llamada.error !== 'RESPUESTA_INVALIDA'
+          : llamada.error === 'RESPUESTA_INVALIDA'
+            ? [{ severidad: 'CRITICO', chequeo: 'respuesta-invalida', detalle: 'Dos salidas que no cumplen el contrato: el alumno ve RESPUESTA_INVALIDA (502).' }]
+          : llamada.error
             ? [{ severidad: 'CRITICO' as Severidad, chequeo: 'error-proveedor', detalle: `La llamada falló con ${llamada.error}.` }]
             : chequear({
           // Lo mismo que ve el modelo: el monto del último mensaje como presupuesto (llamarConVerificacion).
@@ -117,9 +142,13 @@ export const evaluar = async (opciones: OpcionesEvaluacion): Promise<ResultadoEv
           presupuestoDelPlan: contexto.financiero?.presupuestoMensual ?? null,
           respuesta: llamada.respuesta, codigosCrudos: codigosCrudos(llamada.crudo),
         });
-      filas.push({ numero, ms, costoUsd, uso: llamada.uso, intentos: llamada.intentos, error: llamada.error, respuesta: llamada.respuesta, crudo: llamada.crudo, detalle: llamada.detalle ?? [], verificacion: llamada.verificacion ?? null, chequeosFiltro: llamada.chequeosFiltro ?? [], fallos });
+      filas.push({
+        numero, ms, costoUsd, uso: usoTotal, intentos: llamada.intentos, error: llamada.error, respuesta: llamada.respuesta, crudo: llamada.crudo,
+        detalle: llamada.detalle ?? [], verificacion: llamada.verificacion ?? null, chequeosFiltro: llamada.chequeosFiltro ?? [], fallos,
+        ...(previo ? { historial: previo.historial } : {}),
+      });
       resultado.costoUsd = Number((resultado.costoUsd + costoUsd).toFixed(6));
-      resultado.uso = sumarUso(resultado.uso, llamada.uso);
+      resultado.uso = sumarUso(resultado.uso, usoTotal);
       resultado.latencias.push(ms);
       resultado.latenciasPorModo[caso.modo].push(ms);
       progreso(`${fallos.length ? '✗' : '✓'} ${caso.id} #${numero} · ${ms} ms · US$ ${resultado.costoUsd.toFixed(4)}${fallos.length ? ` · ${fallos.map((fallo) => `${fallo.severidad}:${fallo.chequeo}`).join(', ')}` : ''}`);

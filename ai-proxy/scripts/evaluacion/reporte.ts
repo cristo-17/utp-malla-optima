@@ -123,6 +123,10 @@ export const reporteMarkdown = (resultado: ResultadoEvaluacion, meta: MetaReport
     for (const fila of repeticiones) {
       const filtro = fila.verificacion ? ` · filtro: ${fila.verificacion}${fila.chequeosFiltro.length ? ` (${fila.chequeosFiltro.join(', ')})` : ''}` : '';
       lineas.push('', `**Repetición ${fila.numero}** · ${fila.ms} ms · ${fila.intentos} intento(s) · US$ ${fila.costoUsd.toFixed(6)}${fila.error ? ` · error ${fila.error}` : ''}${filtro}`, '');
+      // Caso encadenado: lo que respondió el modelo en los turnos anteriores (la última pregunta ya está arriba).
+      if (fila.historial) {
+        lineas.push(...fila.historial.map((mensaje) => `> **${mensaje.rol === 'user' ? 'Alumno' : 'Asistente'}:** ${mensaje.texto.replace(/\n/g, ' ')}`), '');
+      }
       lineas.push(bloque(fila.respuesta ? respuestaLegible(fila.respuesta) : (fila.crudo ?? '(sin respuesta)')));
       if (fila.fallos.length) lineas.push('', ...fila.fallos.map((fallo) => `- **${fallo.severidad}** \`${fallo.chequeo}\`: ${fallo.detalle}`));
       if (fila.detalle.length) lineas.push('', ...detalleIntentos(fila.detalle));
