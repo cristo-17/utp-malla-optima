@@ -14,6 +14,8 @@ export const MAX_MENSAJES = 8;
 export const MAX_TEXTO_MENSAJE = 1000;
 export const MAX_ACCIONES = 3;
 export const MAX_PREGUNTAS = 3;
+/** Códigos de curso que el proxy conserva por respuesta o sección (la interfaz muestra 5 chips). */
+export const MAX_CURSOS = 10;
 
 export const NivelSchema = z.enum(['ok', 'atencion', 'riesgo']);
 export type Nivel = z.infer<typeof NivelSchema>;
@@ -474,19 +476,40 @@ export const AIAnalisisResponseSchema = z.object({
   preguntasSugeridas: z.array(z.string()).max(MAX_PREGUNTAS),
 });
 
-/**
- * La misma forma con las secciones en cualquier cantidad u orden. Solo la usa el proxy al leer la respuesta del
- * modelo, para que el filtro de salida pida corregir las secciones con el error concreto.
- */
-export const AIAnalisisLibreSchema = AIAnalisisResponseSchema.extend({ secciones: z.array(AISeccionSchema) });
-export type AIAnalisisResponse = z.infer<typeof AIAnalisisLibreSchema>;
-
 export const AIChatResponseSchema = z.object({
   texto: z.string(),
   cursos: z.array(z.string()),
   preguntasSugeridas: z.array(z.string()).max(MAX_PREGUNTAS),
 });
 export type AIChatResponse = z.infer<typeof AIChatResponseSchema>;
+
+// Lectura tolerante del modelo (solo el proxy, D-059): los campos no críticos no invalidan la respuesta.
+
+/** Lista no crítica: si falta o no es una lista, []; descarta lo que no sea texto y recorta a `max`. */
+const listaTolerante = (max = Infinity) =>
+  z.array(z.unknown()).catch([]).transform((items) => items.filter((item): item is string => typeof item === 'string').slice(0, max));
+/** El texto sí es crítico: sin él no hay respuesta. */
+const textoNoVacio = z.string().refine((texto) => texto.trim() !== '', { error: 'vacío' });
+
+const AISeccionToleranteSchema = AISeccionSchema.extend({ acciones: listaTolerante(MAX_ACCIONES), cursos: listaTolerante() });
+
+/**
+ * El análisis con las secciones en cualquier cantidad u orden, para que el filtro de salida pida corregirlas con el
+ * error concreto, y con acciones, cursos y preguntas tolerantes. Ignora las claves de más.
+ */
+export const AIAnalisisLibreSchema = z.object({
+  resumen: textoNoVacio,
+  secciones: z.array(AISeccionToleranteSchema),
+  preguntasSugeridas: listaTolerante(MAX_PREGUNTAS),
+});
+export type AIAnalisisResponse = z.infer<typeof AIAnalisisLibreSchema>;
+
+/** El chat del modelo: texto no vacío; cursos y preguntas tolerantes; claves de más ignoradas. */
+export const AIChatToleranteSchema = z.object({
+  texto: textoNoVacio,
+  cursos: listaTolerante(),
+  preguntasSugeridas: listaTolerante(MAX_PREGUNTAS),
+});
 
 export type AIRespuesta = AIAnalisisResponse | AIChatResponse;
 
@@ -549,21 +572,20 @@ export const errorSecciones = (tipos: string[]): string | null => {
 };
 
 /**
- * Valida la respuesta del modo y descarta los códigos de curso que no existan en el contexto.
- * `seccionesLibres` (solo el proxy) acepta un análisis con otras secciones para que el filtro lo corrija.
+ * Valida la respuesta del modo, descarta los códigos de curso que no existan en el contexto y deja hasta MAX_CURSOS.
+ * `delModelo` (solo el proxy, al leer al modelo) usa la lectura tolerante: secciones en cualquier orden para que el
+ * filtro las corrija, y acciones, cursos y preguntas que no invalidan la respuesta.
  */
-export function parsearRespuesta(modo: 'analisis', datos: unknown, contexto: AIContext, seccionesLibres?: boolean): AIAnalisisResponse;
-export function parsearRespuesta(modo: 'chat', datos: unknown, contexto: AIContext, seccionesLibres?: boolean): AIChatResponse;
-export function parsearRespuesta(modo: AIRequest['modo'], datos: unknown, contexto: AIContext, seccionesLibres?: boolean): AIRespuesta;
-export function parsearRespuesta(modo: AIRequest['modo'], datos: unknown, contexto: AIContext, seccionesLibres = false): AIRespuesta {
+export function parsearRespuesta(modo: 'analisis', datos: unknown, contexto: AIContext, delModelo?: boolean): AIAnalisisResponse;
+export function parsearRespuesta(modo: 'chat', datos: unknown, contexto: AIContext, delModelo?: boolean): AIChatResponse;
+export function parsearRespuesta(modo: AIRequest['modo'], datos: unknown, contexto: AIContext, delModelo?: boolean): AIRespuesta;
+export function parsearRespuesta(modo: AIRequest['modo'], datos: unknown, contexto: AIContext, delModelo = false): AIRespuesta {
   const validos = codigosDelContexto(contexto);
+  const cursos = (codigos: string[]) => filtrar(codigos, validos).slice(0, MAX_CURSOS);
   if (modo === 'analisis') {
-    const respuesta: AIAnalisisResponse = (seccionesLibres ? AIAnalisisLibreSchema : AIAnalisisResponseSchema).parse(datos);
-    return {
-      ...respuesta,
-      secciones: respuesta.secciones.map((seccion) => ({ ...seccion, cursos: filtrar(seccion.cursos, validos) })),
-    };
+    const respuesta: AIAnalisisResponse = (delModelo ? AIAnalisisLibreSchema : AIAnalisisResponseSchema).parse(datos);
+    return { ...respuesta, secciones: respuesta.secciones.map((seccion) => ({ ...seccion, cursos: cursos(seccion.cursos) })) };
   }
-  const respuesta = AIChatResponseSchema.parse(datos);
-  return { ...respuesta, cursos: filtrar(respuesta.cursos, validos) };
+  const respuesta = (delModelo ? AIChatToleranteSchema : AIChatResponseSchema).parse(datos);
+  return { ...respuesta, cursos: cursos(respuesta.cursos) };
 }

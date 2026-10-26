@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
-  AIContextSchema, AIRequestSchema, errorSecciones, esquemaRespuesta, MAX_TEXTO_MENSAJE, parsearRespuesta, TIPOS_SECCION,
+  AIContextSchema, AIRequestSchema, errorSecciones, esquemaRespuesta, MAX_CURSOS, MAX_TEXTO_MENSAJE, parsearRespuesta, TIPOS_SECCION,
 } from '../../src/application/ai/contracts';
 import { crearContextoMinimo } from '../helpers/aiContexto';
 
@@ -80,6 +80,24 @@ describe('Contratos IA - respuestas', () => {
     const muchas = { ...seccion, acciones: ['1', '2', '3', '4'] };
     expect(() => parsearRespuesta('analisis', { resumen: 'r', secciones: [muchas, ...resto], preguntasSugeridas: [] }, contexto)).toThrow();
     expect(() => parsearRespuesta('chat', { texto: 't', cursos: [], preguntasSugeridas: ['1', '2', '3', '4'] }, contexto)).toThrow();
+  });
+
+  it('el proxy lee al modelo de forma tolerante: recorta, descarta y completa los campos no críticos (D-059)', () => {
+    const codigos = Array.from({ length: 12 }, (_, indice) => `100000X${String(indice).padStart(3, '0')}`);
+    const amplio = { ...contexto, catalogo: [...contexto.catalogo, ...codigos.map((codigo) => ({ ...contexto.catalogo[0], codigo }))] };
+    const chat = parsearRespuesta('chat', { texto: 't', cursos: ['INVENTADO', ...codigos], preguntasSugeridas: ['1', '2', '3', '4'], extra: 1 }, amplio, true);
+    expect(MAX_CURSOS).toBe(10);
+    expect(chat).toEqual({ texto: 't', cursos: codigos.slice(0, MAX_CURSOS), preguntasSugeridas: ['1', '2', '3'] });
+    expect(parsearRespuesta('chat', { texto: 't' }, contexto, true)).toEqual({ texto: 't', cursos: [], preguntasSugeridas: [] });
+    expect(parsearRespuesta('chat', { texto: 't', cursos: 'no', preguntasSugeridas: [1, '¿?'] }, contexto, true))
+      .toEqual({ texto: 't', cursos: [], preguntasSugeridas: ['¿?'] });
+    // El texto sigue siendo obligatorio y no vacío.
+    for (const malo of [{}, { texto: '' }, { texto: '   ' }, { texto: 3 }]) expect(() => parsearRespuesta('chat', malo, contexto, true)).toThrow();
+    const larga = { ...seccion, acciones: ['1', '2', '3', '4'] };
+    const analisis = parsearRespuesta('analisis', { resumen: 'r', secciones: [larga, ...resto], otra: true }, contexto, true);
+    expect(analisis.secciones[0].acciones).toEqual(['1', '2', '3']);
+    expect(analisis.preguntasSugeridas).toEqual([]);
+    expect(() => parsearRespuesta('analisis', { resumen: ' ', secciones: [seccion, ...resto] }, contexto, true)).toThrow();
   });
 
   it('rechaza un tipo de sección o nivel desconocido', () => {

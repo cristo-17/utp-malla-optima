@@ -103,11 +103,11 @@ describe('consumo - registro de cada llamada real', () => {
   it('si la salida no cumple el contrato, registra los problemas (path:code, vacío o JSON inválido) y nunca el texto', async () => {
     const fetch = vi.fn()
       .mockResolvedValueOnce(respuesta(' '.repeat(64)))
-      .mockResolvedValueOnce(respuesta(JSON.stringify({ texto: 'mi dato privado', cursos: 'no', preguntasSugeridas: [] })));
+      .mockResolvedValueOnce(respuesta(JSON.stringify({ texto: '  ', cursos: ['mi dato privado'], preguntasSugeridas: [] })));
     const { POST, registros } = crear(fetch);
     const res = await POST(post());
     expect(res.status).toBe(502);
-    expect(registros[0]).toMatchObject({ codigo: 'RESPUESTA_INVALIDA', intentos: 2, problemas_esquema: ['(contenido):vacio', 'cursos:invalid_type'] });
+    expect(registros[0]).toMatchObject({ codigo: 'RESPUESTA_INVALIDA', intentos: 2, problemas_esquema: ['(contenido):vacio', 'texto:custom'] });
     expect(JSON.stringify(registros[0])).not.toContain('mi dato privado');
     const otra = crear(vi.fn(async () => respuesta('no es json')));
     await otra.POST(post());

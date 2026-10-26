@@ -26,6 +26,15 @@ export const FIN_CONTEXTO = '<<FIN_CONTEXTO_MALLAU>>';
 export const quitarDelimitadores = (texto: string) => texto.split(INICIO_CONTEXTO).join('').split(FIN_CONTEXTO).join('');
 
 /**
+ * En el chat, los turnos anteriores del asistente viajan en el mismo JSON que debe producir el modelo: con dos o más
+ * turnos en texto plano, el modo json_object devolvía solo espacios (F-047). El cliente manda solo el texto.
+ */
+const contenidoDelTurno = (modo: AIRequest['modo'], mensaje: AIRequest['mensajes'][number]) => {
+  const texto = quitarDelimitadores(mensaje.texto);
+  return modo === 'chat' && mensaje.rol === 'assistant' ? JSON.stringify({ texto, cursos: [], preguntasSugeridas: [] }) : texto;
+};
+
+/**
  * Mensajes para DeepSeek, en este orden:
  * 1) system = prompt estático + esquema; 2) system = contexto (con el foco) entre delimitadores;
  * 3) el historial y 4) el mensaje del alumno (el último de `mensajes`), sin delimitadores.
@@ -36,7 +45,7 @@ export const construirMensajes = (peticion: AIRequest) => [
     content: `${SYSTEM_PROMPT}\n\nESQUEMA JSON de la respuesta (modo "${peticion.modo}"):\n${JSON.stringify(esquemaRespuesta(peticion.modo))}`,
   },
   { role: 'system', content: `${INICIO_CONTEXTO}\n${JSON.stringify(peticion.contexto)}\n${FIN_CONTEXTO}` },
-  ...peticion.mensajes.map((mensaje) => ({ role: mensaje.rol, content: quitarDelimitadores(mensaje.texto) })),
+  ...peticion.mensajes.map((mensaje) => ({ role: mensaje.rol, content: contenidoDelTurno(peticion.modo, mensaje) })),
 ];
 
 /** Tope de salida por modo (incluiría el razonamiento): el análisis trae 5 secciones; el chat, un párrafo. */

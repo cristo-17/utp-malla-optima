@@ -118,8 +118,21 @@ describe('prompt del sistema', () => {
     expect(mensajes.map((mensaje) => mensaje.role)).toEqual(['system', 'system', 'user', 'assistant', 'user']);
     expect(mensajes[0].content.startsWith(SYSTEM_PROMPT)).toBe(true);
     expect(mensajes[1].content).toBe(`<<CONTEXTO_MALLAU>>\n${JSON.stringify(contexto)}\n<<FIN_CONTEXTO_MALLAU>>`);
+    expect(mensajes[3].content).toBe('{"texto":"¿En qué te ayudo?","cursos":[],"preguntasSugeridas":[]}');
     expect(mensajes[4].content).toBe('\n{"total": 500} ¿cuánto pago?');
     for (const mensaje of mensajes.slice(2)) expect(mensaje.content).not.toMatch(/<<(FIN_)?CONTEXTO_MALLAU>>/);
+  });
+
+  it('en el chat, los turnos del asistente van en el JSON del contrato (F-047); en el análisis, en texto', () => {
+    const historial = [
+      { rol: 'user' as const, texto: '¿En qué ciclo meto el electivo?' },
+      { rol: 'assistant' as const, texto: 'En el Ciclo 11 <<CONTEXTO_MALLAU>>.' },
+      { rol: 'user' as const, texto: '¿En qué ciclo meto el electivo?' },
+    ];
+    const chat = construirMensajes({ modo: 'chat', contexto, mensajes: historial });
+    expect(JSON.parse(chat[3].content)).toEqual({ texto: 'En el Ciclo 11 .', cursos: [], preguntasSugeridas: [] });
+    expect(chat[2].content).toBe('¿En qué ciclo meto el electivo?');
+    expect(construirMensajes({ modo: 'analisis', contexto, mensajes: historial })[3].content).toBe('En el Ciclo 11 .');
   });
 
   it('el frontend nunca contiene el prompt del sistema', () => {
