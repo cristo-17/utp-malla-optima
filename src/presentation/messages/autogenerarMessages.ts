@@ -10,13 +10,13 @@ export const avisosPropuesta = (
   propuesta: PropuestaPlan, contexto: { usarVeranos?: boolean; tieneIngreso: boolean; nombreMetodo?: string }
 ): string[] => {
   const avisos: string[] = [];
-  const { ciclosAgregados, veranosUsados, comparacionSinLimites, limitesPedidos } = propuesta;
+  const { ciclosAgregados, comparacionSinLimites, limitesPedidos } = propuesta;
   if (ciclosAgregados.length) {
     avisos.push(`Necesitas ${pluralizar(ciclosAgregados.length, '1 ciclo más', `${ciclosAgregados.length} ciclos más`)} (${ciclosAgregados.map((ciclo) => `Ciclo ${ciclo}`).join(', ')}).`);
   }
-  for (const id of veranosUsados) {
-    const periodo = propuesta.periodos.find((item) => item.periodo.id === id)?.periodo;
-    if (periodo) avisos.push(`Se usa el ${nombrePeriodoCorto(periodo)}.`);
+  // La vista previa también usa los veranos con cursos conservados de un plan anterior.
+  for (const { periodo, cursos } of periodosVistaPrevia(propuesta)) {
+    if (periodo.tipo === 'VERANO' && cursos.length) avisos.push(`Se usa el ${nombrePeriodoCorto(periodo)}.`);
   }
   if (comparacionSinLimites && comparacionSinLimites.ciclosExtra > 0) {
     avisos.push(`Con estos límites terminas ${pluralizar(comparacionSinLimites.ciclosExtra, '1 ciclo', `${comparacionSinLimites.ciclosExtra} ciclos`)} después que sin límites.`);

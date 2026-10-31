@@ -426,15 +426,15 @@ export const generarPlanificacionAutomatica = (
 ): ResultadoPlanificacionAutomatica => {
   const sinVeranos = planificar(cursosEntrada, opciones, new Set());
   let elegido = sinVeranos;
-  // Los veranos se usan solo si hacen falta: se habilitan desde el más cercano hasta no necesitar ciclos extra (y,
-  // con una meta de egreso, hasta lograrla).
-  if (opciones.usarVeranos && sinVeranos.alcance === 'hastaEgresar' &&
-      (sinVeranos.ciclosAgregados.length || sinVeranos.noPlanificados.length || !cumpleMetaEgreso(sinVeranos, opciones.cicloMeta))) {
+  // Un ciclo ya agregado en una propuesta anterior no debe impedir comparar si los veranos permiten egresar antes.
+  if (opciones.usarVeranos && sinVeranos.alcance === 'hastaEgresar') {
     const candidatos = veranosDelCalendario(opciones, sinVeranos.cicloInicio - 1);
     for (let cantidad = 1; cantidad <= candidatos.length; cantidad += 1) {
+      // Un verano igual o posterior al egreso más temprano ya no puede adelantarlo.
+      if (!elegido.noPlanificados.length && elegido.periodoEgreso &&
+          candidatos[cantidad - 1] >= elegido.periodoEgreso.cicloReferencia) break;
       const intento = planificar(cursosEntrada, opciones, new Set(candidatos.slice(0, cantidad)));
       if (egresaAntes(intento, elegido)) elegido = intento;
-      if (!intento.ciclosAgregados.length && !intento.noPlanificados.length && cumpleMetaEgreso(intento, opciones.cicloMeta)) break;
     }
   }
   if (elegido.alcance !== 'hastaEgresar') return { ...elegido, comparacionSinLimites: null };
